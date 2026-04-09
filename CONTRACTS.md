@@ -22,8 +22,53 @@ All shared service methods return a `Result<T, E>` shape.
 type Result<T, E> =
   | { ok: true; value: T }
   | { ok: false; error: E };
-
+```
 ---
+
+## SharedTypes
+
+```ts
+type UserRole = "admin" | "staff" | "user";
+```
+
+```ts
+type Event = {
+    id: string
+    title: string
+    description: string
+    location: string
+    category: string
+    status: "draft" | "published" | "cancelled" | "past"
+    capacity: number | null
+    startDatetime: Date
+    endDatetime: Date
+    organizerId: string
+    createdAt: Date
+    updatedAt: Date
+}
+```
+```ts
+type RSVP = {
+    id: string
+    eventId: string
+    userId: string
+    status: "going" | "waitlisted" | "cancelled"
+    createdAt: Date
+}
+```
+
+```ts
+type RSVPWithEvent = {
+    id: string
+    eventId: string
+    userId: string
+    status: "going" | "waitlisted" | "cancelled"
+    createdAt: Date
+    event: Event
+}
+```
+---
+
 ## EventService
 
 ### `getEventById`
@@ -31,50 +76,52 @@ type Result<T, E> =
 **Used by:** Features 2, 3, 4, 5, 8, 10, 12
 
 ```ts
-EventService.getEventById(eventId: string): Result<Event, EventNotFoundError>
+EventService.getEventById(
+  eventId: string,
+  actingUserId: string,
+  actingUserRole: UserRole
+): Result<Event, EventNotFoundError | NotAuthorizedError>
 ```
 
 **Success — `{ ok: true, value: Event }`**
 
-```ts
-{
-  id: string
-  title: string
-  description: string
-  location: string
-  category: string
-  status: "draft" | "published" | "cancelled" | "past"
-  capacity: number | null        
-  startDatetime: Date
-  endDatetime: Date
-  organizerId: string
-  createdAt: Date
-  updatedAt: Date
-}
-```
+Returns the full `Event` object
+
+**Visibility Rules by Role:**
+
+|   Role  |                              Can Fetch                                 |
+|---------|------------------------------------------------------------------------|
+|  `user` |                         "published" events only                        |
+| `staff` | "published" events and their own drafts ('organizerid = actingUserId') |
+| `admin` |                             all statuses                               |
 
 **Errors:**
 
-|     Error class      |                When               |
-|----------------------|-----------------------------------|
-| `EventNotFoundError` | No event exists with the given ID |
+|     Error class      |                        When                        |
+|----------------------|----------------------------------------------------|
+| `EventNotFoundError` |          No event exists with the given ID         |
+| `NotAuthorizedError` |  actingUserRole doesn't have visibility of event   |
+
 
 ---
 ### `createEvent`
 
-**Used by:** Feature 1 (owned), Feature 3 (reads shape)
+**Used by:** Feature 1, 3
 
 ```ts
-EventService.createEvent(data: {
-  title: string
-  description: string
-  location: string
-  category: string
-  capacity: number | null
-  startDatetime: Date
-  endDatetime: Date
-  organizerId: string
-}): Result<Event, InvalidInputError>
+EventService.createEvent(
+    actingUserId: string,
+    actingUserRole: UserRole,
+    data: {
+        title: string
+        description: string
+        location: string
+        category: string // thoughts on making category a union of values (like birthday, wedding, graduation) to make searching feasible
+        capacity: number | null
+        startDatetime: Date
+        endDatetime: Date
+    }
+): Result<Event, InvalidInputError | NotAuthorizedError>
 ```
 
 **Success — `{ ok: true, value: Event }`**
@@ -83,21 +130,22 @@ Returns the full `Event` object as defined in `getEventById` above. Status is al
 
 **Errors:**
 
-|     Error class     |                                   When                                                |
-|---------------------|---------------------------------------------------------------------------------------|
+|     Error class     |                                             When                                                   |
+|---------------------|----------------------------------------------------------------------------------------------------|
 | `InvalidInputError` | Any required field is missing, endDatetime is not after startDatetime, or other validation failure |
+| `NotAuthorizedError`|        `actingUserRole` === "user"; only `"admin"` and `"staff"` can create event drafts           |
 
 ---
 
 ### `updateEvent`
 
-**Used by:** Feature 3 (owned), Feature 1 (shape dependency)
+**Used by:** Feature 3 
 
 ```ts
 EventService.updateEvent(
   eventId: string,
   actingUserId: string,
-  actingUserRole: string,
+  actingUserRole: UserRole,
   data: Partial<{
     title: string
     description: string
@@ -119,7 +167,7 @@ Returns the full updated `Event` object.
 |        Error class       |                                     When                                      |
 |--------------------------|-------------------------------------------------------------------------------|
 |   `EventNotFoundError`   |                        No event exists with the given ID                      |
-|   `NotAuthorizedError`   |             Acting user is not the organizer and is not an admin              |
+|   `NotAuthorizedError`   |      Acting user is not authorized to update (not `staff` or an `admin`)      |
 | `InvalidEventStateError` |                 Event is in `"cancelled"` or `"past"` status                  |
 |   `InvalidInputError`    | Updated field values fail validation (e.g., endDatetime before startDatetime) |
 
@@ -133,7 +181,7 @@ Returns the full updated `Event` object.
 EventService.updateEventStatus(
   eventId: string,
   actingUserId: string,
-  actingUserRole: string,
+  actingUserRole: UserRole,
   newStatus: "published" | "cancelled"
 ): Result<Event, EventNotFoundError | NotAuthorizedError | InvalidEventStateError>
 ```
@@ -144,20 +192,20 @@ Returns the full updated `Event` object with the new status applied.
 
 **Valid transitions:**
 
-| From | To |
-|---|---|
-| `"draft"` | `"published"` |
+|      From     |       To      |
+|---------------|---------------|
+|   `"draft"`   | `"published"` |
 | `"published"` | `"cancelled"` |
 
 All other transitions are rejected.
 
 **Errors:**
 
-|        Error class       |                             When                                  |
-|--------------------------|-------------------------------------------------------------------|
-|    `EventNotFoundError`  |                 No event exists with the given ID                 |
-|   `NotAuthorizedError`   |          Acting user is not the organizer and is not an admin.    |
-| `InvalidEventStateError` | Requested transition is not valid from the event's current status |
+|        Error class       |                                   When                                       |
+|--------------------------|------------------------------------------------------------------------------|
+|    `EventNotFoundError`  |                       No event exists with the given ID                      |
+|   `NotAuthorizedError`   | publishing requires `admin` role; deleting requires either `admin` or `staff`|
+| `InvalidEventStateError` |       Requested transition is not valid from the event's current status      |
 
 ---
 
@@ -168,7 +216,8 @@ All other transitions are rejected.
 ```ts
 EventService.listEvents(filters?: {
   category?: string
-  timeframe?: "all" | "this_week" | "this_weekend"
+  timeframe?: "all" | "this_week" | "this_month" | "this_year" 
+  //More challenging but we could also change timeframe to accept startdate & enddate and make a calender UI
   searchQuery?: string
 }): Result<Event[], InvalidInputError>
 ```
@@ -187,18 +236,18 @@ Returns an array of `Event` objects. Only `"published"` events with a `startDate
 
 ### `getEventsByOrganizer`
 
-**Used by:** Feature 8 (owned), Feature 5 (shape dependency)
+**Used by:** Feature 8
 
 ```ts
 EventService.getEventsByOrganizer(
   actingUserId: string,
-  actingUserRole: string
+  actingUserRole: UserRole
 ): Result<Event[], never>
 ```
 
 **Success — `{ ok: true, value: Event[] }`**
 
-If `actingUserRole === "admin"`, returns all events across all organizers. Otherwise returns only events where `organizerId === actingUserId`. Always succeeds (empty array if none found). Sorted by `createdAt` descending.
+If `actingUserRole === "admin"`, returns all events across all admin. Otherwise returns only events where `organizerId === actingUserId`. Always succeeds (empty array if none found). Sorted by `createdAt` descending.
 
 **Errors:** None.
 
@@ -208,45 +257,46 @@ If `actingUserRole === "admin"`, returns all events across all organizers. Other
 
 ### `getRSVPsByEvent`
 
-**Used by:** Features 4, 8, 12
+**Used by:** Feature 12
 
 ```ts
 RSVPService.getRSVPsByEvent(
-  eventId: string
-): Result<RSVP[], EventNotFoundError>
+  eventId: string,
+  actingUserId: string,
+  actingUserRole: UserRole
+): Result<RSVP[], EventNotFoundError | NotAuthorizedError>
 ```
 
 **Success — `{ ok: true, value: RSVP[] }`**
 
-```ts
-{
-  id: string
-  eventId: string
-  userId: string
-  status: "going" | "waitlisted" | "cancelled"
-  createdAt: Date
-}
-```
-
 Returns all RSVPs for the event regardless of status, sorted by `createdAt` ascending. Returns an empty array if there are no RSVPs.
+
+**Visibility Rules by Role:**
+
+|   Role  |                               Can View                                 |
+|---------|------------------------------------------------------------------------|
+|  `user` |                                 Never                                  |
+| `staff` |         Only their own events (organizerId === actingUserId)           |
+| `admin` |                               all events                               |
 
 **Errors:**
 
-|      Error class.    |               When                |
-|----------------------|-----------------------------------|
-| `EventNotFoundError` | No event exists with the given ID |
+|      Error class.    |                                       When                                     |
+|----------------------|--------------------------------------------------------------------------------|
+| `EventNotFoundError` |                       No event exists with the given ID                        |
+| `NotAuthorizedError` |  Trying to access Attendee list when `actingUserRole` === "user" OR "staff"    |
 
 ---
 
 ### `getRSVPsByUser`
 
-**Used by:** Features 4, 7
+**Used by:** Features 7
 
 ```ts
-RSVPService.getRSVPsByUser(userId: string): Result<RSVP[], never>
+RSVPService.getRSVPsByUser(userId: string): Result<RSVPWithEvent[], never>
 ```
 
-**Success — `{ ok: true, value: RSVP[] }`**
+**Success — `{ ok: true, value: RSVPWithEvent[] }`**
 
 Returns all RSVPs for the given user across all events, in all statuses. Sorted by `createdAt` descending. Returns an empty array if none exist. Always succeeds.
 
@@ -256,12 +306,13 @@ Returns all RSVPs for the given user across all events, in all statuses. Sorted 
 
 ### `toggleRSVP`
 
-**Used by:** Feature 4 (owned), Features 7, 8 (shape dependency — cancel path)
+**Used by:** Feature 4, 7 
 
 ```ts
 RSVPService.toggleRSVP(
   eventId: string,
-  userId: string
+  actingUserId: string,
+  actingUserRole: UserRole
 ): Result<RSVP, EventNotFoundError | InvalidRSVPError>
 ```
 
@@ -269,20 +320,20 @@ RSVPService.toggleRSVP(
 
 Returns the resulting RSVP record after the toggle. The three cases:
 
-|                   Prior state                  |  Result status |
-|------------------------------------------------|----------------|
-|        No existing RSVP, event not full        |   `"going"`    |
-|       No existing RSVP, event at capacity      | `"waitlisted"` |
-|   Existing `"going"` or `"waitlisted"` RSVP    |  `"cancelled"` |
-|   Existing `"cancelled"` RSVP, event not full  |   `"going"`    |
-| Existing `"cancelled"` RSVP, event at capacity | `"waitlisted"` |
+|       Action       |                   Prior state                  |  Result status |
+|--------------------|------------------------------------------------|----------------|
+|    "RSVP going"    |        No existing RSVP, event not full        |   `"going"`    |
+|    "RSVP going"    |       No existing RSVP, event at capacity      | `"waitlisted"` |
+|  "RSVP Cancelled"  |  Existing `"going"` or `"waitlisted"` RSVP     |  `"cancelled"` |
+|    "RSVP going"    |   Existing `"cancelled"` RSVP, event not full  |   `"going"`    |
+|    "RSVP going"    | Existing `"cancelled"` RSVP, event at capacity | `"waitlisted"` |
 
 **Errors:**
 
-| Error class | When |
-|---|---|
-| `EventNotFoundError` | No event exists with the given ID |
-| `InvalidRSVPError` | Event is `"cancelled"` or `"past"`, or acting user is an organizer or admin |
+|      Error class     |                                    When                                     |
+|----------------------|-----------------------------------------------------------------------------|
+| `EventNotFoundError` |                    No event exists with the given ID                        |
+|  `InvalidRSVPError`  |       Event is `"cancelled"` or `"past"`, or acting `staff`or `admin`       |
 
 ---
 
