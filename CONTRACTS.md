@@ -13,6 +13,17 @@ Agreed upon before Sprint 1 development begins.
 **Integration Compromise rule:** If you change a method's return shape after a teammate has built against it, that is a −10 point penalty on your individual sprint score. Communicate *before* you change anything documented here.
 
 ---
+## Shared Result Pattern
+
+All shared service methods return a `Result<T, E>` shape.
+
+### Success
+```ts
+type Result<T, E> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+---
 ## EventService
 
 ### `getEventById`
@@ -33,7 +44,7 @@ EventService.getEventById(eventId: string): Result<Event, EventNotFoundError>
   location: string
   category: string
   status: "draft" | "published" | "cancelled" | "past"
-  capacity: number | null        // null means no limit
+  capacity: number | null        
   startDatetime: Date
   endDatetime: Date
   organizerId: string
@@ -321,47 +332,3 @@ These are defined once in a shared `errors.ts` file and imported by all service 
 - The `Event` and `RSVP` shapes above define the in-memory data structure for Sprints 1–2. The Prisma schema in Sprint 3 must match these field names so only the repository layer changes.
 - `capacity: null` means the event has no limit. Capacity enforcement in `toggleRSVP` compares the current `going` count from `getAttendeeCount` against the event's `capacity` field.
 
-
-Shared Errors
-type ValidationError = {
-  type: "ValidationError";
-  message: string;
-};
-
-type EventNotFoundError = {
-  type: "EventNotFoundError";
-  eventId: number;
-};
-
-type UnauthorizedError = {
-  type: "UnauthorizedError";
-  message: string;
-};
-
-type ForbiddenError = {
-  type: "ForbiddenError";
-  message: string;
-};
-
-type InvalidEventStateError = {
-  type: "InvalidEventStateError";
-  currentStatus: EventStatus;
-  message: string;
-};
-
-type RSVPNotFoundError = {
-  type: "RSVPNotFoundError";
-  eventId: number;
-  userId: number;
-};
-
-type DuplicateRSVPError = {
-  type: "DuplicateRSVPError";
-  eventId: number;
-  userId: number;
-};
-
-type CapacityExceededError = {
-  type: "CapacityExceededError";
-  eventId: number;
-};
