@@ -1,7 +1,6 @@
 import type {UserRole} from "../auth/User"
 
 export type {UserRole};
-// need to change CONTRACTS.md to include EventStatus and RSVPstatus
 export type EventStatus = "draft" | "published" | "cancelled" | "past";
 export type RSVPStatus = "going" | "waitlisted" | "cancelled";
 
