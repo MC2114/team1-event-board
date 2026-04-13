@@ -12,5 +12,5 @@ export interface IEventRepository {
     findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>>;
     findAll(): Promise<Result<Event[], EventError>>;
     create(event: Event): Promise<Result<Event, EventError>>;
-    updateStatus(eventId: string, status: EventStatus): Promise<Result<Event, EventError>>;
+    updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>>;
 }

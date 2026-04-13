@@ -50,8 +50,14 @@ class InMemoryEventRepository implements IEventRepository {
         return Ok(event);
     }
 
-    async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event, EventError>> {
-        
+    async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>> {
+        const event = this.events.find((e) => e.id === eventId);
+        if (!event){
+            return Ok(null);
+        }
+        event.status = status;
+        event.updatedAt = new Date();
+        return Ok(event);
     }
 }
 
