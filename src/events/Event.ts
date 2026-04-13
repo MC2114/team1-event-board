@@ -1,6 +1,6 @@
 export type EventStatus = "draft" | "published" | "cancelled" | "past";
 
-const VALID_CATEGORIES = [
+export const VALID_CATEGORIES = [
     "technology",
     "business",
     "music",
@@ -21,7 +21,7 @@ const VALID_CATEGORIES = [
 
 export type EventCategory = (typeof VALID_CATEGORIES)[number];
 
-const VALID_TIMEFRAMES = ["all", "this_week", "this_month", "this_year"] as const;
+export const VALID_TIMEFRAMES = ["all", "this_week", "this_month", "this_year"] as const;
 
 export type EventTimeframe = (typeof VALID_TIMEFRAMES)[number];
 
