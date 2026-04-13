@@ -1,7 +1,7 @@
 import { Err, Ok, type Result } from "../lib/result";
 import type { Event, EventCategory, EventTimeframe, EventStatus } from "./Event";
 import type { EventFilters, IEventRepository } from "./EventRepository";
-import { EventNotFound, EventError } from "./errors";
+import { EventError, UnexpectedDependencyError } from "./errors";
 
 const now = new Date();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -59,11 +59,16 @@ class InMemoryEventRepository implements IEventRepository {
     }
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
-        const event = this.events.find((e) => e.id === eventId) ?? null;
-        return Ok(event ? event : null);
+        try {
+            const event = this.events.find((e) => e.id === eventId) ?? null;
+            return Ok(event ? event : null);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find the event."));
+        }
     }
 
     async findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>> {
+        try {
         const now = new Date();
         let results: Event[] = this.events.filter((e) => e.status === "published" && e.startDatetime > now);
 
@@ -86,26 +91,41 @@ class InMemoryEventRepository implements IEventRepository {
             results = results.filter((e) => e.startDatetime <= cutoffDate);
         }
 
-        return Ok(results);
+            return Ok(results);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find the events."));
+        }
     }
 
     async findAll(): Promise<Result<Event[], EventError>> {
-        return Ok(this.events);
+        try {
+            return Ok(this.events);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find the events."));
+        }
     }
 
     async create(event: Event): Promise<Result<Event, EventError>> {
-        this.events.push(event);
-        return Ok(event);
+        try {
+            this.events.push(event);
+            return Ok(event);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to create the event."));
+        }
     }
 
     async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>> {
-        const event = this.events.find((e) => e.id === eventId);
-        if (!event){
-            return Ok(null);
+        try {
+            const event = this.events.find((e) => e.id === eventId);
+            if (!event){
+                return Ok(null);
+            }
+            event.status = status;
+            event.updatedAt = new Date();
+            return Ok(event);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to update the event status."));
         }
-        event.status = status;
-        event.updatedAt = new Date();
-        return Ok(event);
     }
 }
 
