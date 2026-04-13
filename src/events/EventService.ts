@@ -14,10 +14,10 @@ class EventService implements IEventService {
         const category = filters?.category;
         const timeframe = filters?.timeframe;
 
-        if (category && !VALID_CATEGORIES.includes(category)) {
+        if (category && !VALID_CATEGORIES.includes(category as EventCategory)) {
             return Err(InvalidInputError("Invalid category"));
         }
-        if (timeframe && !VALID_TIMEFRAMES.includes(timeframe)) {
+        if (timeframe && !VALID_TIMEFRAMES.includes(timeframe as EventTimeframe )) {
             return Err(InvalidInputError("Invalid timeframe"));
         }
 
