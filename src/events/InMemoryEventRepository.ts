@@ -3,6 +3,54 @@ import type { Event, EventCategory, EventTimeframe, EventStatus } from "./Event"
 import type { EventFilters, IEventRepository } from "./EventRepository";
 import { EventNotFound, EventError } from "./errors";
 
+const now = new Date();
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const DEMO_EVENTS: Event[] = [
+    {
+      id: "event-published-1",
+      title: "Spring Tech Meetup",
+      description: "A community gathering for tech enthusiasts in the Boston area.",
+      location: "Boston, MA",
+      category: "technology",
+      status: "published",
+      capacity: 50,
+      startDatetime: new Date(now.getTime() + 3 * DAY_MS),
+      endDatetime: new Date(now.getTime() + 3 * DAY_MS + 90 * 60 * 1000),
+      organizerId: "user-staff",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: "event-published-2",
+      title: "Weekend Hiking Trip",
+      description: "Casual hiking through the Blue Hills Reservation.",
+      location: "Milton, MA",
+      category: "sports",
+      status: "published",
+      capacity: 20,
+      startDatetime: new Date(now.getTime() + 5 * DAY_MS),
+      endDatetime: new Date(now.getTime() + 5 * DAY_MS + 4 * 60 * 60 * 1000),
+      organizerId: "user-staff",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: "event-draft-1",
+      title: "Networking Breakfast",
+      description: "An upcoming networking event — not yet published.",
+      location: "Cambridge, MA",
+      category: "networking",
+      status: "draft",
+      capacity: 30,
+      startDatetime: new Date(now.getTime() + 10 * DAY_MS),
+      endDatetime: new Date(now.getTime() + 10 * DAY_MS + 2 * 60 * 60 * 1000),
+      organizerId: "user-staff",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+
 class InMemoryEventRepository implements IEventRepository {
     private readonly events: Event[] = [];
 
@@ -62,5 +110,5 @@ class InMemoryEventRepository implements IEventRepository {
 }
 
 function CreateInMemoryEventRepository(): IEventRepository {
-    return new InMemoryEventRepository([]);
+    return new InMemoryEventRepository([...DEMO_EVENTS]);
 }
