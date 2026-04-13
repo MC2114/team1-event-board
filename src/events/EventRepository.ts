@@ -8,7 +8,7 @@ export interface EventFilters {
 }
 
 export interface IEventRepository {
-    findById(id: string): Promise<Result<Event | null, EventError>>;
+    findById(eventId: string): Promise<Result<Event | null, EventError>>;
     findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>>;
     findAll(): Promise<Result<Event[], EventError>>;
     create(event: Event): Promise<Result<Event, EventError>>;
