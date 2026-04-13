@@ -34,5 +34,11 @@ class EventController implements IEventController {
             res.status(status).render("events/list", { events: [] , pageError: result.value.message, category: rawCategory, timeframe: rawTimeframe });
             return;
         }
+
+        res.render("events/list", { events: result.value, pageError: null, category: rawCategory, timeframe: rawTimeframe });
     }
+}
+
+export function CreateEventController(eventService: IEventService, logger: ILoggingService): IEventController {
+    return new EventController(eventService, logger);
 }
