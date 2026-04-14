@@ -1,5 +1,5 @@
 import { Err, Ok, type Result } from "../lib/result";
-import type { UserRole, Event } from "./Event";
+import type { UserRole, Event, EventDetailView } from "./Event";
 import type { EventError } from "./errors";
 import { EventNotFoundError, NotAuthorizedError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
@@ -48,5 +48,32 @@ export class EventService {
         return Err(NotAuthorizedError("You are not authorized to view this event."));
     }
     return Err(NotAuthorizedError("You are not authorized to view this event."));
+  }
+
+  async getEventDetailView(
+    eventId: string,
+    actingUserId: string,
+    actingUserRole: UserRole,
+  ): Promise<Result<EventDetailView, EventError>> {
+    const eventResult = await this.getEventById(
+      eventId,
+      actingUserId,
+      actingUserRole,
+    );
+
+    if (!eventResult.ok) {
+      return eventResult;
+    }
+    const event = eventResult.value;
+    const attendeeCountResult = await this.rsvpRepository.countGoingByEvent(eventId);
+
+    if (!attendeeCountResult.ok) {
+      return attendeeCountResult;
+    }
+
+    return Ok({
+      event: event,
+      attendeeCount: attendeeCountResult.value,
+    });
   }
 }
