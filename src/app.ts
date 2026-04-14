@@ -297,23 +297,23 @@ class ExpressApp implements IApp {
     );
 
     this.app.post(
-      "/events/:eventId/publish",
+      "/events/:id/publish",
       asyncHandler(async (req, res) => {
         if (!this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")){
           return;
         }
-        this.logger.info(`POST /events/${req.params.eventId}/publish`);
+        this.logger.info(`POST /events/${req.params.id}/publish`);
         await this.eventController.publishEvent(req, res);
       }),
     );
 
     this.app.post(
-      "/events/:eventId/cancel",
+      "/events/:id/cancel",
       asyncHandler(async (req, res) => {
         if (!this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")){
           return;
         }
-        this.logger.info(`POST /events/${req.params.eventId}/cancel`);
+        this.logger.info(`POST /events/${req.params.id}/cancel`);
         await this.eventController.cancelEvent(req, res);
       }),
     );
