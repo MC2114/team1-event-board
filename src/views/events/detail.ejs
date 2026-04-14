@@ -23,6 +23,10 @@
       </p>
     </div>
 
+     <div class="pt-4 border-t border-gray-200">
+      <p class="text-sm text-blue-600 font-medium">RSVP controls coming in a later sprint.</p>
+    </div>
+    
     <!-- This provides admin view based on UserRole -->
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
       <div class="flex gap-3">
