@@ -30,6 +30,10 @@ type Result<T, E> =
 ```ts
 type UserRole = "admin" | "staff" | "user";
 ```
+```ts
+type EventStatus = "draft" | "published" | "cancelled" | "past";
+type RSVPStatus = "going" | "waitlisted" | "cancelled";
+```
 
 ```ts
 type Event = {
@@ -38,7 +42,7 @@ type Event = {
     description: string
     location: string
     category: string
-    status: "draft" | "published" | "cancelled" | "past"
+    status: EventStatus
     capacity: number | null
     startDatetime: Date
     endDatetime: Date
@@ -52,7 +56,7 @@ type RSVP = {
     id: string
     eventId: string
     userId: string
-    status: "going" | "waitlisted" | "cancelled"
+    status: RSVPStatus
     createdAt: Date
 }
 ```
@@ -62,7 +66,7 @@ type RSVPWithEvent = {
     id: string
     eventId: string
     userId: string
-    status: "going" | "waitlisted" | "cancelled"
+    status: RSVPStatus
     createdAt: Date
     event: Event
 }
@@ -92,7 +96,7 @@ Returns the full `Event` object
 |   Role  |                              Can Fetch                                 |
 |---------|------------------------------------------------------------------------|
 |  `user` |                         "published" events only                        |
-| `staff` | "published" events and their own drafts ('organizerid = actingUserId') |
+| `staff` | "published" events and their own drafts (`organizerid === actingUserId`) |
 | `admin` |                             all statuses                               |
 
 **Errors:**
@@ -130,10 +134,10 @@ Returns the full `Event` object as defined in `getEventById` above. Status is al
 
 **Errors:**
 
-|     Error class     |                                             When                                                   |
-|---------------------|----------------------------------------------------------------------------------------------------|
-| `InvalidInputError` | Any required field is missing, endDatetime is not after startDatetime, or other validation failure |
-| `NotAuthorizedError`|        `actingUserRole` === "user"; only `"admin"` and `"staff"` can create event drafts           |
+|     Error class     |                                                 When                                                 |
+|---------------------|------------------------------------------------------------------------------------------------------|
+| `InvalidInputError` |  Any required field is missing, endDatetime is not after startDatetime, or other validation failure  |
+| `NotAuthorizedError`|        `actingUserRole` === `"user"`; only `"admin"` and `"staff"` can create event drafts           |
 
 ---
 
@@ -359,21 +363,16 @@ Returns the count of RSVPs with `status === "going"` for the given event. Return
 
 ## Shared Error Classes
 
-All errors below extend a base `AppError` class and are returned inside `Result` objects — never thrown.
-
 ```ts
-class AppError extends Error {
-  constructor(message: string) { super(message) }
-}
-
-class EventNotFoundError extends AppError {}
-class NotAuthorizedError extends AppError {}
-class InvalidEventStateError extends AppError {}
-class InvalidInputError extends AppError {}
-class InvalidRSVPError extends AppError {}
+type EventError =
+  | { name: "EventNotFoundError"; message: string }
+  | { name: "NotAuthorizedError"; message: string }
+  | { name: "InvalidEventStateError"; message: string }
+  | { name: "InvalidInputError"; message: string }
+  | { name: "InvalidRSVPError"; message: string };
 ```
 
-These are defined once in a shared `errors.ts` file and imported by all service and controller files that need them.
+These are defined once in a shared `/events/errors.ts` file and imported by all service and controller files that need them.
 
 ---
 
