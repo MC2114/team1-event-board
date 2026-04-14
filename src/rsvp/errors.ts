@@ -2,19 +2,24 @@ export type RsvpError =
     | { name: "EventNotFound"; message: string }
     | { name: "NotAuthorized"; message: string }
     | { name: "InvalidRsvp"; message: string }
+    | { name: "UnexpectedError"; message: string };
 
 export const EventNotFound = (message: string): RsvpError => ({
     name: "EventNotFound",
-    message
-})
+    message,
+});
 
 export const NotAuthorized = (message: string): RsvpError => ({
     name: "NotAuthorized",
-    message
-})
+    message,
+});
 
 export const InvalidRsvp = (message: string): RsvpError => ({
     name: "InvalidRsvp",
-    message
-})
+    message,
+});
 
+export const UnexpectedError = (message: string): RsvpError => ({
+    name: "UnexpectedError",
+    message,
+});

@@ -1,3 +1,4 @@
+import { Event } from "../events/Event";
 export type RSVPStatus = "going" | "waitlisted" | "cancelled";
 
 export type RSVP = {
