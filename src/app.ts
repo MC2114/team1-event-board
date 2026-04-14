@@ -3,7 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import { EventController } from "./events/EventController";
+import { EventController, IEventController } from "./events/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -18,6 +18,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import { IRsvpController } from "./rsvp/RsvpController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -36,7 +37,8 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
-    private readonly eventController: EventController,
+    private readonly eventController: IEventController,
+    private readonly rsvpController: IRsvpController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -284,8 +286,9 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
-  eventController: EventController,
+  eventController: IEventController,
+  rsvpController: IRsvpController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, eventController, logger);
+  return new ExpressApp(authController, eventController, rsvpController, logger);
 }

@@ -11,6 +11,7 @@ import { InMemoryRSVPRepository } from "./events/InMemoryRSVPRepository";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
+import { CreateEventController } from "./events/EventController";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -26,8 +27,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const eventRepository = CreateInMemoryEventRepository();
   const rsvpRepository = CreateInMemoryRsvpRepository();
   const eventService = CreateEventService(eventRepository, rsvpRepository);
-  const eventController = CreateEventCon(eventService, rsvpRepository);
-
+  const eventController = CreateEventController(eventService, rsvpRepository);
 
   return CreateApp(authController, eventController, resolvedLogger);
 }
