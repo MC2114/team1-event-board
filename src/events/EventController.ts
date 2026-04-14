@@ -9,6 +9,8 @@ export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
   handleCreateForm(req: Request, res: Response): Promise<void>;
   showEventDetail(req: Request, res: Response): Promise<void>;
+  showEditForm(req: Request, res: Response): Promise<void>;
+  handleEditForm(req: Request, res: Response): Promise<void>;
 }
 
 function parseCapacity(raw: string): number | null {
