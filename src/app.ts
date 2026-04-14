@@ -3,7 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import { EventController } from "./events/EventController";
+import { EventController, IEventController } from "./events/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -18,6 +18,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import { IRsvpController } from "./rsvp/RsvpController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -36,8 +37,9 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
+    private readonly eventController: IEventController,
+    private readonly rsvpController: IRsvpController,
     private readonly logger: ILoggingService,
-    private readonly eventController: EventController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -240,7 +242,6 @@ class ExpressApp implements IApp {
     );
 
     // ── Authenticated home page ──────────────────────────────────────
-    // TODO: Replace this placeholder with your project's main page.
 
     this.app.get(
       "/home",
@@ -274,22 +275,13 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // -- Event editing routs --
     this.app.get(
-      "/events/:id/edit",
+      "/events/:eventId",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`GET /events/${req.params.id}/edit`);
-        await this.eventController.showEditForm(req, res);
-      }),
-    );
-
-    this.app.post(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`POST /events/${req.params.id}/edit`);
-        await this.eventController.handleEditForm(req, res);
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.showEventDetail(req, res);
       }),
     );
 
@@ -312,8 +304,9 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
-  EventController: EventController,
+  eventController: IEventController,
+  rsvpController: IRsvpController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, EventController, logger);
+  return new ExpressApp(authController, eventController, rsvpController, logger);
 }

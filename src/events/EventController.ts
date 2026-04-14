@@ -1,12 +1,14 @@
 import type { Request, Response } from "express";
+import { getAuthenticatedUser, AppSessionStore } from "../session/AppSession";
 import type { IEventService } from "./EventService";
-import type { AppSessionStore } from "../session/AppSession";
-import { getAuthenticatedUser } from "../session/AppSession";
+import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { UserRole } from "../auth/User";
 import { NotAuthorizedError, InvalidInputError } from "../errors";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
-  handleCreateForm(req: Request, res: Response): void;
+  handleCreateForm(req: Request, res: Response): Promise<void>;
+  showEventDetail(req: Request, res: Response): Promise<void>;
 }
 
 function parseCapacity(raw: string): number | null {
@@ -19,10 +21,13 @@ function parseDate(raw: string): Date {
   return new Date(raw);
 }
 
-export function CreateEventController(
-  eventService: IEventService
-): IEventController {
-  function showCreateForm(req: Request, res: Response): void {
+export class EventController implements IEventController {
+  constructor(
+    private readonly eventService: IEventService,
+    private readonly rsvpRepository: IRsvpRepository,
+  ) { }
+
+  showCreateForm(req: Request, res: Response): void {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
 
@@ -45,7 +50,7 @@ export function CreateEventController(
     });
   }
 
-  function handleCreateForm(req: Request, res: Response): void {
+  async handleCreateForm(req: Request, res: Response): Promise<void> {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
 
@@ -54,25 +59,39 @@ export function CreateEventController(
       return;
     }
 
-    const rawCapacity = typeof req.body.capacity === "string" ? req.body.capacity : "";
+    const rawCapacity =
+      typeof req.body.capacity === "string" ? req.body.capacity : "";
+
     const formData = {
       title: typeof req.body.title === "string" ? req.body.title : "",
-      description: typeof req.body.description === "string" ? req.body.description : "",
-      location: typeof req.body.location === "string" ? req.body.location : "",
-      category: typeof req.body.category === "string" ? req.body.category : "",
+      description:
+        typeof req.body.description === "string" ? req.body.description : "",
+      location:
+        typeof req.body.location === "string" ? req.body.location : "",
+      category:
+        typeof req.body.category === "string" ? req.body.category : "",
       capacity: parseCapacity(rawCapacity),
       startDatetime: parseDate(
-        typeof req.body.startDatetime === "string" ? req.body.startDatetime : ""
+        typeof req.body.startDatetime === "string"
+          ? req.body.startDatetime
+          : ""
       ),
       endDatetime: parseDate(
-        typeof req.body.endDatetime === "string" ? req.body.endDatetime : ""
+        typeof req.body.endDatetime === "string"
+          ? req.body.endDatetime
+          : ""
       ),
     };
 
-    const result = eventService.createEvent(user.userId, user.role, formData);
+    const result = await this.eventService.createEvent(
+      user.userId,
+      user.role,
+      formData
+    );
 
     if (!result.ok) {
       const error = result.value;
+
       if (error instanceof NotAuthorizedError) {
         res.status(403).render("partials/error", {
           message: error.message,
@@ -80,6 +99,7 @@ export function CreateEventController(
         });
         return;
       }
+
       if (error instanceof InvalidInputError) {
         res.status(400).render("events/create", {
           pageError: error.message,
@@ -90,12 +110,63 @@ export function CreateEventController(
         });
         return;
       }
+
+      // fallback
+      res.status(500).render("partials/error", {
+        message: "Something went wrong.",
+        layout: false,
+      });
+      return;
     }
 
-    if (result.ok) {
-      res.redirect(`/events/${result.value.id}`);
-    }
+    res.redirect(`/events/${result.value.id}`);
   }
 
-  return { showCreateForm, handleCreateForm };
+  async showEventDetail(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    const eventId = req.params.eventId as string;
+
+    const detailResult = await this.eventService.getEventDetailView(
+      eventId,
+      user.userId,
+      user.role as UserRole
+    );
+
+    if (!detailResult.ok) {
+      res.status(404).render("partials/error", {
+        message: "Event not found.",
+        layout: false,
+      });
+      return;
+    }
+
+    const userRSVPResult = await this.rsvpRepository.findByUserAndEvent(
+      eventId,
+      user.userId
+    );
+
+    const userRSVP = userRSVPResult.ok ? userRSVPResult.value : null;
+
+    res.render("events/detail", {
+      title: detailResult.value.event.title,
+      event: detailResult.value.event,
+      attendeeCount: detailResult.value.attendeeCount,
+      user,
+      userRSVP,
+    });
+  }
+}
+
+export function CreateEventController(
+  eventService: IEventService,
+  rsvpRepository: IRsvpRepository,
+): IEventController {
+  return new EventController(eventService, rsvpRepository);
 }
