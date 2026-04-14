@@ -4,6 +4,7 @@ import type { IEventService } from "./EventService";
 import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import { NotAuthorizedError, InvalidInputError } from "../errors";
+import { EventNotFoundError } from "./errors";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -190,6 +191,44 @@ export class EventController implements IEventController {
       events: result.value,
       pageError: null,
     });
+  }
+
+  async publishEvent(req: Request, res: Response): Promise<void> {
+      const store = req.session as AppSessionStore;
+      const user = getAuthenticatedUser(store);
+
+      if (!user){
+        res.redirect("/login")
+        return;
+      }
+
+      const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+      const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
+
+      if (result.ok === false){
+        let status = 500;
+
+        if (result.value.name === "EventNotFoundError"){
+          status = 404;
+        }
+
+        if (result.value.name === "NotAuthorizedError"){
+          status = 403;
+        }
+
+        if (result.value.name === "InvalidEventStateError"){
+          status = 400;
+        }
+
+        res.status(status).render("partials/error", {
+          message: result.value.message,
+          layout: false,
+        });
+        return;
+      }
+
+      res.redirect("/events/manage");
   }
 }
 
