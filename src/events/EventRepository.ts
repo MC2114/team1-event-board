@@ -1,11 +1,7 @@
+import { randomUUID } from "node:crypto";
 import type { Result } from "../lib/result";
 import type { EventError } from "./errors";
-import type { Event, EventCategory, EventTimeframe, EventStatus } from "./Event";
-
-export interface EventFilters {
-    category?: EventCategory;
-    timeframe?: EventTimeframe;
-}
+import type { Event, EventCategory, EventTimeframe, EventStatus, CreateEventData, EventFilters } from "./Event";
 
 export interface IEventRepository {
     findById(eventId: string): Promise<Result<Event | null, EventError>>;
@@ -16,3 +12,4 @@ export interface IEventRepository {
     update(event: Event): Promise<Result<Event | null, EventError>>;
     updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>>;
 }
+
