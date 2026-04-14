@@ -307,6 +307,17 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.post(
+      "/events/:eventId/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")){
+          return;
+        }
+        this.logger.info(`POST /events/${req.params.eventId}/cancel`);
+        await this.eventController.cancelEvent(req, res);
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
