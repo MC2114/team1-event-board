@@ -3,6 +3,7 @@ export type EventError =
     | { name: "NotAuthorizedError"; message: string }
     | { name: "InvalidEventStateError"; message: string }
     | { name: "InvalidInputError"; message: string }
+    | { name: "InvalidRSVPError"; message: string }
     | { name: "UnexpectedDependencyError"; message: string };
 
 export const EventNotFound = (message: string): EventError => ({
@@ -22,6 +23,11 @@ export const InvalidEventStateError = (message: string): EventError => ({
 
 export const InvalidInputError = (message: string): EventError => ({
     name: "InvalidInputError",
+    message,
+});
+
+export const InvalidRSVPError = (message: string): EventError => ({
+    name: "InvalidRSVPError",
     message,
 });
 

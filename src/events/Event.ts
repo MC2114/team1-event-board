@@ -39,3 +39,19 @@ export interface Event {
     createdAt: Date
     updatedAt: Date
 }
+
+export interface CreateEventData {
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  capacity: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
+}
+
+export interface EventFilters {
+    category?: EventCategory;
+    timeframe?: EventTimeframe;
+}
