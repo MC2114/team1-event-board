@@ -164,6 +164,32 @@ export class EventController implements IEventController {
       userRSVP,
     });
   }
+
+  async showEditForm(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+        res.redirect("/login");
+        return;
+    }
+
+    if (user.role === "user") {
+        res.status(403).render("partials/error", {
+            message: "Only organizers and admins can edit events.",
+            layout: false,
+        });
+        return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+    res.render("events/edit", {
+        pageError: null,
+        eventId,
+        formData: {},
+    });
+  }
 }
 
 export function CreateEventController(
