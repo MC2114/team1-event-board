@@ -5,12 +5,12 @@ import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
-import { EventController } from "./events/EventController";
-import { EventService } from "./events/EventService";
-import { InMemoryEventRepository } from "./events/InMemoryEventRepository";
+import { CreateEventService } from "./events/EventService";
+import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
 import { InMemoryRSVPRepository } from "./events/InMemoryRSVPRepository";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
+import { CreateInMemoryRsvpRepository } from "./rsvp/InMemoryRsvpRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -23,10 +23,10 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
   // Event wiring
-  const eventRepository = new InMemoryEventRepository();
-  const rsvpRepository = new InMemoryRSVPRepository();
-  const eventService = new EventService(eventRepository, rsvpRepository);
-  const eventController = new EventController(eventService, rsvpRepository);
+  const eventRepository = CreateInMemoryEventRepository();
+  const rsvpRepository = CreateInMemoryRsvpRepository();
+  const eventService = CreateEventService(eventRepository, rsvpRepository);
+  const eventController = CreateEventCon(eventService, rsvpRepository);
 
 
   return CreateApp(authController, eventController, resolvedLogger);
