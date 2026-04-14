@@ -37,7 +37,7 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
-    private readonly eventController: IEventController,
+    private readonly eventController: EventController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -293,7 +293,8 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
+  EventController: EventController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, EventController, logger);
 }
