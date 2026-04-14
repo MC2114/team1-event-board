@@ -183,15 +183,30 @@ export class EventController implements IEventController {
       timeframe,
       searchQuery,
     });
+    const isHtmxRequest = req.get("HX-Request") === "true";
 
     if (result.ok === false) {
       const error = result.value as EventError;
       const status = error.name === "InvalidInputError" ? 400 : 500;
+      if (isHtmxRequest) {
+        res.status(status).render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
       res.status(status).render("events/index", {
         session: req.session,
         events: [],
         searchQuery: searchQuery ?? "",
         pageError: error.message,
+      });
+      return;
+    }
+
+    if (isHtmxRequest) {
+      res.render("events/results", {
+        events: result.value,
       });
       return;
     }
