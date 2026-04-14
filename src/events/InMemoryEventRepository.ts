@@ -48,7 +48,7 @@ export const DEMO_EVENTS: Event[] = [
     },
 ];
 
-class InMemoryEventRepository implements IEventRepository {
+export class InMemoryEventRepository implements IEventRepository {
     constructor(private readonly events: Event[]) {}
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
@@ -139,6 +139,6 @@ class InMemoryEventRepository implements IEventRepository {
     }
 }
 
-function CreateInMemoryEventRepository(): IEventRepository {
+export function CreateInMemoryEventRepository(): IEventRepository {
     return new InMemoryEventRepository([...DEMO_EVENTS]);
 }
