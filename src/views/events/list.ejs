@@ -69,4 +69,8 @@
         </div>
       <% } %>
   </form>
+
+  <% if (pageError) { %>
+    <%- include("../partials/error", { message: pageError }) %>
+  <% } %>
 </section>
