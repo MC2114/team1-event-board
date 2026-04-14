@@ -1,0 +1,19 @@
+<section class="mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-3xl font-bold text-slate-900">Event Manager</h1>
+      
+        href="/events"
+        class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 no-underline"
+      >
+        Back to Events
+      </a>
+    </div>
+  
+    <p class="text-slate-500 mb-6">
+      <% if (session.authenticatedUser.role === "admin") { %>
+        Viewing all events across all organizers.
+      <% } else { %>
+        Viewing your events.
+      <% } %>
+    </p>
+</section>
