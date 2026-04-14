@@ -203,6 +203,21 @@ class EventService implements IEventService {
     async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
         const normalizedCategory = filters.category?.trim() || undefined;
         const normalizedTimeframe = filters.timeframe?.trim() || undefined;
+
+        if (
+            normalizedCategory !== undefined &&
+            !EventService.validCategories.has(normalizedCategory)
+        ) {
+            return Err(InvalidInputError("Invalid category filter."));
+        }
+
+        if (
+            normalizedTimeframe !== undefined &&
+            !EventService.validTimeframes.has(normalizedTimeframe)
+        ) {
+            return Err(InvalidInputError("Invalid timeframe filter."));
+        }
+
         const repositoryFilters: EventFilters = {};
 
         if (normalizedCategory !== undefined) {
