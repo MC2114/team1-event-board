@@ -55,3 +55,8 @@ export interface EventFilters {
     category?: EventCategory;
     timeframe?: EventTimeframe;
 }
+
+export type EventDetailView = {
+  event: Event;
+  attendeeCount: number;
+};

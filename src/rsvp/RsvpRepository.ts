@@ -1,5 +1,6 @@
 import { Result } from "../lib/result";
-import type { RSVP, RSVPWithEvent, Event } from "./RsvpTypes";
+import type { RSVP, RSVPWithEvent } from "./RSVP";
+import type { Event } from "../events/Event";
 import type { RsvpError } from "./errors.ts"
 
 export interface IRsvpRepository {
