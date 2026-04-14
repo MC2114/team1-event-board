@@ -81,6 +81,15 @@ export function CreateEventService(repo: IEventRepository): IEventService {
       endDatetime: Date;
     }
   ): Result<Event, InvalidInputError | NotAuthorizedError> {
+    if (actingUserRole === "user") {
+      return Err(new NotAuthorizedError("Only organizers and admins can create events."));
+    }
+
+    const validationError = validateCreateEvent(data);
+    if (validationError) {
+      return Err(validationError);
+    }
+
     const event = repo.create({
       ...data,
       organizerId: actingUserId,
