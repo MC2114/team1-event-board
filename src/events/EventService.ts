@@ -1,9 +1,9 @@
 
 import { Err, Ok, type Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
-import type { Event, EventDetailView } from "./Event";
+import type { Event, EventDetailView, EventStatus } from "./Event";
 import type { EventError } from "./errors";
-import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
+import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError, InvalidEventStateError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
 import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
@@ -176,6 +176,53 @@ class EventService implements IEventService {
         };
 
         return await this.eventRepository.create(event);
+    }
+
+    async updateEventStatus(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        newStatus: EventStatus,
+    ): Promise<Result<Event, EventError>> {
+        const result = await this.eventRepository.findById(eventId);
+
+        if (!result.ok) {
+            return result;
+        }
+
+        const event = result.value;
+
+        if (!event) {
+           return Err(EventNotFoundError("No event exists with the given ID."));
+        }
+
+        const isOwner = actingUserRole === 'staff' && event.organizerId === actingUserId;
+        const isAdmin = actingUserRole === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return Err(NotAuthorizedError("You are not authorized to update the event status."));
+        }
+
+        if (newStatus === "published" && event.status !== "draft") {
+            return Err(InvalidEventStateError(`Cannot publish an event with status "${event.status}". Only drafts can be published.`));
+        }
+
+        if (newStatus === "cancelled" && event.status !== "published") {
+            return Err(InvalidEventStateError(`Cannot cancel an event with status "${event.status}". Only published events can be cancelled.`));
+        }
+
+        const updateResult = await this.eventRepository.updateStatus(eventId, newStatus);
+        
+        if (updateResult.ok === false){
+            return updateResult;
+        }
+
+        const updated = updateResult.value;
+        if (!updated) {
+            return Err(EventNotFoundError("No event exists with the given ID."));
+        }
+
+        return Ok(updated);
     }
 }
 
