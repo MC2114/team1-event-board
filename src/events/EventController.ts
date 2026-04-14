@@ -18,7 +18,7 @@ export class EventController {
       return;
     }
 
-    const eventId = req.params.eventId;
+    const eventId = req.params.eventId as string;
     const actingUserId = user.userId;
     const actingUserRole = user.role as UserRole;
 
@@ -29,8 +29,8 @@ export class EventController {
     );
 
     if (!detailResult.ok) {
-      res.render("partials/error", {
-        error: detailResult.error.message,
+      res.status(404).render("partials/error", {
+        error: "Event not found.",
       });
       return;
     }
