@@ -212,6 +212,31 @@ class EventService implements IEventService {
             return Err(InvalidEventStateError("Cancelled or past events cannot be edited."));
         }
 
+        if (data.title !== undefined && !data.title.trim()) {
+            return Err(InvalidInputError("Title is required."));
+        }
+        if (data.description !== undefined && !data.description.trim()) {
+            return Err(InvalidInputError("Description is required."));
+        }
+        if (data.location !== undefined && !data.location.trim()) {
+            return Err(InvalidInputError("Location is required."));
+        }
+        if (data.category !== undefined && !data.category.trim()) {
+            return Err(InvalidInputError("Category is required."));
+        }
+        if (data.startDatetime !== undefined && isNaN(data.startDatetime.getTime())) {
+            return Err(InvalidInputError("Start date and time is invalid."));
+        }
+        if (data.endDatetime !== undefined && isNaN(data.endDatetime.getTime())) {
+            return Err(InvalidInputError("End date and time is invalid."));
+        }
+        if (data.startDatetime && data.endDatetime && data.endDatetime <= data.startDatetime) {
+            return Err(InvalidInputError("End date and time must be after start date and time."));
+        }
+        if (data.capacity !== undefined && data.capacity !== null && (data.capacity < 1 || !Number.isInteger(data.capacity))) {
+            return Err(InvalidInputError("Capacity must be a positive whole number."));
+        }
+
         const merged = { ...existing, ...data };
         const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
 
