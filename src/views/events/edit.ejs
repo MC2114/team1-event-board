@@ -1,3 +1,6 @@
+<% if (pageError) { %>
+  <%- include('../partials/error', { message: pageError }) %>
+<% } %>
 <div class="edit-event">
   <h1>Edit Event</h1>
 
