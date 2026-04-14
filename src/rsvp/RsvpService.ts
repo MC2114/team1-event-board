@@ -59,7 +59,7 @@ class RsvpService implements IRsvpService {
         }
 
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
-        return await this.eventRepo.findById(eventId);
+        return await this.rsvpRepo.findByEvent(eventId);
     }
 
     async toggleRSVP(
