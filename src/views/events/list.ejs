@@ -57,5 +57,16 @@
     >
       Filter
     </button>
+
+    <% if (activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
+        <div class="mb-4">
+          
+            href="/events"
+            class="text-sm text-slate-500 hover:text-slate-700 hover:underline"
+          >
+            Clear filters
+          </a>
+        </div>
+      <% } %>
   </form>
 </section>
