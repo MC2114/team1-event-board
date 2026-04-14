@@ -1,11 +1,10 @@
 import type { Request, Response } from "express";
 import type { IEventService } from "./EventService";
 import type { ILoggingService } from "../service/LoggingService";
-import type { IAuthService } from "../auth/AuthService";
-import type { IUserSummary, UserRole } from "../auth/User";
-import type { IAppBrowserSession } from "../session/AppSession";
+import { recordPageView, type AppSessionStore } from "../session/AppSession";
 import type { EventError } from "./errors";
-import type { EventCategory, EventTimeframe } from "./Event";
+import { VALID_CATEGORIES, VALID_TIMEFRAMES, type EventCategory, type EventTimeframe } from "./Event";
+
 
 export interface IEventController {
     showEventsList(req: Request, res: Response): Promise<void>;
@@ -23,19 +22,43 @@ class EventController implements IEventController {
     }
 
     async showEventsList(req: Request, res: Response): Promise<void> {
+        const store = req.session as AppSessionStore;
+        const browserSession = recordPageView(store);
+        
         const rawCategory = typeof req.query.category === "string" ? req.query.category : undefined;
         const rawTimeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
 
-        const result = await this.eventService.listEvents({ category: rawCategory | undefined, timeframe: rawTimeframe | undefined});
+        const category = VALID_CATEGORIES.includes(rawCategory as EventCategory)
+            ? (rawCategory as EventCategory)
+            : undefined;
+        const timeframe = VALID_TIMEFRAMES.includes(rawTimeframe as EventTimeframe)
+            ? (rawTimeframe as EventTimeframe)
+            : undefined;
+        
+        const result = await this.eventService.listEvents({ category, timeframe});
+        
+        
         if (result.ok === false) {
             const status = this.mapErrorStatus(result.value);
             const log = status >= 500 ? this.logger.error : this.logger.warn;
             log.call(this.logger, `Failed to list events: ${result.value.message}`);
-            res.status(status).render("events/list", { events: [] , pageError: result.value.message, category: rawCategory, timeframe: rawTimeframe });
+            res.status(status).render("events/list", { 
+                session: browserSession,
+                events: [], 
+                activeCategory: category ?? "", 
+                activeTimeframe: timeframe ?? "all",
+                pageError: result.value.message
+            });
             return;
         }
 
-        res.render("events/list", { events: result.value, pageError: null, category: rawCategory, timeframe: rawTimeframe });
+        res.render("events/list", { 
+            session: browserSession,
+            events: result.value, 
+            activeCategory: category ?? "", 
+            activeTimeframe: timeframe ?? "all",
+            pageError: null
+        });
     }
 }
 
