@@ -261,7 +261,7 @@ class ExpressApp implements IApp {
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info("GET /events/new");
-        this.eventController.showCreateForm(req, res);
+        await this.eventController.showCreateForm(req, res);
       }),
     );
 
@@ -270,7 +270,7 @@ class ExpressApp implements IApp {
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info("POST /events/new");
-        this.eventController.handleCreateForm(req, res);
+        await this.eventController.handleCreateForm(req, res);
       }),
     );
 
