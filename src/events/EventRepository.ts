@@ -1,7 +1,6 @@
-import { randomUUID } from "node:crypto";
 import type { Result } from "../lib/result";
 import type { EventError } from "./errors";
-import type { Event, EventCategory, EventTimeframe, EventStatus, CreateEventData, EventFilters } from "./Event";
+import type { Event, EventStatus, EventFilters } from "./Event";
 
 export interface IEventRepository {
     findById(eventId: string): Promise<Result<Event | null, EventError>>;
