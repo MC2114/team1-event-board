@@ -124,6 +124,10 @@ export class EventController implements IEventController {
     res.redirect(`/events/${result.value.id}`);
   }
 
+  private getStringQuery(req: Request, key: string): string | undefined {
+    return typeof req.query[key] === "string" ? req.query[key] : undefined;
+  }
+
   async showEventDetail(req: Request, res: Response): Promise<void> {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
@@ -173,10 +177,9 @@ export class EventController implements IEventController {
       return;
     }
 
-    const category = typeof req.query.category === "string" ? req.query.category : undefined;
-    const timeframe = typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
-    const searchQuery =
-      typeof req.query.searchQuery === "string" ? req.query.searchQuery : undefined;
+    const category = this.getStringQuery(req, "category");
+    const timeframe = this.getStringQuery(req, "timeframe");
+    const searchQuery = this.getStringQuery(req, "searchQuery");
 
     const result = await this.eventService.listEvents({
       category,
