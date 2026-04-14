@@ -16,4 +16,19 @@
         Viewing your events.
       <% } %>
     </p>
+
+    <% if (pageError) { %>
+        <%- include("../partials/error", { message: pageError }) %>
+      <% } %>
+    
+      <% if (events.length === 0) { %>
+        <div class="text-center py-16 text-slate-500">
+          <p class="text-lg font-medium">No events to manage.</p>
+          <p class="text-sm mt-1">
+            <a href="/events/new" class="text-blue-600 hover:underline">
+              Create your first event
+            </a>
+          </p>
+        </div>
+      <% } else { %>
 </section>
