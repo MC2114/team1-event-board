@@ -11,6 +11,14 @@
       <strong class="text-slate-700"><%= session.authenticatedUser.role %></strong>).
     </p>
   <% } %>
+  <div class="mt-4">
+    <a
+      href="/events"
+      class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white font-medium no-underline hover:bg-blue-700"
+    >
+      Browse Events
+    </a>
+  </div>
 </section>
 
 <% if (pageError) { %>
