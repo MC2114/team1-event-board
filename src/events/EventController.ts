@@ -165,6 +165,32 @@ export class EventController implements IEventController {
       userRSVP,
     });
   }
+
+  async showManage(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+  
+    const result = await this.eventService.getAllEventsForManager(user.userId, user.role);
+
+    if (result.ok === false) {
+      res.status(500).render("partials/error", {
+        message: "Something went wrong.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/manage", {
+      session: {authenticatedUser: user},
+      events: result.value,
+      pageError: null,
+    });
+  }
 }
 
 export function CreateEventController(
