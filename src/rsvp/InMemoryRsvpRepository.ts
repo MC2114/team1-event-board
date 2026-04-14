@@ -1,7 +1,7 @@
 import { Ok, Err, type Result } from "../lib/result";
 import { IRsvpRepository } from "./RsvpRepository";
 import type { RSVP, RSVPWithEvent, Event } from "./RsvpTypes";
-import type { RsvpError } from "./errors";
+import { UnexpectedError, type RsvpError } from "./errors";
 
 
 export const DEMO_EVENTS: Event[] = [
@@ -64,7 +64,63 @@ class InMemoryRsvpRepository implements IRsvpRepository {
 
             return Ok(result);
         } catch {
-            return Err({ name: "Unexpected Error"})
+            return Err(UnexpectedError("Unable to read RSVPs."));
         }
     }
+
+    async findByEvent(eventId: string): Promise<Result<RSVP[], RsvpError>> {
+        try {
+            const result = this.rsvps
+                .filter((r) => r.eventId === eventId)
+                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+            return Ok(result)
+        } catch {
+            return Err(UnexpectedError("Unable to read RSVPs for event."))
+        }
+    }
+
+    async findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | undefined, RsvpError>> {
+        try {
+            const match = this.rsvps.find((r) => r.userId === userId && r.eventId === eventId)
+            return Ok(match)
+        } catch {
+            return Err(UnexpectedError("Unable to look up RSVP."))
+        }
+    }
+
+    async findEventById(eventId: string): Promise<Result<Event | undefined, RsvpError>> {
+        try {
+            const match = this.events.find((e) => e.id === eventId);
+            return Ok(match);
+        } catch {
+            return Err(UnexpectedError("Unable to look up event."))
+        }
+    }
+
+    async countGoing(eventId: string): Promise<Result<number, RsvpError>> {
+        try {
+            const count = this.rsvps.filter((r) => r.eventId === eventId && r.status === "going").length;
+            return Ok(count);
+        } catch {
+            return Err(UnexpectedError("Unable to count attendees."))
+        }
+    }
+
+    async save(rsvp: RSVP): Promise<Result<RSVP, RsvpError>> {
+        try {
+            const index = this.rsvps.findIndex((r) => r.id === rsvp.id);
+            if (index !== -1) {
+                this.rsvps[index] = rsvp;
+            } else {
+                this.rsvps.push(rsvp)
+            }
+            return Ok(rsvp)
+        } catch {
+            return Err(UnexpectedError("Unable to save RSVP."))
+        }
+    }
+}
+
+export function CreateInMemoryRsvpRepository(): IRsvpRepository {
+    return new InMemoryRsvpRepository([...DEMO_EVENTS], [...DEMO_RSVPS])
 }
