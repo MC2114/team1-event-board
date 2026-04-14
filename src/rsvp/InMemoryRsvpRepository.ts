@@ -79,15 +79,6 @@ class InMemoryRSVPRepository implements IRSVPRepository {
         }
     }
 
-    async findEventById(eventId: string): Promise<Result<Event | null, RSVPError>> {
-        try {
-            const match = this.events.find((e) => e.id === eventId);
-            return Ok(match ?? null);
-        } catch {
-            return Err(UnexpectedError("Unable to look up event."))
-        }
-    }
-
     async countGoing(eventId: string): Promise<Result<number, RSVPError>> {
         try {
             const count = this.rsvps.filter((r) => r.eventId === eventId && r.status === "going").length;
