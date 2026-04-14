@@ -1,4 +1,5 @@
 import { Ok, Err, type Result } from "../lib/result";
+import { IRsvpRepository } from "./RsvpRepository";
 import type { RSVP, RSVPWithEvent, Event } from "./RsvpTypes";
 import type { RsvpError } from "./errors";
 
@@ -44,3 +45,26 @@ export const DEMO_RSVPS: RSVP[] = [
     }
 ]
 
+class InMemoryRsvpRepository implements IRsvpRepository {
+    constructor(
+        private readonly events: Event[],
+        private readonly rsvps: RSVP[]
+    ) { }
+
+    async findByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>> {
+        try {
+            const result = this.rsvps
+                .filter((r) => r.userId === userId)
+                .flatMap((r) => {
+                    const event = this.events.find((e) => e.id === r.eventId)
+                    if (!event) return [];
+                    return [{ ...r, event }];
+                })
+                .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+            return Ok(result);
+        } catch {
+            return Err({ name: "Unexpected Error"})
+        }
+    }
+}
