@@ -22,5 +22,25 @@
         <% } %>
       </p>
     </div>
+
+    <!-- This provides admin view based on UserRole -->
+    <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
+      <div class="flex gap-3">
+        <a
+          href="/events/<%= event.id %>/edit"
+          class="px-4 py-2 rounded bg-blue-600 text-white"
+        >
+          Edit Event
+        </a>
+        <form method="post" action="/events/<%= event.id %>/status">
+          <button
+            type="submit"
+            class="px-4 py-2 rounded bg-red-600 text-white"
+          >
+            Cancel Event
+          </button>
+        </form>
+      </div>
+    <% } %>
   </div>
 </div>
