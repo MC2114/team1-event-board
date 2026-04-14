@@ -276,16 +276,6 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
-      "/events/:eventId",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        await this.eventController.showEventDetail(req, res);
-      }),
-    );
-
-    this.app.get(
       "/events/manage",
       asyncHandler(async (req, res) => {
         if (!this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")){
@@ -293,6 +283,16 @@ class ExpressApp implements IApp {
         }
         this.logger.info("GET /events/manage");
         await this.eventController.showManage(req, res);
+      }),
+    );
+
+    this.app.get(
+      "/events/:eventId",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.showEventDetail(req, res);
       }),
     );
 
