@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { UnexpectedDependencyError, type EventError } from "./errors";
-import type { Event, EventCategory, EventTimeframe, EventStatus, EventFilters } from "./Event";
+import type { Event, EventStatus, EventFilters } from "./Event";
 import type { IEventRepository } from "./EventRepository";
 
 export const DEMO_EVENTS: Event[] = [

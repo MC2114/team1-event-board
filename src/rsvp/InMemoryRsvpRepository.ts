@@ -1,7 +1,9 @@
 import { Ok, Err, type Result } from "../lib/result";
 import { IRsvpRepository } from "./RsvpRepository";
 import type { RSVP, RSVPWithEvent } from "./RSVP";
+import { Event } from "../events/Event";
 import { UnexpectedError, type RsvpError } from "./errors";
+import { DEMO_EVENTS } from "../events/InMemoryEventRepository";
 
 export const DEMO_RSVPS: RSVP[] = [
     {
