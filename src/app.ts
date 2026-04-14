@@ -37,6 +37,7 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
+    private readonly eventController: IEventController,
   ) {
     this.app = express();
     this.registerMiddleware();
