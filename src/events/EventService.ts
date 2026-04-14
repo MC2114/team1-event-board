@@ -179,6 +179,44 @@ class EventService implements IEventService {
 
         return await this.eventRepository.create(event);
     }
+
+    async updateEvent(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: Partial<{
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        }>
+    ): Promise<Result<Event, EventError>> {
+        const findResult = await this.eventRepository.findById(eventId);
+        if (!findResult.ok) {
+            return findResult;
+        }
+
+        const existing = findResult.value;
+        if (!existing) {
+            return Err(EventNotFoundError("Event not found."));
+        }
+
+        const merged = { ...existing, ...data };
+        const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
+
+        if (!updateResult.ok) {
+            return updateResult;
+        }
+
+        if (!updateResult.value) {
+            return Err(EventNotFoundError("Event could not be updated."));
+        }
+
+        return Ok(updateResult.value);
+    }
 }
 
 export function CreateEventService(
