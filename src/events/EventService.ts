@@ -224,6 +224,29 @@ class EventService implements IEventService {
 
         return Ok(updated);
     }
+
+    async getAllEventsForManager(
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<Event[], EventError>> {
+        if (actingUserRole === 'user') {
+            return Err(NotAuthorizedError("You are not authorized to view all events."));
+        }
+
+        const result = await this.eventRepository.findAll();
+
+        if (result.ok === false) {
+            return result;
+        }
+
+        if (actingUserRole === 'admin') {
+            return Ok(result.value);
+        }
+
+        const staffEvents = result.value.filter((e) => e.organizerId === actingUserId);
+
+        return Ok(staffEvents);
+    }
 }
 
 export function CreateEventService(
