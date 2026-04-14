@@ -1,6 +1,7 @@
 
 import { Err, Ok, type Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
+import { isEventCategory, isEventTimeframe } from "./Event";
 import type { Event, EventCategory, EventDetailView, EventFilters, EventTimeframe } from "./Event";
 import type { EventError } from "./errors";
 import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
@@ -41,33 +42,6 @@ export interface IEventService {
 }
 
 class EventService implements IEventService {
-    private static readonly validCategories: ReadonlySet<string> = new Set([
-        "technology",
-        "business",
-        "music",
-        "art",
-        "food",
-        "health",
-        "education",
-        "sports",
-        "gaming",
-        "networking",
-        "party",
-        "holiday",
-        "birthday",
-        "graduation",
-        "wedding",
-        "movies and tv",
-        "other",
-    ]);
-
-    private static readonly validTimeframes: ReadonlySet<string> = new Set([
-        "all",
-        "this_week",
-        "this_month",
-        "this_year",
-    ]);
-
     private static includesSearchMatch(event: Event, searchQuery: string): boolean {
         const title = event.title.toLowerCase();
         const description = event.description.toLowerCase();
@@ -215,28 +189,30 @@ class EventService implements IEventService {
     async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
         const normalizedCategory = filters.category?.trim() || undefined;
         const normalizedTimeframe = filters.timeframe?.trim() || undefined;
+        let categoryFilter: EventCategory | undefined;
+        let timeframeFilter: EventTimeframe | undefined;
 
-        if (
-            normalizedCategory !== undefined &&
-            !EventService.validCategories.has(normalizedCategory)
-        ) {
-            return Err(InvalidInputError("Invalid category filter."));
+        if (normalizedCategory !== undefined) {
+            if (!isEventCategory(normalizedCategory)) {
+                return Err(InvalidInputError("Invalid category filter."));
+            }
+            categoryFilter = normalizedCategory;
         }
 
-        if (
-            normalizedTimeframe !== undefined &&
-            !EventService.validTimeframes.has(normalizedTimeframe)
-        ) {
-            return Err(InvalidInputError("Invalid timeframe filter."));
+        if (normalizedTimeframe !== undefined) {
+            if (!isEventTimeframe(normalizedTimeframe)) {
+                return Err(InvalidInputError("Invalid timeframe filter."));
+            }
+            timeframeFilter = normalizedTimeframe;
         }
 
         const repositoryFilters: EventFilters = {};
 
-        if (normalizedCategory !== undefined) {
-            repositoryFilters.category = normalizedCategory as EventCategory;
+        if (categoryFilter !== undefined) {
+            repositoryFilters.category = categoryFilter;
         }
-        if (normalizedTimeframe !== undefined) {
-            repositoryFilters.timeframe = normalizedTimeframe as EventTimeframe;
+        if (timeframeFilter !== undefined) {
+            repositoryFilters.timeframe = timeframeFilter;
         }
 
         const repositoryResult = await this.eventRepository.findPublishedUpcoming(
