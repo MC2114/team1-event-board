@@ -58,4 +58,16 @@
                     <%= event.status %>
                   </span>
                 </div>
+
+                <div class="flex items-center gap-2 mt-3 flex-wrap">
+                    <% if (event.status === "draft") { %>
+                      <form method="POST" action="/events/<%= event.id %>/publish" class="m-0">
+                        <button
+                          type="submit"
+                          class="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
+                        >
+                          Publish
+                        </button>
+                      </form>
+                    <% } %>
 </section>
