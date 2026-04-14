@@ -20,6 +20,15 @@ export interface IEventService {
   ): Result<Event, InvalidInputError | NotAuthorizedError>;
 }
 
+const VALID_CATEGORIES = [
+  "social",
+  "educational",
+  "volunteer",
+  "sports",
+  "arts",
+  "other",
+] as const;
+
 export function CreateEventService(repo: IEventRepository): IEventService {
   function createEvent(
     actingUserId: string,
