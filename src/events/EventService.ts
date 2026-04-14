@@ -1,12 +1,19 @@
 
 import { Err, Ok, type Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
-import type { Event, EventDetailView } from "./Event";
+import { isEventCategory, isEventTimeframe } from "./Event";
+import type { Event, EventCategory, EventDetailView, EventFilters, EventTimeframe } from "./Event";
 import type { EventError } from "./errors";
 import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
 import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
+
+export interface IListEventsFilters {
+    category?: string;
+    timeframe?: string;
+    searchQuery?: string;
+}
 
 export interface IEventService {
     getEventById(eventId: string,
@@ -31,9 +38,22 @@ export interface IEventService {
             endDatetime: Date;
         }
     ): Promise<Result<Event, EventError>>;
+    listEvents(filters?: IListEventsFilters): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
+    private static includesSearchMatch(event: Event, searchQuery: string): boolean {
+        const title = event.title.toLowerCase();
+        const description = event.description.toLowerCase();
+        const location = event.location.toLowerCase();
+
+        return (
+            title.includes(searchQuery) ||
+            description.includes(searchQuery) ||
+            location.includes(searchQuery)
+        );
+    }
+
     constructor(
         private readonly eventRepository: IEventRepository,
         private readonly rsvpRepository: IRsvpRepository,
@@ -164,6 +184,55 @@ class EventService implements IEventService {
         };
 
         return await this.eventRepository.create(event);
+    }
+
+    async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
+        const normalizedCategory = filters.category?.trim() || undefined;
+        const normalizedTimeframe = filters.timeframe?.trim() || undefined;
+        let categoryFilter: EventCategory | undefined;
+        let timeframeFilter: EventTimeframe | undefined;
+
+        if (normalizedCategory !== undefined) {
+            if (!isEventCategory(normalizedCategory)) {
+                return Err(InvalidInputError("Invalid category filter."));
+            }
+            categoryFilter = normalizedCategory;
+        }
+
+        if (normalizedTimeframe !== undefined) {
+            if (!isEventTimeframe(normalizedTimeframe)) {
+                return Err(InvalidInputError("Invalid timeframe filter."));
+            }
+            timeframeFilter = normalizedTimeframe;
+        }
+
+        const repositoryFilters: EventFilters = {};
+
+        if (categoryFilter !== undefined) {
+            repositoryFilters.category = categoryFilter;
+        }
+        if (timeframeFilter !== undefined) {
+            repositoryFilters.timeframe = timeframeFilter;
+        }
+
+        const repositoryResult = await this.eventRepository.findPublishedUpcoming(
+            Object.keys(repositoryFilters).length > 0 ? repositoryFilters : undefined,
+        );
+
+        if (repositoryResult.ok === false) {
+            return repositoryResult;
+        }
+
+        const searchQuery = (filters.searchQuery ?? "").trim().toLowerCase();
+        if (searchQuery.length === 0) {
+            return Ok(repositoryResult.value);
+        }
+
+        const filteredEvents = repositoryResult.value.filter((event) =>
+            EventService.includesSearchMatch(event, searchQuery),
+        );
+
+        return Ok(filteredEvents);
     }
 }
 
