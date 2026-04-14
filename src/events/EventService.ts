@@ -3,7 +3,7 @@ import { Err, Ok, type Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
 import type { Event, EventDetailView } from "./Event";
 import type { EventError } from "./errors";
-import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
+import { EventNotFoundError, InvalidInputError, InvalidEventStateError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
 import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
