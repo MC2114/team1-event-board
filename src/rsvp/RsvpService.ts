@@ -3,7 +3,7 @@ import { Err, Result, Ok } from "../lib/result";
 import { ILoggingService } from "../service/LoggingService";
 import { EventNotFound, InvalidRsvp, NotAuthorized, RsvpError } from "./errors";
 import { IRsvpRepository } from "./RsvpRepository";
-import { RSVP, RSVPWithEvent } from "./RsvpTypes";
+import { RSVP, RSVPWithEvent } from "./RSVP";
 
 export interface IRsvpService {
     getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>>;
