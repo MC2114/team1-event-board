@@ -1,6 +1,6 @@
 export type EventStatus = "draft" | "published" | "cancelled" | "past";
 
-const VALID_CATEGORIES = [
+export const VALID_CATEGORIES = [
     "technology",
     "business",
     "music",
@@ -21,9 +21,17 @@ const VALID_CATEGORIES = [
 
 export type EventCategory = (typeof VALID_CATEGORIES)[number];
 
-const VALID_TIMEFRAMES = ["all", "this_week", "this_month", "this_year"] as const;
+export const VALID_TIMEFRAMES = ["all", "this_week", "this_month", "this_year"] as const;
 
 export type EventTimeframe = (typeof VALID_TIMEFRAMES)[number];
+
+export function isEventCategory(value: string): value is EventCategory {
+    return (VALID_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function isEventTimeframe(value: string): value is EventTimeframe {
+    return (VALID_TIMEFRAMES as readonly string[]).includes(value);
+}
 
 export interface Event {
     id: string
