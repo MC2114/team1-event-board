@@ -1,8 +1,8 @@
 import { Ok, Err, type Result } from "../lib/result";
-import { IRsvpRepository } from "./RsvpRepository";
+import { IRSVPRepository } from "./RsvpRepository";
 import type { RSVP, RSVPWithEvent } from "./RSVP";
 import { Event } from "../events/Event";
-import { UnexpectedError, type RsvpError } from "./errors";
+import { UnexpectedError, type RSVPError } from "./errors";
 import { DEMO_EVENTS } from "../events/InMemoryEventRepository";
 
 export const DEMO_RSVPS: RSVP[] = [
@@ -36,13 +36,13 @@ export const DEMO_RSVPS: RSVP[] = [
     },
 ];
 
-class InMemoryRsvpRepository implements IRsvpRepository {
+class InMemoryRSVPRepository implements IRSVPRepository {
     constructor(
         private readonly events: Event[],
         private readonly rsvps: RSVP[]
     ) { }
 
-    async findByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>> {
+    async findByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>> {
         try {
             const result = this.rsvps
                 .filter((r) => r.userId === userId)
@@ -59,7 +59,7 @@ class InMemoryRsvpRepository implements IRsvpRepository {
         }
     }
 
-    async findByEvent(eventId: string): Promise<Result<RSVP[], RsvpError>> {
+    async findByEvent(eventId: string): Promise<Result<RSVP[], RSVPError>> {
         try {
             const result = this.rsvps
                 .filter((r) => r.eventId === eventId)
@@ -70,7 +70,7 @@ class InMemoryRsvpRepository implements IRsvpRepository {
         }
     }
 
-    async findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | undefined, RsvpError>> {
+    async findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | undefined, RSVPError>> {
         try {
             const match = this.rsvps.find((r) => r.userId === userId && r.eventId === eventId)
             return Ok(match)
@@ -79,7 +79,7 @@ class InMemoryRsvpRepository implements IRsvpRepository {
         }
     }
 
-    async findEventById(eventId: string): Promise<Result<Event | undefined, RsvpError>> {
+    async findEventById(eventId: string): Promise<Result<Event | undefined, RSVPError>> {
         try {
             const match = this.events.find((e) => e.id === eventId);
             return Ok(match);
@@ -88,7 +88,7 @@ class InMemoryRsvpRepository implements IRsvpRepository {
         }
     }
 
-    async countGoing(eventId: string): Promise<Result<number, RsvpError>> {
+    async countGoing(eventId: string): Promise<Result<number, RSVPError>> {
         try {
             const count = this.rsvps.filter((r) => r.eventId === eventId && r.status === "going").length;
             return Ok(count);
@@ -97,7 +97,7 @@ class InMemoryRsvpRepository implements IRsvpRepository {
         }
     }
 
-    async save(rsvp: RSVP): Promise<Result<RSVP, RsvpError>> {
+    async save(rsvp: RSVP): Promise<Result<RSVP, RSVPError>> {
         try {
             const index = this.rsvps.findIndex((r) => r.id === rsvp.id);
             if (index !== -1) {
@@ -112,6 +112,6 @@ class InMemoryRsvpRepository implements IRsvpRepository {
     }
 }
 
-export function CreateInMemoryRsvpRepository(): IRsvpRepository {
-    return new InMemoryRsvpRepository([...DEMO_EVENTS], [...DEMO_RSVPS])
+export function CreateInMemoryRsvpRepository(): IRSVPRepository {
+    return new InMemoryRSVPRepository([...DEMO_EVENTS], [...DEMO_RSVPS])
 }
