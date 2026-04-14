@@ -204,6 +204,14 @@ class EventService implements IEventService {
             return Err(EventNotFoundError("Event not found."));
         }
 
+        if (actingUserRole !== "admin" && existing.organizerId !== actingUserId) {
+            return Err(NotAuthorizedError("You do not have permission to edit this event."));
+        }
+
+        if (existing.status === "cancelled" || existing.status === "past") {
+            return Err(InvalidEventStateError("Cancelled or past events cannot be edited."));
+        }
+
         const merged = { ...existing, ...data };
         const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
 
