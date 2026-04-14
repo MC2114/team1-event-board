@@ -6,7 +6,7 @@ export type EventError =
     | { name: "InvalidRSVPError"; message: string }
     | { name: "UnexpectedDependencyError"; message: string };
 
-export const EventNotFound = (message: string): EventError => ({
+export const EventNotFoundError = (message: string): EventError => ({
     name: "EventNotFoundError",
     message,
 });
