@@ -5,18 +5,18 @@ import { EventNotFound, InvalidRsvp, NotAuthorized, RsvpError } from "./errors";
 import { RSVP, RSVPWithEvent } from "./RsvpTypes";
 
 export interface IRsvpService {
-    getRSVPsByUser(userId: string): Result<RSVPWithEvent[], never>;
+    getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>>;
     getRSVPsByEvent(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Result<RSVP[], RsvpError>;
+    ): Promise<Result<RSVP[], RsvpError>>;
     toggleRSVP(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Result<RSVP, RsvpError>;
-    getAttendeeCount(eventId: string): Result<number, RsvpError>;
+    ): Promise<Result<RSVP, RsvpError>>;
+    getAttendeeCount(eventId: string): Promise<Result<number, RsvpError>>;
 }
 
 class RsvpService implements IRsvpService {
@@ -25,12 +25,12 @@ class RsvpService implements IRsvpService {
         private readonly logger: ILoggingService,
     ) { }
 
-    getRSVPsByUser(userId: string): Result<RSVPWithEvent[], never> {
+    async getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>> {
         this.logger.info(`Fetching RSVPs for user ${userId}`);
         return this.repo.findByUser(userId);
     }
 
-    getRSVPsByEvent(eventId: string, actingUserId: string, actingUserRole: UserRole): Result<RSVP[], RsvpError> {
+    async getRSVPsByEvent(eventId: string, actingUserId: string, actingUserRole: UserRole): Promise<Result<RSVP[], RsvpError>> {
         const event = this.repo.findEventById(eventId);
         if (!event) {
             return Err(EventNotFound(`Event ${eventId} not found`));
@@ -48,7 +48,7 @@ class RsvpService implements IRsvpService {
         return this.repo.findEventById(eventId);
     }
 
-    toggleRSVP(eventId: string, actingUserId: string, actingUserRole: UserRole): Result<RSVP, RsvpError> {
+    async toggleRSVP(eventId: string, actingUserId: string, actingUserRole: UserRole): Promise<Result<RSVP, RsvpError>> {
         if (actingUserRole === "staff" || actingUserRole === "admin") {
             return Err(InvalidRsvp("Organizers and admins cannot RSVP to events"))
         }
@@ -99,7 +99,7 @@ class RsvpService implements IRsvpService {
         return Ok(rsvp);
     }
 
-    getAttendeeCount(eventId: string): Result<number, RsvpError> {
+    async getAttendeeCount(eventId: string): Promise<Result<number, RsvpError>> {
         const event = this.repo.findEventById(eventId);
         if (!event) {
             return Err(EventNotFound(`Event ${eventId} not found`))
@@ -108,7 +108,7 @@ class RsvpService implements IRsvpService {
     }
 }
 
-export function CreateRsvpService (
+export function CreateRsvpService(
     repo: any, // TBD: IRsvpRepository
     logger: ILoggingService,
 ): IRsvpService {
