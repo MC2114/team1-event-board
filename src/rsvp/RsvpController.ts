@@ -18,3 +18,16 @@ export interface IRsvpController {
     ): Promise<void>;
 }
 
+class RsvpController implements IRsvpController {
+    constructor (
+        private readonly service: IRsvpService,
+        private readonly logger: ILoggingService,
+    ) {}
+
+    private mapErrorStatus(error: RsvpError): number {
+        if (error.name === "EventNotFound") return 404;
+        if (error.name === "NotAuthorized") return 403;
+        if (error.name === "InvalidRsvp") return 400;
+        return 500;
+    }
+}
