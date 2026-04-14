@@ -1,14 +1,27 @@
 import { Err, Ok, type Result } from "../lib/result";
-import type { UserRole, Event, EventDetailView } from "./Event";
+import type { UserRole } from "../auth/User";
+import type { Event, EventDetailView } from "./Event";
 import type { EventError } from "./errors";
-import { EventNotFoundError, NotAuthorizedError } from "./errors";
+import { EventNotFoundError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
-import type { IRSVPRepository } from "./RSVPRepository";
+import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 
-export class EventService {
+export interface IEventService {
+  getEventById(eventId: string,
+    actingUserId: string,
+    actingUserRole: UserRole,
+  ): Promise<Result<Event, EventError>>
+  getEventDetailView(
+    eventId: string,
+    actingUserId: string,
+    actingUserRole: UserRole,
+  ): Promise<Result<EventDetailView, EventError>>
+}
+
+class EventService implements IEventService{
   constructor(
     private readonly eventRepository: IEventRepository,
-    private readonly rsvpRepository: IRSVPRepository,
+    private readonly rsvpRepository: IRsvpRepository,
   ) {}
 
   async getEventById(
@@ -65,10 +78,10 @@ export class EventService {
       return eventResult;
     }
     const event = eventResult.value;
-    const attendeeCountResult = await this.rsvpRepository.countGoingByEvent(eventId);
+    const attendeeCountResult = await this.rsvpRepository.countGoing(eventId);
 
     if (!attendeeCountResult.ok) {
-      return attendeeCountResult;
+      return Err(UnexpectedDependencyError(attendeeCountResult.value.message));
     }
 
     return Ok({
@@ -76,4 +89,11 @@ export class EventService {
       attendeeCount: attendeeCountResult.value,
     });
   }
+}
+
+export function CreateEventService(
+  eventRepository: IEventRepository,
+  rsvpRepository: IRsvpRepository,
+): IEventService {
+  return new EventService(eventRepository, rsvpRepository);
 }
