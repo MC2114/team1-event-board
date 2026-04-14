@@ -6,8 +6,8 @@ import type { RSVPError } from "./errors.ts"
 export interface IRSVPRepository {
     findByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
     findByEvent(eventId: string): Promise<Result<RSVP[], RSVPError>>;
-    findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | undefined, RSVPError>>;
-    findEventById(eventId: string): Promise<Result<Event | undefined, RSVPError>>;
+    findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | null, RSVPError>>;
+    findEventById(eventId: string): Promise<Result<Event | null, RSVPError>>;
     countGoing(eventId: string): Promise<Result<number, RSVPError>>;
     save(rsvp: RSVP): Promise<Result<RSVP, RSVPError>>;
 }

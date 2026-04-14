@@ -70,19 +70,19 @@ class InMemoryRSVPRepository implements IRSVPRepository {
         }
     }
 
-    async findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | undefined, RSVPError>> {
+    async findByUserAndEvent(userId: string, eventId: string): Promise<Result<RSVP | null, RSVPError>> {
         try {
             const match = this.rsvps.find((r) => r.userId === userId && r.eventId === eventId)
-            return Ok(match)
+            return Ok(match ?? null)
         } catch {
             return Err(UnexpectedError("Unable to look up RSVP."))
         }
     }
 
-    async findEventById(eventId: string): Promise<Result<Event | undefined, RSVPError>> {
+    async findEventById(eventId: string): Promise<Result<Event | null, RSVPError>> {
         try {
             const match = this.events.find((e) => e.id === eventId);
-            return Ok(match);
+            return Ok(match ?? null);
         } catch {
             return Err(UnexpectedError("Unable to look up event."))
         }
