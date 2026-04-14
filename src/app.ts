@@ -17,6 +17,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import type { IEventController } from "./events/EventController";
 
 type AsyncRequestHandler = RequestHandler;
 
