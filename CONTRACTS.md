@@ -17,11 +17,11 @@ Agreed upon before Sprint 1 development begins.
 
 All shared service methods return a `Result<T, E>` shape.
 
-### Success
+### Success and Failure
 ```ts
 type Result<T, E> =
   | { ok: true; value: T }
-  | { ok: false; error: E };
+  | { ok: false; value: E };
 ```
 ---
 
@@ -67,6 +67,22 @@ type RSVPWithEvent = {
     event: Event
 }
 ```
+
+  ```ts
+  type AttendeeListItem = {
+    userId: string
+    displayName: string
+    createdAt: Date
+  }
+  ```
+
+  ```ts
+  type AttendeeListGrouped = {
+    going: AttendeeListItem[]
+    waitlisted: AttendeeListItem[]
+    cancelled: AttendeeListItem[]
+  }
+  ```
 ---
 
 ## EventService
@@ -264,12 +280,15 @@ RSVPService.getRSVPsByEvent(
   eventId: string,
   actingUserId: string,
   actingUserRole: UserRole
-): Result<RSVP[], EventNotFoundError | NotAuthorizedError>
+): Result<AttendeeListGrouped, EventNotFoundError | NotAuthorizedError>
 ```
 
-**Success — `{ ok: true, value: RSVP[] }`**
+**Success — `{ ok: true, value: AttendeeListGrouped }`**
 
-Returns all RSVPs for the event regardless of status, sorted by `createdAt` ascending. Returns an empty array if there are no RSVPs.
+Returns all RSVPs for the event grouped by status (`going`, `waitlisted`, `cancelled`).
+Each item includes `userId`, `displayName`, and RSVP `createdAt`.
+Each group is sorted by `createdAt` ascending.
+Empty groups are valid and should return empty arrays.
 
 **Visibility Rules by Role:**
 
@@ -281,10 +300,10 @@ Returns all RSVPs for the event regardless of status, sorted by `createdAt` asce
 
 **Errors:**
 
-|      Error class.    |                                       When                                     |
-|----------------------|--------------------------------------------------------------------------------|
-| `EventNotFoundError` |                       No event exists with the given ID                        |
-| `NotAuthorizedError` |  Trying to access Attendee list when `actingUserRole` === "user" OR "staff"    |
+|    Error class      |                                                When                                                |
+|---------------------|----------------------------------------------------------------------------------------------------|
+| `EventNotFoundError`|                                No event exists with the given ID                                  |
+| `NotAuthorizedError`| `actingUserRole` is `user`, or `actingUserRole` is `staff` and `organizerId !== actingUserId`   |
 
 ---
 
