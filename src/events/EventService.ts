@@ -31,6 +31,20 @@ export interface IEventService {
             endDatetime: Date;
         }
     ): Promise<Result<Event, EventError>>;
+    updateEvent(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: Partial<{
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        }>
+    ): Promise<Result<Event, EventError>>;
 }
 
 class EventService implements IEventService {
