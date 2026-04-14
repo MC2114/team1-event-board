@@ -68,6 +68,18 @@ class EventService implements IEventService {
         "this_year",
     ]);
 
+    private static includesSearchMatch(event: Event, searchQuery: string): boolean {
+        const title = event.title.toLowerCase();
+        const description = event.description.toLowerCase();
+        const location = event.location.toLowerCase();
+
+        return (
+            title.includes(searchQuery) ||
+            description.includes(searchQuery) ||
+            location.includes(searchQuery)
+        );
+    }
+
     constructor(
         private readonly eventRepository: IEventRepository,
         private readonly rsvpRepository: IRsvpRepository,
@@ -227,9 +239,24 @@ class EventService implements IEventService {
             repositoryFilters.timeframe = normalizedTimeframe as EventTimeframe;
         }
 
-        return this.eventRepository.findPublishedUpcoming(
+        const repositoryResult = await this.eventRepository.findPublishedUpcoming(
             Object.keys(repositoryFilters).length > 0 ? repositoryFilters : undefined,
         );
+
+        if (repositoryResult.ok === false) {
+            return repositoryResult;
+        }
+
+        const searchQuery = (filters.searchQuery ?? "").trim().toLowerCase();
+        if (searchQuery.length === 0) {
+            return Ok(repositoryResult.value);
+        }
+
+        const filteredEvents = repositoryResult.value.filter((event) =>
+            EventService.includesSearchMatch(event, searchQuery),
+        );
+
+        return Ok(filteredEvents);
     }
 }
 
