@@ -74,17 +74,17 @@ class RsvpService implements IRsvpService {
         const eventResult = await this.eventRepo.findById(eventId); // was missing await
 
         if (eventResult.ok === false) {
-            return Err(eventResult.value);
+            return Err(InvalidRsvp("Unable to verify event."))
         }
 
         const event = eventResult.value;
 
-        if (!event) {
+        if (event === null) {
             return Err(EventNotFound(`Event ${eventId} not found`));
         }
 
-        if (event.status === "cancelled" || event.status === "past") {
-            return Err(InvalidRsvp("Cannot RSVP to a cancelled or past event"));
+        if (event.status === "cancelled" || event.status === "past" || event.status === "draft") {
+            return Err(InvalidRsvp("Cannot RSVP to this event"));
         }
 
         const existingResult = await this.rsvpRepo.findByUserAndEvent(actingUserId, eventId); // was missing await
@@ -95,7 +95,7 @@ class RsvpService implements IRsvpService {
 
         const existing = existingResult.value;
 
-        if (existing && (existing.status === "going" || existing.status === "waitlisted")) {
+        if (existing !== null && (existing.status === "going" || existing.status === "waitlisted")) {
             const updated: RSVP = {
                 id: existing.id,
                 eventId: existing.eventId,
@@ -123,7 +123,8 @@ class RsvpService implements IRsvpService {
         const isFull = event.capacity !== null && countResult.value >= event.capacity;
         const newStatus = isFull ? "waitlisted" : "going";
 
-        const rsvp: RSVP = existing
+        const rsvp: RSVP = 
+            existing !== null
             ? {
                 id: existing.id,
                 eventId: existing.eventId,
