@@ -1,6 +1,6 @@
 import type { Result } from "../lib/result";
 import type { EventError } from "./errors";
-import type { RSVP } from "./Event";
+import type { RSVP } from "./RSVP";
 
 export interface IRSVPRepository {
   countGoingByEvent(eventId: string): Promise<Result<number, EventError>>;

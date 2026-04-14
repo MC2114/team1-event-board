@@ -2,7 +2,6 @@ import type {UserRole} from "../auth/User"
 
 export type {UserRole};
 export type EventStatus = "draft" | "published" | "cancelled" | "past";
-export type RSVPStatus = "going" | "waitlisted" | "cancelled";
 
 export type Event = {
     id: string;
@@ -18,20 +17,3 @@ export type Event = {
     createdAt: Date;
     updatedAt: Date;
 };
-
-export type RSVP = {
-    id: string;
-    eventId: string;
-    userId: string;
-    status: RSVPStatus;
-    createdAt: Date;
-}
-
-export type RSVPWithEvent = {
-    id: string
-    eventId: string
-    userId: string
-    status: RSVPStatus
-    createdAt: Date
-    event: Event
-}

@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { UnexpectedDependencyError, type EventError } from "./errors";
-import type { RSVP } from "./Event";
+import type { RSVP } from "./RSVP";
 import type { IRSVPRepository } from "./RSVPRepository";
 
 export const DEMO_RSVPS: RSVP[] = [
