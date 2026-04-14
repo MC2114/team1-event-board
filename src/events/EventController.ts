@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUser } from "../session/AppSession";
-import { EventService } from "./EventService";
-import type { IRSVPRepository } from "./RSVPRepository";
-import type { UserRole } from "./Event";
+import { IEventService } from "./EventService";
+import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { UserRole } from "../auth/User";
 
 export class EventController {
   constructor(
-    private readonly eventService: EventService,
-    private readonly rsvpRepository: IRSVPRepository,
+    private readonly eventService: IEventService,
+    private readonly rsvpRepository: IRsvpRepository,
   ) {}
 
   async showEventDetail(req: Request, res: Response): Promise<void> {
@@ -35,7 +35,7 @@ export class EventController {
       return;
     }
 
-    const userRSVPResult = await this.rsvpRepository.getRSVPByEventAndUser(
+    const userRSVPResult = await this.rsvpRepository.findByUserAndEvent(
       eventId,
       actingUserId,
     );
