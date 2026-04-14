@@ -1,12 +1,18 @@
 
 import { Err, Ok, type Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
-import type { Event, EventDetailView } from "./Event";
+import type { Event, EventCategory, EventDetailView, EventFilters, EventTimeframe } from "./Event";
 import type { EventError } from "./errors";
 import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
 import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
+
+export interface IListEventsFilters {
+    category?: string;
+    timeframe?: string;
+    searchQuery?: string;
+}
 
 export interface IEventService {
     getEventById(eventId: string,
@@ -31,9 +37,37 @@ export interface IEventService {
             endDatetime: Date;
         }
     ): Promise<Result<Event, EventError>>;
+    listEvents(filters?: IListEventsFilters): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
+    private static readonly validCategories: ReadonlySet<string> = new Set([
+        "technology",
+        "business",
+        "music",
+        "art",
+        "food",
+        "health",
+        "education",
+        "sports",
+        "gaming",
+        "networking",
+        "party",
+        "holiday",
+        "birthday",
+        "graduation",
+        "wedding",
+        "movies and tv",
+        "other",
+    ]);
+
+    private static readonly validTimeframes: ReadonlySet<string> = new Set([
+        "all",
+        "this_week",
+        "this_month",
+        "this_year",
+    ]);
+
     constructor(
         private readonly eventRepository: IEventRepository,
         private readonly rsvpRepository: IRsvpRepository,
@@ -164,6 +198,23 @@ class EventService implements IEventService {
         };
 
         return await this.eventRepository.create(event);
+    }
+
+    async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
+        const normalizedCategory = filters.category?.trim() || undefined;
+        const normalizedTimeframe = filters.timeframe?.trim() || undefined;
+        const repositoryFilters: EventFilters = {};
+
+        if (normalizedCategory !== undefined) {
+            repositoryFilters.category = normalizedCategory as EventCategory;
+        }
+        if (normalizedTimeframe !== undefined) {
+            repositoryFilters.timeframe = normalizedTimeframe as EventTimeframe;
+        }
+
+        return this.eventRepository.findPublishedUpcoming(
+            Object.keys(repositoryFilters).length > 0 ? repositoryFilters : undefined,
+        );
     }
 }
 
