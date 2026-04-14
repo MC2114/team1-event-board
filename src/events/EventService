@@ -1,0 +1,31 @@
+import { Err, Ok, type Result } from "../lib/result";
+import type { UserRole, Event } from "./Event";
+import type { EventError } from "./errors";
+import { EventNotFoundError } from "./errors";
+import type { IEventRepository } from "./EventRepository";
+import type { IRSVPRepository } from "./RSVPRepository";
+
+export class EventService {
+  constructor(
+    private readonly eventRepository: IEventRepository,
+    private readonly rsvpRepository: IRSVPRepository,
+  ) {}
+
+  async getEventById(
+    eventId: string,
+    actingUserId: string,
+    actingUserRole: UserRole,
+  ): Promise<Result<Event, EventError>> {
+    const eventResult = await this.eventRepository.findById(eventId);
+
+    if (!eventResult.ok) {
+      return eventResult;
+    }
+
+    if (eventResult.value === null) {
+      return Err(EventNotFoundError("No event exists with the given ID."));
+    }
+
+    return Ok(eventResult.value);
+  }
+}
