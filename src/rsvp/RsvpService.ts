@@ -38,15 +38,15 @@ class RsvpService implements IRsvpService {
         actingUserId: string,
         actingUserRole: UserRole,
     ): Promise<Result<RSVP[], RSVPError>> {
-        const eventResult = await this.rsvpRepo.findEventById(eventId);
+        const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
-            return Err(eventResult.value);
+            return Err(InvalidRsvp("Unable to verify event."));
         }
 
         const event = eventResult.value;
 
-        if (!event) {
+        if (event === null) {
             return Err(EventNotFound(`Event ${eventId} not found`));
         }
 
@@ -59,7 +59,7 @@ class RsvpService implements IRsvpService {
         }
 
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
-        return await this.rsvpRepo.findByEvent(eventId);
+        return await this.eventRepo.findById(eventId);
     }
 
     async toggleRSVP(
@@ -71,7 +71,7 @@ class RsvpService implements IRsvpService {
             return Err(InvalidRsvp("Organizers and admins cannot RSVP to events"));
         }
 
-        const eventResult = await this.rsvpRepo.findEventById(eventId); // was missing await
+        const eventResult = await this.eventRepo.findById(eventId); // was missing await
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -150,15 +150,15 @@ class RsvpService implements IRsvpService {
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>> {
-        const eventResult = await this.rsvpRepo.findEventById(eventId); // was missing await
+        const eventResult = await this.eventRepo.findById(eventId); // was missing await
 
         if (eventResult.ok === false) {
-            return Err(eventResult.value);
+            return Err(InvalidRsvp("Unable to verify event."));
         }
 
         const event = eventResult.value;
 
-        if (!event) {
+        if (event === null) {
             return Err(EventNotFound(`Event ${eventId} not found`));
         }
 
