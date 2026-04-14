@@ -1,42 +1,44 @@
 import { UserRole } from "../auth/User";
 import { Err, Result, Ok } from "../lib/result";
 import { ILoggingService } from "../service/LoggingService";
-import { EventNotFound, InvalidRsvp, NotAuthorized, RsvpError } from "./errors";
-import { IRsvpRepository } from "./RsvpRepository";
+import type { IEventRepository } from "../events/EventRepository";
+import { EventNotFound, InvalidRsvp, NotAuthorized, RSVPError } from "./errors";
+import { IRSVPRepository } from "./RsvpRepository";
 import { RSVP, RSVPWithEvent } from "./RSVP";
 
 export interface IRsvpService {
-    getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>>;
+    getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
     getRSVPsByEvent(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP[], RsvpError>>;
+    ): Promise<Result<RSVP[], RSVPError>>;
     toggleRSVP(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP, RsvpError>>;
-    getAttendeeCount(eventId: string): Promise<Result<number, RsvpError>>;
+    ): Promise<Result<RSVP, RSVPError>>;
+    getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>>;
 }
 
 class RsvpService implements IRsvpService {
     constructor(
-        private readonly repo: IRsvpRepository,
+        private readonly rsvpRepo: IRSVPRepository,
+        private readonly eventRepo: IEventRepository,
         private readonly logger: ILoggingService,
     ) { }
 
-    async getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RsvpError>> {
+    async getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>> {
         this.logger.info(`Fetching RSVPs for user ${userId}`);
-        return this.repo.findByUser(userId);
+        return this.rsvpRepo.findByUser(userId);
     }
 
     async getRSVPsByEvent(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP[], RsvpError>> {
-        const eventResult = await this.repo.findEventById(eventId);
+    ): Promise<Result<RSVP[], RSVPError>> {
+        const eventResult = await this.rsvpRepo.findEventById(eventId);
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -57,19 +59,19 @@ class RsvpService implements IRsvpService {
         }
 
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
-        return await this.repo.findByEvent(eventId);
+        return await this.rsvpRepo.findByEvent(eventId);
     }
 
     async toggleRSVP(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP, RsvpError>> {
+    ): Promise<Result<RSVP, RSVPError>> {
         if (actingUserRole === "staff" || actingUserRole === "admin") {
             return Err(InvalidRsvp("Organizers and admins cannot RSVP to events"));
         }
 
-        const eventResult = await this.repo.findEventById(eventId); // was missing await
+        const eventResult = await this.rsvpRepo.findEventById(eventId); // was missing await
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -85,7 +87,7 @@ class RsvpService implements IRsvpService {
             return Err(InvalidRsvp("Cannot RSVP to a cancelled or past event"));
         }
 
-        const existingResult = await this.repo.findByUserAndEvent(actingUserId, eventId); // was missing await
+        const existingResult = await this.rsvpRepo.findByUserAndEvent(actingUserId, eventId); // was missing await
 
         if (existingResult.ok === false) {
             return Err(existingResult.value);
@@ -102,7 +104,7 @@ class RsvpService implements IRsvpService {
                 createdAt: existing.createdAt,
             };
 
-            const saveResult = await this.repo.save(updated); // was missing await
+            const saveResult = await this.rsvpRepo.save(updated); // was missing await
 
             if (saveResult.ok === false) {
                 return Err(saveResult.value);
@@ -112,7 +114,7 @@ class RsvpService implements IRsvpService {
             return Ok(updated);
         }
 
-        const countResult = await this.repo.countGoing(eventId); // was missing await
+        const countResult = await this.rsvpRepo.countGoing(eventId); // was missing await
 
         if (countResult.ok === false) {
             return Err(countResult.value);
@@ -137,7 +139,7 @@ class RsvpService implements IRsvpService {
                 createdAt: new Date(),
             };
 
-        const saveResult = await this.repo.save(rsvp); // was missing await
+        const saveResult = await this.rsvpRepo.save(rsvp); // was missing await
 
         if (saveResult.ok === false) {
             return Err(saveResult.value);
@@ -147,8 +149,8 @@ class RsvpService implements IRsvpService {
         return Ok(rsvp);
     }
 
-    async getAttendeeCount(eventId: string): Promise<Result<number, RsvpError>> {
-        const eventResult = await this.repo.findEventById(eventId); // was missing await
+    async getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>> {
+        const eventResult = await this.rsvpRepo.findEventById(eventId); // was missing await
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -160,13 +162,14 @@ class RsvpService implements IRsvpService {
             return Err(EventNotFound(`Event ${eventId} not found`));
         }
 
-        return await this.repo.countGoing(eventId); // was missing await
+        return await this.rsvpRepo.countGoing(eventId); // was missing await
     }
 }
 
 export function CreateRsvpService(
-    repo: IRsvpRepository,
+    rsvpRepo: IRSVPRepository,
+    eventRepo: IEventRepository,
     logger: ILoggingService,
 ): IRsvpService {
-    return new RsvpService(repo, logger);
+    return new RsvpService(rsvpRepo, eventRepo, logger);
 }
