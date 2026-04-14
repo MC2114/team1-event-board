@@ -255,6 +255,25 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // -- Event routes --
+    this.app.get(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info("GET /events/new");
+        this.eventController.showCreateForm(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info("POST /events/new");
+        this.eventController.handleCreateForm(req, res);
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
