@@ -4,11 +4,16 @@ import { IEventService } from "./EventService";
 import type { IRsvpRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 
-export class EventController {
+export interface IEventController {
+  showEventDetail(req: Request, res: Response): Promise<void>,
+
+}
+
+export class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
     private readonly rsvpRepository: IRsvpRepository,
-  ) {}
+  ) { }
 
   async showEventDetail(req: Request, res: Response): Promise<void> {
     const user = getAuthenticatedUser(req.session);
@@ -50,4 +55,11 @@ export class EventController {
       userRSVP,
     });
   }
+}
+
+export function CreateEventController(
+  eventService: IEventService,
+  rsvpRepository: IRsvpRepository,
+): IEventController {
+  return new EventController(eventService, rsvpRepository);
 }

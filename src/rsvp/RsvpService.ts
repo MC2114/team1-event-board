@@ -69,7 +69,7 @@ class RsvpService implements IRsvpService {
             return Err(InvalidRsvp("Organizers and admins cannot RSVP to events"));
         }
 
-        const eventResult = await this.repo.findEventById(eventId); // was missing await
+        const eventResult = await this.repo.findEventById(eventId);
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -85,7 +85,7 @@ class RsvpService implements IRsvpService {
             return Err(InvalidRsvp("Cannot RSVP to a cancelled or past event"));
         }
 
-        const existingResult = await this.repo.findByUserAndEvent(actingUserId, eventId); // was missing await
+        const existingResult = await this.repo.findByUserAndEvent(actingUserId, eventId);
 
         if (existingResult.ok === false) {
             return Err(existingResult.value);
@@ -102,7 +102,7 @@ class RsvpService implements IRsvpService {
                 createdAt: existing.createdAt,
             };
 
-            const saveResult = await this.repo.save(updated); // was missing await
+            const saveResult = await this.repo.save(updated);
 
             if (saveResult.ok === false) {
                 return Err(saveResult.value);
@@ -112,7 +112,7 @@ class RsvpService implements IRsvpService {
             return Ok(updated);
         }
 
-        const countResult = await this.repo.countGoing(eventId); // was missing await
+        const countResult = await this.repo.countGoing(eventId);
 
         if (countResult.ok === false) {
             return Err(countResult.value);
@@ -137,7 +137,7 @@ class RsvpService implements IRsvpService {
                 createdAt: new Date(),
             };
 
-        const saveResult = await this.repo.save(rsvp); // was missing await
+        const saveResult = await this.repo.save(rsvp);
 
         if (saveResult.ok === false) {
             return Err(saveResult.value);
@@ -148,7 +148,7 @@ class RsvpService implements IRsvpService {
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, RsvpError>> {
-        const eventResult = await this.repo.findEventById(eventId); // was missing await
+        const eventResult = await this.repo.findEventById(eventId);
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -160,7 +160,7 @@ class RsvpService implements IRsvpService {
             return Err(EventNotFound(`Event ${eventId} not found`));
         }
 
-        return await this.repo.countGoing(eventId); // was missing await
+        return await this.repo.countGoing(eventId);
     }
 }
 
