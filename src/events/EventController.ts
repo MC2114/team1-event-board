@@ -1,14 +1,16 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUser, AppSessionStore } from "../session/AppSession";
 import type { IEventService } from "./EventService";
-import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import { NotAuthorizedError, InvalidInputError } from "../errors";
+import type { EventError } from "./errors";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
   handleCreateForm(req: Request, res: Response): Promise<void>;
   showEventDetail(req: Request, res: Response): Promise<void>;
+  listEventsFromQuery(req: Request, res: Response): Promise<void>,
 }
 
 function parseCapacity(raw: string): number | null {
@@ -24,7 +26,7 @@ function parseDate(raw: string): Date {
 export class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
-    private readonly rsvpRepository: IRsvpRepository,
+    private readonly rsvpRepository: IRSVPRepository,
   ) { }
 
   showCreateForm(req: Request, res: Response): void {
@@ -122,6 +124,10 @@ export class EventController implements IEventController {
     res.redirect(`/events/${result.value.id}`);
   }
 
+  private getStringQuery(req: Request, key: string): string | undefined {
+    return typeof req.query[key] === "string" ? req.query[key] : undefined;
+  }
+
   async showEventDetail(req: Request, res: Response): Promise<void> {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
@@ -162,11 +168,64 @@ export class EventController implements IEventController {
       userRSVP,
     });
   }
+
+  async listEventsFromQuery(req: Request, res: Response): Promise<void> {
+    const user = getAuthenticatedUser(req.session);
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    const category = this.getStringQuery(req, "category");
+    const timeframe = this.getStringQuery(req, "timeframe");
+    const searchQuery = this.getStringQuery(req, "searchQuery");
+
+    const result = await this.eventService.listEvents({
+      category,
+      timeframe,
+      searchQuery,
+    });
+    const isHtmxRequest = req.get("HX-Request") === "true";
+
+    if (result.ok === false) {
+      const error = result.value as EventError;
+      const status = error.name === "InvalidInputError" ? 400 : 500;
+      if (isHtmxRequest) {
+        res.status(status).render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
+      res.status(status).render("events/index", {
+        session: req.session,
+        events: [],
+        searchQuery: searchQuery ?? "",
+        pageError: error.message,
+      });
+      return;
+    }
+
+    if (isHtmxRequest) {
+      res.render("events/results", {
+        events: result.value,
+      });
+      return;
+    }
+
+    res.render("events/index", {
+      session: req.session,
+      events: result.value,
+      searchQuery: searchQuery ?? "",
+      pageError: null,
+    });
+  }
 }
 
 export function CreateEventController(
   eventService: IEventService,
-  rsvpRepository: IRsvpRepository,
+  rsvpRepository: IRSVPRepository,
 ): IEventController {
   return new EventController(eventService, rsvpRepository);
 }
