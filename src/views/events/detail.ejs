@@ -50,7 +50,25 @@
             You are currently on the waitlist for this event.
           </p>
         <% } %>
-       <% } %>
+       
+        <form method="post" action="/events/<%= event.id %>/rsvp">
+          <% if (!userRSVP || userRSVP.status === "cancelled") { %>
+            <button
+              type="submit"
+              class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+            >
+              RSVP
+            </button>
+          <% } else { %>
+            <button
+              type="submit"
+              class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+            >
+              Cancel RSVP
+            </button>
+          <% } %>
+        </form>
+      <% } %>
 
     <!-- This provides admin view based on UserRole -->
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
