@@ -1,9 +1,9 @@
-import { response, type Response } from "express";
+import type { Response } from "express";
 import type { IRsvpService } from "./RsvpService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import type { RSVPError } from "./errors";
-import { EventError } from "../events/errors";
+import type { EventError } from "../events/errors";
 
 export interface IRsvpController {
     showMyRsvps(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -12,7 +12,7 @@ export interface IRsvpController {
         eventId: string,
         session: IAppBrowserSession,
     ): Promise<void>;
-    showEventAtAttendees(
+    showEventAttendees(
         res: Response,
         eventId: string,
         session: IAppBrowserSession,
@@ -53,11 +53,11 @@ class RsvpController implements IRsvpController {
         if (result.ok === false) {
             const status = this.mapErrorStatus(result.value)
             this.logger.error(`showMyRsvps failed: ${result.value.message}`)
-            res.status(status).render("error", { message: result.value.message, session })
+            res.status(status).render("partials/error", { message: result.value.message, layout: false })
             return;
         }
 
-        res.render("rsvps/dashboard", { rsvp: result.value, session });
+        res.render("rsvps/dashboard", { rsvps: result.value, session });
     }
 
     async toggleRsvp(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
@@ -67,7 +67,7 @@ class RsvpController implements IRsvpController {
         if (result.ok === false) {
             const status = this.mapErrorStatus(result.value);
             this.logger.warn(`toggleRsvp failed: ${result.value.message}`);
-            res.status(status).render("error", { message: result.value.message, session });
+            res.status(status).render("partials/error", { message: result.value.message, layout: false });
             return;
         }
 
@@ -75,7 +75,7 @@ class RsvpController implements IRsvpController {
         res.redirect("back");
     }
 
-    async showEventAtAttendees(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
+    async showEventAttendees(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
         const { userId: userId, role } = session.authenticatedUser!;
 
         const result = await this.service.getRSVPsByEvent(eventId, userId, role);
@@ -83,7 +83,7 @@ class RsvpController implements IRsvpController {
         if (result.ok === false) {
             const status = this.mapErrorStatus(result.value);
             this.logger.warn(`showEventAttendees failed: ${result.value.message}`);
-            res.status(status).render("error", { message: result.value.message, session });
+            res.status(status).render("partials/error", { message: result.value.message, layout: false });
             return;
         }
 

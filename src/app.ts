@@ -295,6 +295,27 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.post(
+      "/events/:eventId/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        const browserSession = touchAppSession(sessionStore(req));
+        const eventId = req.params.eventId as string;
+        await this.rsvpController.toggleRsvp(res, eventId, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/events/:eventId/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+      }),
+    );
+
     // -- Event editing routes --
     this.app.get(
       "/events/:id/edit",
@@ -304,7 +325,7 @@ class ExpressApp implements IApp {
         await this.eventController.showEditForm(req, res);
       }),
     );
-
+  
     this.app.post(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
