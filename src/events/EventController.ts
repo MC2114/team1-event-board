@@ -1,14 +1,19 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUser, AppSessionStore } from "../session/AppSession";
 import type { IEventService } from "./EventService";
-import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import { NotAuthorizedError, InvalidInputError } from "../errors";
+import type { EventError } from "./errors";
+import { isEventCategory, isEventTimeframe } from "./Event";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
   handleCreateForm(req: Request, res: Response): Promise<void>;
   showEventDetail(req: Request, res: Response): Promise<void>;
+  showEditForm(req: Request, res: Response): Promise<void>;
+  handleEditForm(req: Request, res: Response): Promise<void>;
+  listEventsFromQuery(req: Request, res: Response): Promise<void>,
 }
 
 function parseCapacity(raw: string): number | null {
@@ -24,7 +29,7 @@ function parseDate(raw: string): Date {
 export class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
-    private readonly rsvpRepository: IRsvpRepository,
+    private readonly rsvpRepository: IRSVPRepository,
   ) { }
 
   showCreateForm(req: Request, res: Response): void {
@@ -122,6 +127,10 @@ export class EventController implements IEventController {
     res.redirect(`/events/${result.value.id}`);
   }
 
+  private getStringQuery(req: Request, key: string): string | undefined {
+    return typeof req.query[key] === "string" ? req.query[key] : undefined;
+  }
+
   async showEventDetail(req: Request, res: Response): Promise<void> {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
@@ -162,11 +171,173 @@ export class EventController implements IEventController {
       userRSVP,
     });
   }
+
+  async showEditForm(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+        res.redirect("/login");
+        return;
+    }
+
+    if (user.role === "user") {
+        res.status(403).render("partials/error", {
+            message: "Only organizers and admins can edit events.",
+            layout: false,
+        });
+        return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+    res.render("events/edit", {
+        pageError: null,
+        eventId,
+        formData: {},
+    });
+  }
+
+  async handleEditForm(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+        res.redirect("/login");
+        return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+    const rawCapacity = typeof req.body.capacity === "string" ? req.body.capacity : "";
+
+    const data: Partial<{
+        title: string;
+        description: string;
+        location: string;
+        category: string;
+        capacity: number | null;
+        startDatetime: Date;
+        endDatetime: Date;
+    }> = {};
+
+    if (req.body.title) data.title = req.body.title;
+    if (req.body.description) data.description = req.body.description;
+    if (req.body.location) data.location = req.body.location;
+    if (req.body.category) data.category = req.body.category;
+    if (req.body.capacity !== undefined) data.capacity = parseCapacity(rawCapacity);
+    if (req.body.startDatetime) data.startDatetime = parseDate(req.body.startDatetime);
+    if (req.body.endDatetime) data.endDatetime = parseDate(req.body.endDatetime);
+
+    const result = await this.eventService.updateEvent(
+        eventId,
+        user.userId,
+        user.role,
+        data
+    );
+
+    if (!result.ok) {
+        const error = result.value;
+
+        if (error.name === "NotAuthorizedError") {
+            res.status(403).render("partials/error", {
+                message: error.message,
+                layout: false,
+            });
+            return;
+        }
+
+        if (error.name === "EventNotFoundError") {
+            res.status(404).render("partials/error", {
+                message: error.message,
+                layout: false,
+            });
+            return;
+        }
+
+        if (error.name === "InvalidEventStateError") {
+            res.status(400).render("partials/error", {
+                message: error.message,
+                layout: false,
+            });
+            return;
+        }
+
+        res.status(400).render("events/edit", {
+            pageError: error.message,
+            eventId,
+            formData: { ...req.body, capacity: rawCapacity },
+        });
+        return;
+    }
+
+    res.redirect(`/events/${result.value.id}`);
+  }
+  async listEventsFromQuery(req: Request, res: Response): Promise<void> {
+    const user = getAuthenticatedUser(req.session);
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    const rawCategory = this.getStringQuery(req, "category");
+    const rawTimeframe = this.getStringQuery(req, "timeframe");
+    const searchQuery = this.getStringQuery(req, "searchQuery");
+
+
+    const category = rawCategory && isEventCategory(rawCategory)
+      ? rawCategory
+      : undefined;
+
+    const timeframe = rawTimeframe && isEventTimeframe(rawTimeframe)
+      ? rawTimeframe
+      : undefined;
+
+    const result = await this.eventService.listEvents({
+      category,
+      timeframe,
+      searchQuery,
+    });
+    const isHtmxRequest = req.get("HX-Request") === "true";
+
+    if (result.ok === false) {
+      const error = result.value as EventError;
+      const status = error.name === "InvalidInputError" ? 400 : 500;
+      if (isHtmxRequest) {
+        res.status(status).render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
+      res.status(status).render("events/index", {
+        session: req.session,
+        events: [],
+        searchQuery: searchQuery ?? "",
+        pageError: error.message,
+      });
+      return;
+    }
+
+    if (isHtmxRequest) {
+      res.render("events/results", {
+        events: result.value,
+      });
+      return;
+    }
+
+    res.render("events/index", {
+      session: req.session,
+      events: result.value,
+      searchQuery: searchQuery ?? "",
+      pageError: null,
+    });
+  }
 }
 
 export function CreateEventController(
   eventService: IEventService,
-  rsvpRepository: IRsvpRepository,
+  rsvpRepository: IRSVPRepository,
 ): IEventController {
   return new EventController(eventService, rsvpRepository);
 }

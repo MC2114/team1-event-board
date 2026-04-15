@@ -1,6 +1,6 @@
 export type EventStatus = "draft" | "published" | "cancelled" | "past";
 
-const VALID_CATEGORIES = [
+export const VALID_CATEGORIES = [
     "technology",
     "business",
     "music",
@@ -21,9 +21,17 @@ const VALID_CATEGORIES = [
 
 export type EventCategory = (typeof VALID_CATEGORIES)[number];
 
-const VALID_TIMEFRAMES = ["all", "this_week", "this_month", "this_year"] as const;
+export const VALID_TIMEFRAMES = ["all", "this_week", "this_month", "this_year"] as const;
 
 export type EventTimeframe = (typeof VALID_TIMEFRAMES)[number];
+
+export function isEventCategory(value: string): value is EventCategory {
+    return (VALID_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function isEventTimeframe(value: string): value is EventTimeframe {
+    return (VALID_TIMEFRAMES as readonly string[]).includes(value);
+}
 
 export interface Event {
     id: string
@@ -41,22 +49,23 @@ export interface Event {
 }
 
 export interface CreateEventData {
-  title: string;
-  description: string;
-  location: string;
-  category: string;
-  capacity: number | null;
-  startDatetime: Date;
-  endDatetime: Date;
-  organizerId: string;
+    title: string;
+    description: string;
+    location: string;
+    category: string;
+    capacity: number | null;
+    startDatetime: Date;
+    endDatetime: Date;
+    organizerId: string;
 }
 
 export interface EventFilters {
     category?: EventCategory;
     timeframe?: EventTimeframe;
+    searchQuery?: string;
 }
 
 export type EventDetailView = {
-  event: Event;
-  attendeeCount: number;
+    event: Event;
+    attendeeCount: number;
 };

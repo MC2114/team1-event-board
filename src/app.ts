@@ -3,7 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import { EventController, IEventController } from "./events/EventController";
+import { IEventController } from "./events/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -276,12 +276,41 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.listEventsFromQuery(req, res);
+      }),
+    );
+
+    this.app.get(
       "/events/:eventId",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
         await this.eventController.showEventDetail(req, res);
+      }),
+    );
+
+    // -- Event editing routes --
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`GET /events/${req.params.id}/edit`);
+        await this.eventController.showEditForm(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`POST /events/${req.params.id}/edit`);
+        await this.eventController.handleEditForm(req, res);
       }),
     );
 
