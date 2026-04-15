@@ -1,125 +1,435 @@
-import { UserRole } from "../auth/User";
-import { Ok, Err, Result } from "../lib/result";
-import type { IEventRepository } from "./EventRepository";
-import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import { Err, Ok, type Result } from "../lib/result";
+import type { UserRole } from "../auth/User";
 import {
-    EventNotFound,
-    NotAuthorized,
-    InvalidEventState,
-    UnexpectedError,
-    type EventError,
+    isEventCategory,
+    isEventTimeframe,
+    type Event,
+    type EventCategory,
+    type EventDetailView,
+    type EventFilters,
+    type EventStatus,
+    type EventTimeframe,
+} from "./Event";
+import type { EventError } from "./errors";
+import {
+    EventNotFoundError,
+    InvalidEventStateError,
+    InvalidInputError,
+    NotAuthorizedError,
+    UnexpectedDependencyError,
 } from "./errors";
-import type { Event, EventWithAttendeeCount, OrganizerDashboard } from "./EventTypes";
-import { ILoggingService } from "../service/LoggingService";
+import type { IEventRepository } from "./EventRepository";
+import type { IRSVPRepository } from "../rsvp/RsvpRepository";
+import { randomUUID } from "node:crypto";
+
+export interface IListEventsFilters {
+    category?: EventCategory;
+    timeframe?: EventTimeframe;
+    searchQuery?: string;
+}
 
 export interface IEventService {
-    getEventsByOrganizer(
+    getEventById(
+        eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<OrganizerDashboard, EventError>>;
+    ): Promise<Result<Event, EventError>>;
+    getEventDetailView(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<EventDetailView, EventError>>;
+    createEvent(
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: {
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        },
+    ): Promise<Result<Event, EventError>>;
     updateEventStatus(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-        newStatus: "published" | "cancelled",
+        newStatus: EventStatus,
     ): Promise<Result<Event, EventError>>;
+    getAllEventsForManager(
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<Event[], EventError>>;
+    updateEvent(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: Partial<{
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        }>
+    ): Promise<Result<Event, EventError>>;
+    listEvents(filters?: IListEventsFilters): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
-    constructor(
-        private readonly eventRepo: IEventRepository,
-        private readonly rsvpRepo: IRsvpRepository,
-        private readonly logger: ILoggingService,
-    ) { }
+    private static includesSearchMatch(event: Event, searchQuery: string): boolean {
+        const title = event.title.toLowerCase();
+        const description = event.description.toLowerCase();
+        const location = event.location.toLowerCase();
 
-    async getEventsByOrganizer(actingUserId: string, actingUserRole: UserRole): Promise<Result<OrganizerDashboard, EventError>> {
-        if (actingUserRole === "user") {
-            return Err(NotAuthorized("Members cannot access the organizer dashboard."))
-        }
-
-        const eventsResult = actingUserRole === "admin" ? await this.eventRepo.findAll() : await this.eventRepo.findByOrganizer(actingUserId);
-        if (eventsResult.ok === false) {
-            return Err(eventsResult.value);
-        }
-
-        const withCounts: EventWithAttendeeCount[] = [];
-
-        for (const event of eventsResult.value) {
-            const countResult = await this.rsvpRepo.countGoing(event.id);
-            if (countResult.ok === false) {
-                return Err(countResult.value);
-            }
-
-            withCounts.push({ event, attendeeCount: countResult.value })
-        }
-
-        const dashboard: OrganizerDashboard = {
-            published: withCounts
-                .filter((e) => e.event.status === "published")
-                .sort((a, b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime()),
-
-            draft: withCounts
-                .filter((e) => e.event.status === "draft")
-                .sort((a, b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime()),
-
-            cancelledOrPast: withCounts
-                .filter((e) => e.event.status === "cancelled" || e.event.status === "past")
-                .sort((a, b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime()),
-        };
-
-        this.logger.info(`Organizer dashboard fetched for user ${actingUserId}`);
-        return Ok(dashboard);
+        return (
+            title.includes(searchQuery) ||
+            description.includes(searchQuery) ||
+            location.includes(searchQuery)
+        );
     }
 
-    async updateEventStatus(eventId: string, actingUserId: string, actingUserRole: UserRole, newStatus: "published" | "cancelled"): Promise<Result<Event, EventError>> {
-        if (actingUserId === "user") {
-            return Err(NotAuthorized("Members cannot update event status"))
-        }
+    constructor(
+        private readonly eventRepository: IEventRepository,
+        private readonly rsvpRepository: IRSVPRepository,
+    ) { }
 
-        const eventResult = await this.eventRepo.findById(eventId);
-        if (eventResult.ok === false) {
-            return Err(eventResult.value);
-        }
+    async getEventById(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<Event, EventError>> {
+        const eventResult = await this.eventRepository.findById(eventId);
 
-        if (!eventResult.value) {
-            return Err(EventNotFound(`Event ${eventId} not found.`))
+        if (!eventResult.ok) {
+            return eventResult;
         }
 
         const event = eventResult.value;
-        if (actingUserRole === "staff" && event.organizerId !== actingUserId) {
-            return Err(NotAuthorized("Staff can only update their own events."))
+
+        if (event === null) {
+            return Err(EventNotFoundError("No event exists with the given ID."));
         }
 
-        const validTransitions: Record<string, string[]> = {
-            draft: ["published"],
-            published: ["cancelled"],
+        if (actingUserRole === "admin") {
+            return Ok(event);
+        }
+
+        if (actingUserRole === "staff") {
+            const canView =
+                event.status === "published" ||
+                (event.status === "draft" && event.organizerId === actingUserId);
+            if (canView) {
+                return Ok(event);
+            }
+            return Err(NotAuthorizedError("You are not authorized to view this event."));
+        }
+
+        if (actingUserRole === "user") {
+            const canView = event.status === "published";
+            if (canView) {
+                return Ok(event);
+            }
+            return Err(NotAuthorizedError("You are not authorized to view this event."));
+        }
+        return Err(NotAuthorizedError("You are not authorized to view this event."));
+    }
+
+    async getEventDetailView(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<EventDetailView, EventError>> {
+        const eventResult = await this.getEventById(eventId, actingUserId, actingUserRole);
+
+        if (eventResult.ok === false) {
+            return Err(eventResult.value);
+        }
+        const event = eventResult.value;
+        const attendeeCountResult = await this.rsvpRepository.countGoing(eventId);
+
+        if (!attendeeCountResult.ok) {
+            const error = attendeeCountResult.value;
+            const message =
+                typeof error === "object" && error !== null && "message" in error
+                    ? error.message
+                    : "Unknown RSVP error";
+
+            return Err(UnexpectedDependencyError(message));
+        }
+
+        return Ok({
+            event: event,
+            attendeeCount: attendeeCountResult.value,
+        });
+    }
+
+    async createEvent(
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: {
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        },
+    ): Promise<Result<Event, EventError>> {
+        if (actingUserRole === "user") {
+            return Err(NotAuthorizedError("Only organizers and admins can create events."));
+        }
+
+        if (!data.title.trim()) {
+            return Err(InvalidInputError("Title is required."));
+        }
+        if (!data.description.trim()) {
+            return Err(InvalidInputError("Description is required."));
+        }
+        if (!data.location.trim()) {
+            return Err(InvalidInputError("Location is required."));
+        }
+        if (!data.category.trim()) {
+            return Err(InvalidInputError("Category is required."));
+        }
+        if (isNaN(data.startDatetime.getTime())) {
+            return Err(InvalidInputError("Start date and time is invalid."));
+        }
+        if (isNaN(data.endDatetime.getTime())) {
+            return Err(InvalidInputError("End date and time is invalid."));
+        }
+        if (data.endDatetime <= data.startDatetime) {
+            return Err(InvalidInputError("End date and time must be after start date and time."));
+        }
+        if (data.capacity !== null && (data.capacity < 1 || !Number.isInteger(data.capacity))) {
+            return Err(InvalidInputError("Capacity must be a positive whole number."));
+        }
+
+        const now = new Date();
+        const event: Event = {
+            id: randomUUID(),
+            ...data,
+            organizerId: actingUserId,
+            status: "draft",
+            createdAt: now,
+            updatedAt: now,
         };
 
-        const allowed = validTransitions[event.status] ?? [];
-        if (!allowed.includes(newStatus)) {
-            return Err(InvalidEventState(`Cannot transition event from ${event.status} to ${newStatus}`))
+        return await this.eventRepository.create(event);
+    }
+
+    async updateEventStatus(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        newStatus: EventStatus,
+    ): Promise<Result<Event, EventError>> {
+        const result = await this.eventRepository.findById(eventId);
+
+        if (!result.ok) {
+            return result;
         }
 
-        const updated: Event = {
-            ...event,
-            status: newStatus,
-            updatedAt: new Date(),
+        const event = result.value;
+
+        if (!event) {
+            return Err(EventNotFoundError("No event exists with the given ID."));
         }
 
-        const saveResult = await this.eventRepo.save(updated);
-        if (saveResult.ok === false) {
-            return Err(saveResult.value);
+        const isOwner = actingUserRole === "staff" && event.organizerId === actingUserId;
+        const isAdmin = actingUserRole === "admin";
+
+        if (!isOwner && !isAdmin) {
+            return Err(NotAuthorizedError("You are not authorized to update the event status."));
         }
 
-        this.logger.info(`Event ${eventId} status updated to ${newStatus} by user ${actingUserId}`)
-        return Ok(saveResult.value)
+        if (newStatus !== "published" && newStatus !== "cancelled") {
+            return Err(
+                InvalidEventStateError(
+                    `Invalid target status "${newStatus}". Only "published" or "cancelled" are allowed.`,
+                ),
+            );
+        }
+
+        const isDraftToPublished = event.status === "draft" && newStatus === "published";
+        const isPublishedToCancelled = event.status === "published" && newStatus === "cancelled";
+
+        if (!isDraftToPublished && !isPublishedToCancelled) {
+            return Err(
+                InvalidEventStateError(
+                    `Invalid status transition from "${event.status}" to "${newStatus}".`,
+                ),
+            );
+        }
+
+        const updateResult = await this.eventRepository.updateStatus(eventId, newStatus);
+
+        if (updateResult.ok === false) {
+            return updateResult;
+        }
+
+        const updated = updateResult.value;
+        if (!updated) {
+            return Err(EventNotFoundError("No event exists with the given ID."));
+        }
+
+        return Ok(updated);
+    }
+
+    async getAllEventsForManager(
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<Event[], EventError>> {
+        if (actingUserRole === "user") {
+            return Err(NotAuthorizedError("You are not authorized to view all events."));
+        }
+
+        const result = await this.eventRepository.findAll();
+
+        if (result.ok === false) {
+            return result;
+        }
+
+        if (actingUserRole === "admin") {
+            return Ok(result.value);
+        }
+
+        const staffEvents = result.value.filter((event) => event.organizerId === actingUserId);
+        return Ok(staffEvents);
+    }
+
+    async updateEvent(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: Partial<{
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        }>,
+    ): Promise<Result<Event, EventError>> {
+        const findResult = await this.eventRepository.findById(eventId);
+        if (!findResult.ok) {
+            return findResult;
+        }
+
+        const existing = findResult.value;
+        if (!existing) {
+            return Err(EventNotFoundError("Event not found."));
+        }
+
+        if (actingUserRole !== "admin" && existing.organizerId !== actingUserId) {
+            return Err(NotAuthorizedError("You do not have permission to edit this event."));
+        }
+
+        if (existing.status === "cancelled" || existing.status === "past") {
+            return Err(InvalidEventStateError("Cancelled or past events cannot be edited."));
+        }
+
+        if (data.title !== undefined && !data.title.trim()) {
+            return Err(InvalidInputError("Title is required."));
+        }
+        if (data.description !== undefined && !data.description.trim()) {
+            return Err(InvalidInputError("Description is required."));
+        }
+        if (data.location !== undefined && !data.location.trim()) {
+            return Err(InvalidInputError("Location is required."));
+        }
+        if (data.category !== undefined && !data.category.trim()) {
+            return Err(InvalidInputError("Category is required."));
+        }
+        if (data.startDatetime !== undefined && isNaN(data.startDatetime.getTime())) {
+            return Err(InvalidInputError("Start date and time is invalid."));
+        }
+        if (data.endDatetime !== undefined && isNaN(data.endDatetime.getTime())) {
+            return Err(InvalidInputError("End date and time is invalid."));
+        }
+        if (data.startDatetime && data.endDatetime && data.endDatetime <= data.startDatetime) {
+            return Err(InvalidInputError("End date and time must be after start date and time."));
+        }
+        if (
+            data.capacity !== undefined &&
+            data.capacity !== null &&
+            (data.capacity < 1 || !Number.isInteger(data.capacity))
+        ) {
+            return Err(InvalidInputError("Capacity must be a positive whole number."));
+        }
+
+        const merged = { ...existing, ...data };
+        const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
+
+        if (!updateResult.ok) {
+            return updateResult;
+        }
+
+        if (!updateResult.value) {
+            return Err(EventNotFoundError("Event could not be updated."));
+        }
+
+        return Ok(updateResult.value);
+    }
+
+    async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
+        const normalizedCategory = filters.category?.trim() || undefined;
+        const normalizedTimeframe = filters.timeframe?.trim() || undefined;
+        let categoryFilter: EventCategory | undefined;
+        let timeframeFilter: EventTimeframe | undefined;
+
+        if (normalizedCategory !== undefined) {
+            if (!isEventCategory(normalizedCategory)) {
+                return Err(InvalidInputError("Invalid category filter."));
+            }
+            categoryFilter = normalizedCategory;
+        }
+
+        if (normalizedTimeframe !== undefined) {
+            if (!isEventTimeframe(normalizedTimeframe)) {
+                return Err(InvalidInputError("Invalid timeframe filter."));
+            }
+            timeframeFilter = normalizedTimeframe;
+        }
+
+        const repositoryFilters: EventFilters = {};
+
+        if (categoryFilter !== undefined) {
+            repositoryFilters.category = categoryFilter;
+        }
+        if (timeframeFilter !== undefined) {
+            repositoryFilters.timeframe = timeframeFilter;
+        }
+
+        const repositoryResult = await this.eventRepository.findPublishedUpcoming(
+            Object.keys(repositoryFilters).length > 0 ? repositoryFilters : undefined,
+        );
+
+        if (repositoryResult.ok === false) {
+            return repositoryResult;
+        }
+
+        const searchQuery = (filters.searchQuery ?? "").trim().toLowerCase();
+        if (searchQuery.length === 0) {
+            return Ok(repositoryResult.value);
+        }
+
+        const filteredEvents = repositoryResult.value.filter((event) =>
+            EventService.includesSearchMatch(event, searchQuery),
+        );
+
+        return Ok(filteredEvents);
     }
 }
 
 export function CreateEventService(
-    eventRepo: IEventRepository,
-    rsvpRepo: IRsvpRepository,
-    logger: ILoggingService,
+    eventRepository: IEventRepository,
+    rsvpRepository: IRSVPRepository,
 ): IEventService {
-    return new EventService(eventRepo, rsvpRepo, logger);
+    return new EventService(eventRepository, rsvpRepository);
 }
