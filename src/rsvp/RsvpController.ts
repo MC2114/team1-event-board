@@ -2,7 +2,8 @@ import { response, type Response } from "express";
 import type { IRsvpService } from "./RsvpService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
-import type { RsvpError } from "./errors";
+import type { RSVPError } from "./errors";
+import { EventError } from "../events/errors";
 
 export interface IRsvpController {
     showMyRsvps(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -24,11 +25,25 @@ class RsvpController implements IRsvpController {
         private readonly logger: ILoggingService,
     ) { }
 
-    private mapErrorStatus(error: RsvpError): number {
-        if (error.name === "EventNotFound") return 404;
-        if (error.name === "NotAuthorized") return 403;
-        if (error.name === "InvalidRsvp") return 400;
-        return 500;
+    private mapErrorStatus(error: RSVPError | EventError): number {
+        switch (error.name) {
+            case "EventNotFoundError":
+                return 404;
+
+            case "NotAuthorizedError":
+                return 403;
+
+            case "InvalidRSVPError":
+            case "InvalidEventStateError":
+            case "InvalidInputError":
+                return 400;
+
+            case "UnexpectedDependencyError":
+                return 500;
+
+            default:
+                return 500;
+        }
     }
 
     async showMyRsvps(res: Response, session: IAppBrowserSession): Promise<void> {
