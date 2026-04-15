@@ -49,7 +49,7 @@ export const DEMO_EVENTS: Event[] = [
 ];
 
 export class InMemoryEventRepository implements IEventRepository {
-    constructor(private readonly events: Event[]) {}
+    constructor(private readonly events: Event[]) { }
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
         try {
@@ -57,6 +57,15 @@ export class InMemoryEventRepository implements IEventRepository {
             return Ok(match);
         } catch {
             return Err(UnexpectedDependencyError("Unable to read the event."));
+        }
+    }
+
+    async findByOrganizer(organizerId: string): Promise<Result<Event[], EventError>> {
+        try {
+            const results: Event[] = this.events.filter((event) => event.organizerId === organizerId);
+            return Ok(results);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find organizer events."))
         }
     }
 
