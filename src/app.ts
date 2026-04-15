@@ -318,11 +318,14 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
-      "/events/:eventId/rsvp",
+      "/events/:eventId/attendees",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
+        const browserSession = touchAppSession(sessionStore(req));
+        const eventId = req.params.eventId as string;
+        await this.rsvpController.showEventAttendees(res, eventId, browserSession);
       }),
     );
 
