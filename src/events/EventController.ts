@@ -180,12 +180,15 @@ export class EventController implements IEventController {
 
     const userRSVP = userRSVPResult.ok ? userRSVPResult.value : null;
 
+    const rsvpMessage = typeof req.query.rsvpMessage === "string" ? req.query.rsvpMessage : null;
+
     res.render("events/detail", {
       title: detailResult.value.event.title,
       event: detailResult.value.event,
       attendeeCount: detailResult.value.attendeeCount,
       user,
       userRSVP,
+      rsvpMessage,
     });
   }
 
@@ -289,6 +292,7 @@ export class EventController implements IEventController {
 
     res.redirect(`/events/${result.value.id}`);
   }
+
   async listEventsFromQuery(req: Request, res: Response): Promise<void> {
     const user = getAuthenticatedUser(req.session);
 

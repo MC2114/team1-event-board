@@ -36,6 +36,12 @@
         <% } %>
       </p>
 
+      <% if (typeof rsvpMessage !== "undefined" && rsvpMessage) { %>
+        <div class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+          <%= rsvpMessage %>
+        </div>
+      <% } %>
+
       <% if (user.role === "user") { %>
         <% if (!userRSVP || userRSVP.status === "cancelled") { %>
           <p class="text-sm text-gray-600">
