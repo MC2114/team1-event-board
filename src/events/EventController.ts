@@ -66,7 +66,10 @@ export class EventController implements IEventController {
       return;
     }
 
+    const browserSession = recordPageView(store);
+
     res.render("events/create", {
+      session: browserSession,
       pageError: null,
       formData: {},
     });
@@ -157,6 +160,7 @@ export class EventController implements IEventController {
       return;
     }
 
+    const browserSession = recordPageView(store);
     const eventId = req.params.eventId as string;
 
     const detailResult = await this.eventService.getEventDetailView(
@@ -183,6 +187,7 @@ export class EventController implements IEventController {
     const rsvpMessage = typeof req.query.rsvpMessage === "string" ? req.query.rsvpMessage : null;
 
     res.render("events/detail", {
+      session: browserSession,
       title: detailResult.value.event.title,
       event: detailResult.value.event,
       attendeeCount: detailResult.value.attendeeCount,
@@ -209,9 +214,11 @@ export class EventController implements IEventController {
         return;
     }
 
+    const browserSession = recordPageView(store);
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     res.render("events/edit", {
+        session: browserSession,
         pageError: null,
         eventId,
         formData: {},
@@ -283,6 +290,7 @@ export class EventController implements IEventController {
         }
 
         res.status(400).render("events/edit", {
+            session: recordPageView(store),
             pageError: error.message,
             eventId,
             formData: { ...req.body, capacity: rawCapacity },
