@@ -94,7 +94,7 @@ export class EventController implements IEventController {
       formData
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = result.value;
 
       if (error.name === "NotAuthorizedError") {
@@ -235,7 +235,7 @@ export class EventController implements IEventController {
         data
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
         const error = result.value;
 
         if (error.name === "NotAuthorizedError") {
