@@ -6,6 +6,7 @@ import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import type { EventError } from "./errors";
 import { isEventCategory, isEventTimeframe } from "./Event";
+import session from "express-session";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -403,7 +404,23 @@ export class EventController implements IEventController {
       });
       return
     }
-    const now = new 
+    const now = new Date()
+    const published = result.value.filter(
+      (e) => e.status === "published" && e.endDatetime > now
+    );
+
+    const draft = result.value.filter((e) => e.status === "draft");
+    const cancelledOrPast = result.value.filter(
+      (e) => e.status === "cancelled" || e.endDatetime < now
+    );
+
+    res.render("events/dashboard", {
+      session: browserSession,
+      published,
+      draft,
+      cancelledOrPast,
+      user,
+    })
   }
 }
 
