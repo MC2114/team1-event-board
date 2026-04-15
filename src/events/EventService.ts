@@ -10,12 +10,7 @@ import {
     type EventTimeframe,
 } from "./Event";
 import type { EventError } from "./errors";
-import {
-    EventNotFoundError,
-    InvalidInputError,
-    NotAuthorizedError,
-    UnexpectedDependencyError,
-} from "./errors";
+import { EventNotFoundError, InvalidInputError, InvalidEventStateError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
 import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
@@ -50,7 +45,21 @@ export interface IEventService {
             endDatetime: Date;
         },
     ): Promise<Result<Event, EventError>>;
-    listEvents(filters?: IListEventsFilters): Promise<Result<Event[], EventError>>;
+    updateEvent(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: Partial<{
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        }>
+    ): Promise<Result<Event, EventError>>;
+    listEvents(filters?: EventFilters): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -196,6 +205,77 @@ class EventService implements IEventService {
         return await this.eventRepository.create(event);
     }
 
+    async updateEvent(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        data: Partial<{
+            title: string;
+            description: string;
+            location: string;
+            category: string;
+            capacity: number | null;
+            startDatetime: Date;
+            endDatetime: Date;
+        }>
+    ): Promise<Result<Event, EventError>> {
+        const findResult = await this.eventRepository.findById(eventId);
+        if (!findResult.ok) {
+            return findResult;
+        }
+
+        const existing = findResult.value;
+        if (!existing) {
+            return Err(EventNotFoundError("Event not found."));
+        }
+
+        if (actingUserRole !== "admin" && existing.organizerId !== actingUserId) {
+            return Err(NotAuthorizedError("You do not have permission to edit this event."));
+        }
+
+        if (existing.status === "cancelled" || existing.status === "past") {
+            return Err(InvalidEventStateError("Cancelled or past events cannot be edited."));
+        }
+
+        if (data.title !== undefined && !data.title.trim()) {
+            return Err(InvalidInputError("Title is required."));
+        }
+        if (data.description !== undefined && !data.description.trim()) {
+            return Err(InvalidInputError("Description is required."));
+        }
+        if (data.location !== undefined && !data.location.trim()) {
+            return Err(InvalidInputError("Location is required."));
+        }
+        if (data.category !== undefined && !data.category.trim()) {
+            return Err(InvalidInputError("Category is required."));
+        }
+        if (data.startDatetime !== undefined && isNaN(data.startDatetime.getTime())) {
+            return Err(InvalidInputError("Start date and time is invalid."));
+        }
+        if (data.endDatetime !== undefined && isNaN(data.endDatetime.getTime())) {
+            return Err(InvalidInputError("End date and time is invalid."));
+        }
+        if (data.startDatetime && data.endDatetime && data.endDatetime <= data.startDatetime) {
+            return Err(InvalidInputError("End date and time must be after start date and time."));
+        }
+        if (data.capacity !== undefined && data.capacity !== null && (data.capacity < 1 || !Number.isInteger(data.capacity))) {
+            return Err(InvalidInputError("Capacity must be a positive whole number."));
+        }
+
+        const merged = { ...existing, ...data };
+        const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
+
+        if (!updateResult.ok) {
+            return updateResult;
+        }
+
+        if (!updateResult.value) {
+            return Err(EventNotFoundError("Event could not be updated."));
+        }
+
+        return Ok(updateResult.value);
+    }
+    
     async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
         const normalizedCategory = filters.category?.trim() || undefined;
         const normalizedTimeframe = filters.timeframe?.trim() || undefined;
