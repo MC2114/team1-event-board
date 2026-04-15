@@ -1,0 +1,59 @@
+<% if (pageError) { %>
+  <%- include('../partials/error', { message: pageError }) %>
+<% } %>
+
+<div class="create-event">
+  <h1>Create New Event</h1>
+
+  <form method="POST" action="/events/new">
+
+    <div class="form-group">
+      <label for="title">Title <span aria-hidden="true">*</span></label>
+      <input type="text" id="title" name="title" value="<%= formData.title ?? '' %>" required />
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description <span aria-hidden="true">*</span></label>
+      <textarea id="description" name="description" rows="4" required><%= formData.description ?? '' %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="location">Location <span aria-hidden="true">*</span></label>
+      <input type="text" id="location" name="location" value="<%= formData.location ?? '' %>" required />
+    </div>
+
+    <div class="form-group">
+      <label for="category">Category <span aria-hidden="true">*</span></label>
+      <select id="category" name="category" required>
+        <option value="">Select a category</option>
+        <% const categories = ["technology", "business", "music", "art", "food", "health", "education", "sports", "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv", "other"]; %>
+        <% categories.forEach(function(cat) { %>
+          <option value="<%= cat %>" <%= formData.category === cat ? 'selected' : '' %>>
+            <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+          </option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="startDatetime">Start Date & Time <span aria-hidden="true">*</span></label>
+      <input type="datetime-local" id="startDatetime" name="startDatetime" value="<%= formData.startDatetime ?? '' %>" required />
+    </div>
+
+    <div class="form-group">
+      <label for="endDatetime">End Date & Time <span aria-hidden="true">*</span></label>
+      <input type="datetime-local" id="endDatetime" name="endDatetime" value="<%= formData.endDatetime ?? '' %>" required />
+    </div>
+
+    <div class="form-group">
+      <label for="capacity">Capacity <span class="hint">(leave blank for no limit)</span></label>
+      <input type="number" id="capacity" name="capacity" min="1" value="<%= formData.capacity ?? '' %>" />
+    </div>
+
+    <div class="form-actions">
+      <button type="submit">Create Event</button>
+      <a href="/home">Cancel</a>
+    </div>
+
+  </form>
+</div>
