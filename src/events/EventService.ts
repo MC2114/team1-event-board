@@ -1,23 +1,37 @@
-
 import { Err, Ok, type Result } from "../lib/result";
 import type { UserRole } from "../auth/User";
-import type { Event, EventDetailView } from "./Event";
+import {
+    isEventCategory,
+    isEventTimeframe,
+    type Event,
+    type EventCategory,
+    type EventDetailView,
+    type EventFilters,
+    type EventTimeframe,
+} from "./Event";
 import type { EventError } from "./errors";
 import { EventNotFoundError, InvalidInputError, InvalidEventStateError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
-import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
 
+export interface IListEventsFilters {
+    category?: string;
+    timeframe?: string;
+    searchQuery?: string;
+}
+
 export interface IEventService {
-    getEventById(eventId: string,
+    getEventById(
+        eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<Event, EventError>>
+    ): Promise<Result<Event, EventError>>;
     getEventDetailView(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<EventDetailView, EventError>>
+    ): Promise<Result<EventDetailView, EventError>>;
     createEvent(
         actingUserId: string,
         actingUserRole: UserRole,
@@ -29,7 +43,7 @@ export interface IEventService {
             capacity: number | null;
             startDatetime: Date;
             endDatetime: Date;
-        }
+        },
     ): Promise<Result<Event, EventError>>;
     updateEvent(
         eventId: string,
@@ -45,12 +59,25 @@ export interface IEventService {
             endDatetime: Date;
         }>
     ): Promise<Result<Event, EventError>>;
+    listEvents(filters?: EventFilters): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
+    private static includesSearchMatch(event: Event, searchQuery: string): boolean {
+        const title = event.title.toLowerCase();
+        const description = event.description.toLowerCase();
+        const location = event.location.toLowerCase();
+
+        return (
+            title.includes(searchQuery) ||
+            description.includes(searchQuery) ||
+            location.includes(searchQuery)
+        );
+    }
+
     constructor(
         private readonly eventRepository: IEventRepository,
-        private readonly rsvpRepository: IRsvpRepository,
+        private readonly rsvpRepository: IRSVPRepository,
     ) { }
 
     async getEventById(
@@ -70,19 +97,21 @@ class EventService implements IEventService {
             return Err(EventNotFoundError("No event exists with the given ID."));
         }
 
-        if (actingUserRole === 'admin') {
+        if (actingUserRole === "admin") {
             return Ok(event);
         }
 
-        if (actingUserRole === 'staff') {
-            const canView = event.status === "published" || (event.status === "draft" && event.organizerId === actingUserId);
+        if (actingUserRole === "staff") {
+            const canView =
+                event.status === "published" ||
+                (event.status === "draft" && event.organizerId === actingUserId);
             if (canView) {
                 return Ok(event);
             }
             return Err(NotAuthorizedError("You are not authorized to view this event."));
         }
 
-        if (actingUserRole === 'user') {
+        if (actingUserRole === "user") {
             const canView = event.status === "published";
             if (canView) {
                 return Ok(event);
@@ -97,11 +126,7 @@ class EventService implements IEventService {
         actingUserId: string,
         actingUserRole: UserRole,
     ): Promise<Result<EventDetailView, EventError>> {
-        const eventResult = await this.getEventById(
-            eventId,
-            actingUserId,
-            actingUserRole,
-        );
+        const eventResult = await this.getEventById(eventId, actingUserId, actingUserRole);
 
         if (eventResult.ok === false) {
             return Err(eventResult.value);
@@ -110,7 +135,7 @@ class EventService implements IEventService {
         const attendeeCountResult = await this.rsvpRepository.countGoing(eventId);
 
         if (!attendeeCountResult.ok) {
-            const error = attendeeCountResult.value
+            const error = attendeeCountResult.value;
             const message =
                 typeof error === "object" && error !== null && "message" in error
                     ? error.message
@@ -136,7 +161,7 @@ class EventService implements IEventService {
             capacity: number | null;
             startDatetime: Date;
             endDatetime: Date;
-        }
+        },
     ): Promise<Result<Event, EventError>> {
         if (actingUserRole === "user") {
             return Err(NotAuthorizedError("Only organizers and admins can create events."));
@@ -250,11 +275,60 @@ class EventService implements IEventService {
 
         return Ok(updateResult.value);
     }
+    
+    async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
+        const normalizedCategory = filters.category?.trim() || undefined;
+        const normalizedTimeframe = filters.timeframe?.trim() || undefined;
+        let categoryFilter: EventCategory | undefined;
+        let timeframeFilter: EventTimeframe | undefined;
+
+        if (normalizedCategory !== undefined) {
+            if (!isEventCategory(normalizedCategory)) {
+                return Err(InvalidInputError("Invalid category filter."));
+            }
+            categoryFilter = normalizedCategory;
+        }
+
+        if (normalizedTimeframe !== undefined) {
+            if (!isEventTimeframe(normalizedTimeframe)) {
+                return Err(InvalidInputError("Invalid timeframe filter."));
+            }
+            timeframeFilter = normalizedTimeframe;
+        }
+
+        const repositoryFilters: EventFilters = {};
+
+        if (categoryFilter !== undefined) {
+            repositoryFilters.category = categoryFilter;
+        }
+        if (timeframeFilter !== undefined) {
+            repositoryFilters.timeframe = timeframeFilter;
+        }
+
+        const repositoryResult = await this.eventRepository.findPublishedUpcoming(
+            Object.keys(repositoryFilters).length > 0 ? repositoryFilters : undefined,
+        );
+
+        if (repositoryResult.ok === false) {
+            return repositoryResult;
+        }
+
+        const searchQuery = (filters.searchQuery ?? "").trim().toLowerCase();
+        if (searchQuery.length === 0) {
+            return Ok(repositoryResult.value);
+        }
+
+        const filteredEvents = repositoryResult.value.filter((event) =>
+            EventService.includesSearchMatch(event, searchQuery),
+        );
+
+        return Ok(filteredEvents);
+    }
 }
 
 export function CreateEventService(
     eventRepository: IEventRepository,
-    rsvpRepository: IRsvpRepository,
+    rsvpRepository: IRSVPRepository,
 ): IEventService {
     return new EventService(eventRepository, rsvpRepository);
 }
