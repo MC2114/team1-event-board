@@ -1,10 +1,11 @@
 import { UserRole } from "../auth/User";
 import { Err, Result, Ok } from "../lib/result";
 import { ILoggingService } from "../service/LoggingService";
-import type { IEventRepository } from "../events/EventRepository";
-import { EventNotFound, InvalidRsvp, NotAuthorized, RSVPError } from "./errors";
+import { EventNotFoundError, InvalidRSVPError, NotAuthorizedError, RSVPError } from "./errors";
 import { IRSVPRepository } from "./RsvpRepository";
 import { RSVP, RSVPWithEvent } from "./RSVP";
+import { IEventRepository } from "../events/EventRepository";
+import { EventError } from "../events/errors";
 
 export interface IRsvpService {
     getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
@@ -12,12 +13,12 @@ export interface IRsvpService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP[], RSVPError>>;
+    ): Promise<Result<RSVP[], RSVPError | EventError>>;
     toggleRSVP(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP, RSVPError>>;
+    ): Promise<Result<RSVP, RSVPError | EventError>>;
     getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>>;
 }
 
@@ -37,57 +38,57 @@ class RsvpService implements IRsvpService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP[], RSVPError>> {
+    ): Promise<Result<RSVP[], RSVPError | EventError>> {
         const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
-            return Err(InvalidRsvp("Unable to verify event."));
+            return Err(InvalidRSVPError("Unable to verify event."));
         }
 
         const event = eventResult.value;
 
-        if (event === null) {
-            return Err(EventNotFound(`Event ${eventId} not found`));
+        if (!event) {
+            return Err(EventNotFoundError(`Event ${eventId} not found`));
         }
 
         if (actingUserRole === "user") {
-            return Err(NotAuthorized("Users cannot view attendee lists"));
+            return Err(NotAuthorizedError("Users cannot view attendee lists"));
         }
 
         if (actingUserRole === "staff" && event.organizerId !== actingUserId) {
-            return Err(NotAuthorized("Staff can only view attendees for their own events"));
+            return Err(NotAuthorizedError("Staff can only view attendees for their own events"));
         }
 
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
-        return await this.rsvpRepo.findByEvent(eventId);
+        return await this.rsvpRepo.findByEventId(eventId);
     }
 
     async toggleRSVP(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP, RSVPError>> {
+    ): Promise<Result<RSVP, RSVPError | EventError>> {
         if (actingUserRole === "staff" || actingUserRole === "admin") {
-            return Err(InvalidRsvp("Organizers and admins cannot RSVP to events"));
+            return Err(InvalidRSVPError("Organizers and admins cannot RSVP to events"));
         }
 
-        const eventResult = await this.eventRepo.findById(eventId); // was missing await
+        const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
-            return Err(InvalidRsvp("Unable to verify event."))
+            return Err(InvalidRSVPError("Unable to verify event."))
         }
 
         const event = eventResult.value;
 
-        if (event === null) {
-            return Err(EventNotFound(`Event ${eventId} not found`));
+        if (!event) {
+            return Err(EventNotFoundError(`Event ${eventId} not found`));
         }
 
-        if (event.status === "cancelled" || event.status === "past" || event.status === "draft") {
-            return Err(InvalidRsvp("Cannot RSVP to this event"));
+        if (event.status === "cancelled" || event.status === "past") {
+            return Err(InvalidRSVPError("Cannot RSVP to a cancelled or past event"));
         }
 
-        const existingResult = await this.rsvpRepo.findByUserAndEvent(actingUserId, eventId); // was missing await
+        const existingResult = await this.rsvpRepo.findByUserAndEvent(actingUserId, eventId);
 
         if (existingResult.ok === false) {
             return Err(existingResult.value);
@@ -104,7 +105,7 @@ class RsvpService implements IRsvpService {
                 createdAt: existing.createdAt,
             };
 
-            const saveResult = await this.rsvpRepo.save(updated); // was missing await
+            const saveResult = await this.rsvpRepo.save(updated);
 
             if (saveResult.ok === false) {
                 return Err(saveResult.value);
@@ -114,7 +115,7 @@ class RsvpService implements IRsvpService {
             return Ok(updated);
         }
 
-        const countResult = await this.rsvpRepo.countGoing(eventId); // was missing await
+        const countResult = await this.rsvpRepo.countGoing(eventId);
 
         if (countResult.ok === false) {
             return Err(countResult.value);
@@ -140,7 +141,7 @@ class RsvpService implements IRsvpService {
                 createdAt: new Date(),
             };
 
-        const saveResult = await this.rsvpRepo.save(rsvp); // was missing await
+        const saveResult = await this.rsvpRepo.save(rsvp);
 
         if (saveResult.ok === false) {
             return Err(saveResult.value);
@@ -151,19 +152,19 @@ class RsvpService implements IRsvpService {
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>> {
-        const eventResult = await this.eventRepo.findById(eventId); // was missing await
+        const eventResult = await this.eventRepo.findById(eventId); 
 
         if (eventResult.ok === false) {
-            return Err(InvalidRsvp("Unable to verify event."));
+            return Err(InvalidRSVPError("Unable to verify event."));
         }
 
         const event = eventResult.value;
 
-        if (event === null) {
-            return Err(EventNotFound(`Event ${eventId} not found`));
+        if (!event) {
+            return Err(EventNotFoundError(`Event ${eventId} not found`));
         }
 
-        return await this.rsvpRepo.countGoing(eventId); // was missing await
+        return await this.rsvpRepo.countGoing(eventId);
     }
 }
 

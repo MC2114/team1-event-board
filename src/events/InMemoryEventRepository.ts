@@ -70,27 +70,27 @@ export class InMemoryEventRepository implements IEventRepository {
 
     async findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>> {
         try {
-        const now = new Date();
-        let results: Event[] = this.events.filter((e) => e.status === "published" && e.startDatetime > now);
+            const now = new Date();
+            let results: Event[] = this.events.filter((e) => e.status === "published" && e.startDatetime > now);
 
-        if (filters?.category) {
-            results = results.filter((e) => e.category === filters.category);
-        }
-
-        if (filters?.timeframe && filters.timeframe !== "all") {
-            const timeframe = filters.timeframe;
-            const cutoffDate = new Date(now);
-
-            if (timeframe === "this_week") {
-                cutoffDate.setDate(now.getDate() + 7);
-            } else if (timeframe === "this_month") {
-                cutoffDate.setMonth(now.getMonth() + 1);
-            } else if (timeframe === "this_year") {
-                cutoffDate.setFullYear(now.getFullYear() + 1);
+            if (filters?.category) {
+                results = results.filter((e) => e.category === filters.category);
             }
 
-            results = results.filter((e) => e.startDatetime <= cutoffDate);
-        }
+            if (filters?.timeframe && filters.timeframe !== "all") {
+                const timeframe = filters.timeframe;
+                const cutoffDate = new Date(now);
+
+                if (timeframe === "this_week") {
+                    cutoffDate.setDate(now.getDate() + 7);
+                } else if (timeframe === "this_month") {
+                    cutoffDate.setMonth(now.getMonth() + 1);
+                } else if (timeframe === "this_year") {
+                    cutoffDate.setFullYear(now.getFullYear() + 1);
+                }
+
+                results = results.filter((e) => e.startDatetime <= cutoffDate);
+            }
 
             return Ok(results);
         } catch {
@@ -111,11 +111,11 @@ export class InMemoryEventRepository implements IEventRepository {
         try {
             const index = this.events.findIndex((existing) => existing.id === event.id);
             if (index === -1) {
-            return Ok(null);
+                return Ok(null);
             }
             const updatedEvent: Event = {
-            ...event,
-            updatedAt: new Date(),
+                ...event,
+                updatedAt: new Date(),
             };
             this.events[index] = updatedEvent;
             return Ok(updatedEvent);
@@ -123,11 +123,11 @@ export class InMemoryEventRepository implements IEventRepository {
             return Err(UnexpectedDependencyError("Unable to update the event."));
         }
     }
-    
+
     async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>> {
         try {
             const event = this.events.find((e) => e.id === eventId);
-            if (!event){
+            if (!event) {
                 return Ok(null);
             }
             event.status = status;
