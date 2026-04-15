@@ -49,22 +49,23 @@ export interface Event {
 }
 
 export interface CreateEventData {
-  title: string;
-  description: string;
-  location: string;
-  category: string;
-  capacity: number | null;
-  startDatetime: Date;
-  endDatetime: Date;
-  organizerId: string;
+    title: string;
+    description: string;
+    location: string;
+    category: string;
+    capacity: number | null;
+    startDatetime: Date;
+    endDatetime: Date;
+    organizerId: string;
 }
 
 export interface EventFilters {
     category?: EventCategory;
     timeframe?: EventTimeframe;
+    searchQuery?: string;
 }
 
 export type EventDetailView = {
-  event: Event;
-  attendeeCount: number;
+    event: Event;
+    attendeeCount: number;
 };

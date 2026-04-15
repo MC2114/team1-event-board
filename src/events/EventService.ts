@@ -16,8 +16,8 @@ import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
 
 export interface IListEventsFilters {
-    category?: string;
-    timeframe?: string;
+    category?: EventCategory;
+    timeframe?: EventTimeframe;
     searchQuery?: string;
 }
 
@@ -275,7 +275,7 @@ class EventService implements IEventService {
 
         return Ok(updateResult.value);
     }
-    
+
     async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
         const normalizedCategory = filters.category?.trim() || undefined;
         const normalizedTimeframe = filters.timeframe?.trim() || undefined;
