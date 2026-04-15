@@ -23,10 +23,35 @@
       </p>
     </div>
 
-     <div class="pt-4 border-t border-gray-200">
-      <p class="text-sm text-blue-600 font-medium">RSVP controls coming in a later sprint.</p>
-    </div>
-    
+    <div class="pt-4 border-t border-gray-200 space-y-3">
+      <p class="text-sm font-medium text-gray-800">Attendance</p>
+
+      <p class="text-sm text-gray-600">
+        Current attendance:
+        <strong><%= attendeeCount %></strong>
+        <% if (event.capacity !== null) { %>
+          / <strong><%= event.capacity %></strong>
+        <% } else { %>
+          / <strong>No limit</strong>
+        <% } %>
+      </p>
+
+      <% if (user.role === "user") { %>
+        <% if (!userRSVP || userRSVP.status === "cancelled") { %>
+          <p class="text-sm text-gray-600">
+            You are not RSVP'd to attend this event.
+          </p>
+        <% } else if (userRSVP.status === "going") { %>
+          <p class="text-sm text-green-700 font-medium">
+            You are currently RSVP'd for this event.
+          </p>
+        <% } else if (userRSVP.status === "waitlisted") { %>
+          <p class="text-sm text-yellow-700 font-medium">
+            You are currently on the waitlist for this event.
+          </p>
+        <% } %>
+       <% } %>
+
     <!-- This provides admin view based on UserRole -->
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
       <div class="flex gap-3">
