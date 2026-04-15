@@ -320,7 +320,6 @@ class ExpressApp implements IApp {
         await this.rsvpController.showEventAttendees(res, eventId, browserSession);
       }),
     );
-
     // -- Event editing routes --
     this.app.get(
       "/events/:id/edit",
