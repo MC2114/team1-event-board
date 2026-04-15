@@ -45,7 +45,7 @@
       <% if (user.role === "user") { %>
         <% if (!userRSVP || userRSVP.status === "cancelled") { %>
           <p class="text-sm text-gray-600">
-            You are not RSVP'd to attend this event.
+            You are not RSVP'd for this event.
           </p>
         <% } else if (userRSVP.status === "going") { %>
           <p class="text-sm text-green-700 font-medium">
@@ -74,7 +74,19 @@
             </button>
           <% } %>
         </form>
+
+        <% if (event.capacity !== null && attendeeCount >= event.capacity) { %>
+          <p class="text-xs text-gray-500">
+            This event is currently at capacity. New RSVPs may be added to the waitlist.
+          </p>
+        <% } %>
+
+        <% if (user.role === "staff" || user.role === "admin") { %>
+        <p class="text-sm text-gray-600">
+          Staff and admins cannot RSVP to events.
+        </p>
       <% } %>
+    </div>
 
     <!-- This provides admin view based on UserRole -->
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
