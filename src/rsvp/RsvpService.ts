@@ -44,7 +44,7 @@ class RsvpService implements IRsvpService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP[], RSVPError | EventError>> {
+    ): Promise<Result<IAttendeeGroups, RSVPError | EventError>> {
         const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
@@ -66,7 +66,23 @@ class RsvpService implements IRsvpService {
         }
 
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
-        return await this.rsvpRepo.findByEventId(eventId);
+        const rsvpsResult = await this.rsvpRepo.findByEventId(eventId);
+
+        if (rsvpsResult.ok === false) {
+            return Err(rsvpsResult.value);
+        }
+
+        const grouped: IAttendeeGroups = {
+            going: [],
+            waitlisted: [],
+            cancelled: [],
+        };
+
+        for (const rsvp of rsvpsResult.value) {
+            grouped[rsvp.status].push(rsvp);
+        }
+
+        return Ok(grouped);
     }
 
     async toggleRSVP(
