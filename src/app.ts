@@ -241,16 +241,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.get(
-      "/events",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        await this.eventController.showEventsList(req, res);
-      }),
-    )
-
     // ── Authenticated home page ──────────────────────────────────────
 
     this.app.get(
@@ -267,6 +257,7 @@ class ExpressApp implements IApp {
     );
 
     // -- Event routes --
+
     this.app.get(
       "/events/new",
       asyncHandler(async (req, res) => {
@@ -291,7 +282,7 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
-        await this.eventController.listEventsFromQuery(req, res);
+        await this.eventController.showEventsList(req, res);
       }),
     );
 

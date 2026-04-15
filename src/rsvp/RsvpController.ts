@@ -72,7 +72,17 @@ class RsvpController implements IRsvpController {
         }
 
         this.logger.info(`User ${userId} toggled RSVP for event ${eventId} - status: ${result.value.status}`);
-        res.redirect("back");
+        let rsvpMessage = "";
+
+        if (result.value.status === "going") {
+        rsvpMessage = "You have successfully RSVPed to this event.";
+        } else if (result.value.status === "waitlisted") {
+        rsvpMessage = "This event is full. You have been added to the waitlist.";
+        } else if (result.value.status === "cancelled") {
+        rsvpMessage = "Your RSVP has been cancelled.";
+        }
+
+        res.redirect(`/events/${eventId}?rsvpMessage=${encodeURIComponent(rsvpMessage)}`);
     }
 
     async showEventAttendees(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
