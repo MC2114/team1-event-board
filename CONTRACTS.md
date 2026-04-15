@@ -71,6 +71,17 @@ type RSVPWithEvent = {
     event: Event
 }
 ```
+
+```ts
+type RSVPAttendee = {
+    id: string
+    eventId: string
+    userId: string
+    displayName: string
+    status: RSVPStatus
+    createdAt: Date
+}
+```
 ---
 
 ## EventService
@@ -268,12 +279,22 @@ RSVPService.getRSVPsByEvent(
   eventId: string,
   actingUserId: string,
   actingUserRole: UserRole
-): Result<RSVP[], EventNotFoundError | NotAuthorizedError>
+): Result<{
+  going: RSVPAttendee[]
+  waitlisted: RSVPAttendee[]
+  cancelled: RSVPAttendee[]
+}, EventNotFoundError | NotAuthorizedError>
 ```
 
-**Success — `{ ok: true, value: RSVP[] }`**
+**Success — `{ ok: true, value: { going, waitlisted, cancelled } }`**
 
-Returns all RSVPs for the event regardless of status, sorted by `createdAt` ascending. Returns an empty array if there are no RSVPs.
+Returns all attendees for the event grouped by RSVP status.  
+Each attendee row includes:
+
+- `id`, `eventId`, `userId`, `status`, `createdAt`
+- `displayName`
+
+Within each group (`going`, `waitlisted`, `cancelled`), rows are sorted by `createdAt` ascending. Empty groups are valid.
 
 **Visibility Rules by Role:**
 
@@ -381,4 +402,3 @@ These are defined once in a shared `/events/errors.ts` file and imported by all 
 - Services never read from `req.session` directly. Controllers extract `userId` and `role` from the session and pass them as parameters.
 - The `Event` and `RSVP` shapes above define the in-memory data structure for Sprints 1–2. The Prisma schema in Sprint 3 must match these field names so only the repository layer changes.
 - `capacity: null` means the event has no limit. Capacity enforcement in `toggleRSVP` compares the current `going` count from `getAttendeeCount` against the event's `capacity` field.
-
