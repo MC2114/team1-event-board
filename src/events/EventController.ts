@@ -5,6 +5,7 @@ import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import { NotAuthorizedError, InvalidInputError } from "../errors";
 import type { EventError } from "./errors";
+import { isEventCategory, isEventTimeframe } from "./Event";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -177,9 +178,18 @@ export class EventController implements IEventController {
       return;
     }
 
-    const category = this.getStringQuery(req, "category");
-    const timeframe = this.getStringQuery(req, "timeframe");
+    const rawCategory = this.getStringQuery(req, "category");
+    const rawTimeframe = this.getStringQuery(req, "timeframe");
     const searchQuery = this.getStringQuery(req, "searchQuery");
+
+
+    const category = rawCategory && isEventCategory(rawCategory)
+      ? rawCategory
+      : undefined;
+
+    const timeframe = rawTimeframe && isEventTimeframe(rawTimeframe)
+      ? rawTimeframe
+      : undefined;
 
     const result = await this.eventService.listEvents({
       category,
