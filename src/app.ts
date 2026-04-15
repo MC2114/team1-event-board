@@ -276,33 +276,13 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // -- Event editing routes --
-
-    this.app.get(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`GET /events/${req.params.id}/edit`);
-        await this.eventController.showEditForm(req, res);
-      }),
-    );
-
-    this.app.post(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`POST /events/${req.params.id}/edit`);
-        await this.eventController.handleEditForm(req, res);
-      }),
-    );
-
     this.app.get(
       "/events",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
-        await this.eventController.listEventsFromQuery(req, res);
+        await this.eventController.showEventsList(req, res);
       }),
     );
 
@@ -328,12 +308,22 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // -- Event editing routes --
     this.app.get(
-      "/events/:eventId/rsvp",
+      "/events/:id/edit",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`GET /events/${req.params.id}/edit`);
+        await this.eventController.showEditForm(req, res);
+      }),
+    );
+  
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`POST /events/${req.params.id}/edit`);
+        await this.eventController.handleEditForm(req, res);
       }),
     );
 
