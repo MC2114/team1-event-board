@@ -7,10 +7,17 @@ import {
     type EventCategory,
     type EventDetailView,
     type EventFilters,
+    type EventStatus,
     type EventTimeframe,
 } from "./Event";
 import type { EventError } from "./errors";
-import { EventNotFoundError, InvalidInputError, InvalidEventStateError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
+import {
+    EventNotFoundError,
+    InvalidEventStateError,
+    InvalidInputError,
+    NotAuthorizedError,
+    UnexpectedDependencyError,
+} from "./errors";
 import type { IEventRepository } from "./EventRepository";
 import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
@@ -45,6 +52,16 @@ export interface IEventService {
             endDatetime: Date;
         },
     ): Promise<Result<Event, EventError>>;
+    updateEventStatus(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        newStatus: EventStatus,
+    ): Promise<Result<Event, EventError>>;
+    getAllEventsForManager(
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<Event[], EventError>>;
     updateEvent(
         eventId: string,
         actingUserId: string,
@@ -59,7 +76,7 @@ export interface IEventService {
             endDatetime: Date;
         }>
     ): Promise<Result<Event, EventError>>;
-    listEvents(filters?: EventFilters): Promise<Result<Event[], EventError>>;
+    listEvents(filters?: IListEventsFilters): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -205,6 +222,86 @@ class EventService implements IEventService {
         return await this.eventRepository.create(event);
     }
 
+    async updateEventStatus(
+        eventId: string,
+        actingUserId: string,
+        actingUserRole: UserRole,
+        newStatus: EventStatus,
+    ): Promise<Result<Event, EventError>> {
+        const result = await this.eventRepository.findById(eventId);
+
+        if (!result.ok) {
+            return result;
+        }
+
+        const event = result.value;
+
+        if (!event) {
+            return Err(EventNotFoundError("No event exists with the given ID."));
+        }
+
+        const isOwner = actingUserRole === "staff" && event.organizerId === actingUserId;
+        const isAdmin = actingUserRole === "admin";
+
+        if (!isOwner && !isAdmin) {
+            return Err(NotAuthorizedError("You are not authorized to update the event status."));
+        }
+
+        if (newStatus !== "published" && newStatus !== "cancelled") {
+            return Err(
+                InvalidEventStateError(
+                    `Invalid target status "${newStatus}". Only "published" or "cancelled" are allowed.`,
+                ),
+            );
+        }
+
+        const isDraftToPublished = event.status === "draft" && newStatus === "published";
+        const isPublishedToCancelled = event.status === "published" && newStatus === "cancelled";
+
+        if (!isDraftToPublished && !isPublishedToCancelled) {
+            return Err(
+                InvalidEventStateError(
+                    `Invalid status transition from "${event.status}" to "${newStatus}".`,
+                ),
+            );
+        }
+
+        const updateResult = await this.eventRepository.updateStatus(eventId, newStatus);
+
+        if (updateResult.ok === false) {
+            return updateResult;
+        }
+
+        const updated = updateResult.value;
+        if (!updated) {
+            return Err(EventNotFoundError("No event exists with the given ID."));
+        }
+
+        return Ok(updated);
+    }
+
+    async getAllEventsForManager(
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<Event[], EventError>> {
+        if (actingUserRole === "user") {
+            return Err(NotAuthorizedError("You are not authorized to view all events."));
+        }
+
+        const result = await this.eventRepository.findAll();
+
+        if (result.ok === false) {
+            return result;
+        }
+
+        if (actingUserRole === "admin") {
+            return Ok(result.value);
+        }
+
+        const staffEvents = result.value.filter((event) => event.organizerId === actingUserId);
+        return Ok(staffEvents);
+    }
+
     async updateEvent(
         eventId: string,
         actingUserId: string,
@@ -217,7 +314,7 @@ class EventService implements IEventService {
             capacity: number | null;
             startDatetime: Date;
             endDatetime: Date;
-        }>
+        }>,
     ): Promise<Result<Event, EventError>> {
         const findResult = await this.eventRepository.findById(eventId);
         if (!findResult.ok) {
@@ -258,7 +355,11 @@ class EventService implements IEventService {
         if (data.startDatetime && data.endDatetime && data.endDatetime <= data.startDatetime) {
             return Err(InvalidInputError("End date and time must be after start date and time."));
         }
-        if (data.capacity !== undefined && data.capacity !== null && (data.capacity < 1 || !Number.isInteger(data.capacity))) {
+        if (
+            data.capacity !== undefined &&
+            data.capacity !== null &&
+            (data.capacity < 1 || !Number.isInteger(data.capacity))
+        ) {
             return Err(InvalidInputError("Capacity must be a positive whole number."));
         }
 

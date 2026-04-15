@@ -111,8 +111,8 @@ export class EventController implements IEventController {
       formData
     );
 
-    if (!result.ok) {
-      const error = result.value as EventError;
+    if (result.ok === false) {
+      const error = result.value;
 
       if (error.name === "NotAuthorizedError") {
         res.status(403).render("partials/error", {
@@ -252,8 +252,8 @@ export class EventController implements IEventController {
         data
     );
 
-    if (!result.ok) {
-        const error = result.value as EventError;
+    if (result.ok === false) {
+        const error = result.value;
 
         if (error.name === "NotAuthorizedError") {
             res.status(403).render("partials/error", {
