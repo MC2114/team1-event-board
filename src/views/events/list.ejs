@@ -1,16 +1,15 @@
 <section class="mb-6">
   <div class="flex items-center justify-between mb-4">
     <h1 class="text-3xl font-bold text-slate-900">Upcoming Events</h1>
-    <% if (session.authenticatedUser && 
-          (session.authenticatedUser.role === "staff" || 
-           session.authenticatedUser.role === "admin")) { %>
-      <a
-        href="/events/manage"
-        class="px-4 py-2 text-sm font-medium bg-slate-800 text-white rounded-lg hover:bg-slate-700 no-underline"
-      >
-        Manage Events
-      </a>
-    <% } %>
+    <div class="flex items-center gap-2">
+      <% if (session.authenticatedUser && 
+            (session.authenticatedUser.role === "staff" || 
+            session.authenticatedUser.role === "admin")) { %>
+        <a href="/events/new" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 no-underline">
+          + Create Event
+        </a>
+      <% } %>
+    </div>
   </div>
 
   <form method="GET" action="/events"
