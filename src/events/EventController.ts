@@ -171,8 +171,8 @@ export class EventController implements IEventController {
     }
 
     const userRSVPResult = await this.rsvpRepository.findByUserAndEvent(
-      eventId,
-      user.userId
+      user.userId,
+      eventId
     );
 
     const userRSVP = userRSVPResult.ok ? userRSVPResult.value : null;
