@@ -14,7 +14,7 @@ export const DEMO_EVENTS: Event[] = [
         capacity: 25,
         startDatetime: new Date("2026-04-20T15:00:00"),
         endDatetime: new Date("2026-04-20T17:00:00"),
-        organizerId: "user-staff-1",
+        organizerId: "user-staff",
         createdAt: new Date(),
         updatedAt: new Date(),
     },
@@ -28,7 +28,7 @@ export const DEMO_EVENTS: Event[] = [
         capacity: 100,
         startDatetime: new Date("2026-05-15T17:00:00"),
         endDatetime: new Date("2026-05-15T20:00:00"),
-        organizerId: "user-staff-2",
+        organizerId: "user-admin",
         createdAt: new Date("2026-04-02T09:00:00"),
         updatedAt: new Date("2026-04-02T09:00:00"),
     },
@@ -42,14 +42,14 @@ export const DEMO_EVENTS: Event[] = [
         capacity: 10,
         startDatetime: new Date("2026-04-24T18:00:00"),
         endDatetime: new Date("2026-04-24T19:00:00"),
-        organizerId: "user-staff-3",
+        organizerId: "user-staff",
         createdAt: new Date(),
         updatedAt: new Date(),
     },
 ];
 
-class InMemoryEventRepository implements IEventRepository {
-    constructor(private readonly events: Event[]) { }
+export class InMemoryEventRepository implements IEventRepository {
+    constructor(private readonly events: Event[]) {}
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
         try {
