@@ -97,7 +97,12 @@ class RsvpController implements IRsvpController {
             return;
         }
 
-        res.render("rsvps/attendees", { rsvps: result.value, session });
+        this.logger.info(`Loaded attendee list for event ${eventId}`);
+        res.render("rsvps/attendees", {
+            attendees: result.value,
+            eventId,
+            session,
+        });
     }
 }
 
