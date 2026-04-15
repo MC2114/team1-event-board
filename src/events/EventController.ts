@@ -11,6 +11,8 @@ export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
   handleCreateForm(req: Request, res: Response): Promise<void>;
   showEventDetail(req: Request, res: Response): Promise<void>;
+  showEditForm(req: Request, res: Response): Promise<void>;
+  handleEditForm(req: Request, res: Response): Promise<void>;
   listEventsFromQuery(req: Request, res: Response): Promise<void>,
 }
 
@@ -170,6 +172,106 @@ export class EventController implements IEventController {
     });
   }
 
+  async showEditForm(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+        res.redirect("/login");
+        return;
+    }
+
+    if (user.role === "user") {
+        res.status(403).render("partials/error", {
+            message: "Only organizers and admins can edit events.",
+            layout: false,
+        });
+        return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+    res.render("events/edit", {
+        pageError: null,
+        eventId,
+        formData: {},
+    });
+  }
+
+  async handleEditForm(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+        res.redirect("/login");
+        return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+    const rawCapacity = typeof req.body.capacity === "string" ? req.body.capacity : "";
+
+    const data: Partial<{
+        title: string;
+        description: string;
+        location: string;
+        category: string;
+        capacity: number | null;
+        startDatetime: Date;
+        endDatetime: Date;
+    }> = {};
+
+    if (req.body.title) data.title = req.body.title;
+    if (req.body.description) data.description = req.body.description;
+    if (req.body.location) data.location = req.body.location;
+    if (req.body.category) data.category = req.body.category;
+    if (req.body.capacity !== undefined) data.capacity = parseCapacity(rawCapacity);
+    if (req.body.startDatetime) data.startDatetime = parseDate(req.body.startDatetime);
+    if (req.body.endDatetime) data.endDatetime = parseDate(req.body.endDatetime);
+
+    const result = await this.eventService.updateEvent(
+        eventId,
+        user.userId,
+        user.role,
+        data
+    );
+
+    if (!result.ok) {
+        const error = result.value;
+
+        if (error.name === "NotAuthorizedError") {
+            res.status(403).render("partials/error", {
+                message: error.message,
+                layout: false,
+            });
+            return;
+        }
+
+        if (error.name === "EventNotFoundError") {
+            res.status(404).render("partials/error", {
+                message: error.message,
+                layout: false,
+            });
+            return;
+        }
+
+        if (error.name === "InvalidEventStateError") {
+            res.status(400).render("partials/error", {
+                message: error.message,
+                layout: false,
+            });
+            return;
+        }
+
+        res.status(400).render("events/edit", {
+            pageError: error.message,
+            eventId,
+            formData: { ...req.body, capacity: rawCapacity },
+        });
+        return;
+    }
+
+    res.redirect(`/events/${result.value.id}`);
+  }
   async listEventsFromQuery(req: Request, res: Response): Promise<void> {
     const user = getAuthenticatedUser(req.session);
 
