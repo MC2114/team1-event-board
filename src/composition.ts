@@ -32,7 +32,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const eventRepository = CreateInMemoryEventRepository();
   const rsvpRepository = CreateInMemoryRsvpRepository();
   const eventService = CreateEventService(eventRepository, rsvpRepository);
-  const eventController = CreateEventController(eventService, rsvpRepository);
+  const eventController = CreateEventController(
+    eventService,
+    rsvpRepository,
+    resolvedLogger,
+  );
   const rsvpService = CreateRsvpService(rsvpRepository, eventRepository, resolvedLogger);
   const rsvpController = CreateRsvpController(rsvpService, resolvedLogger);
 

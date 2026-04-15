@@ -1,11 +1,18 @@
 import type { Request, Response } from "express";
-import { getAuthenticatedUser, AppSessionStore } from "../session/AppSession";
+import { getAuthenticatedUser, recordPageView, type AppSessionStore } from "../session/AppSession";
 import type { IEventService } from "./EventService";
+import type { ILoggingService } from "../service/LoggingService";
 import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
-import { NotAuthorizedError, InvalidInputError } from "../errors";
 import type { EventError } from "./errors";
-import { isEventCategory, isEventTimeframe } from "./Event";
+import {
+  isEventCategory,
+  isEventTimeframe,
+  type EventCategory,
+  type EventTimeframe,
+  VALID_CATEGORIES,
+  VALID_TIMEFRAMES,
+} from "./Event";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -13,7 +20,8 @@ export interface IEventController {
   showEventDetail(req: Request, res: Response): Promise<void>;
   showEditForm(req: Request, res: Response): Promise<void>;
   handleEditForm(req: Request, res: Response): Promise<void>;
-  listEventsFromQuery(req: Request, res: Response): Promise<void>,
+  listEventsFromQuery(req: Request, res: Response): Promise<void>;
+  showEventsList(req: Request, res: Response): Promise<void>;
 }
 
 function parseCapacity(raw: string): number | null {
@@ -30,7 +38,16 @@ export class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
     private readonly rsvpRepository: IRSVPRepository,
-  ) { }
+    private readonly logger: ILoggingService,
+  ) {}
+
+  private mapErrorStatus(error: EventError): number {
+    if (error.name === "InvalidInputError") return 400;
+    if (error.name === "EventNotFoundError") return 404;
+    if (error.name === "NotAuthorizedError") return 403;
+    if (error.name === "InvalidEventStateError") return 400;
+    return 500;
+  }
 
   showCreateForm(req: Request, res: Response): void {
     const store = req.session as AppSessionStore;
@@ -333,11 +350,53 @@ export class EventController implements IEventController {
       pageError: null,
     });
   }
+
+  async showEventsList(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const browserSession = recordPageView(store);
+
+    const rawCategory =
+      typeof req.query.category === "string" ? req.query.category : undefined;
+    const rawTimeframe =
+      typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
+
+    const category = VALID_CATEGORIES.includes(rawCategory as EventCategory)
+      ? (rawCategory as EventCategory)
+      : undefined;
+    const timeframe = VALID_TIMEFRAMES.includes(rawTimeframe as EventTimeframe)
+      ? (rawTimeframe as EventTimeframe)
+      : undefined;
+
+    const result = await this.eventService.listEvents({ category, timeframe });
+
+    if (result.ok === false) {
+      const status = this.mapErrorStatus(result.value);
+      const log = status >= 500 ? this.logger.error : this.logger.warn;
+      log.call(this.logger, `Failed to list events: ${result.value.message}`);
+      res.status(status).render("events/list", {
+        session: browserSession,
+        events: [],
+        activeCategory: category ?? "",
+        activeTimeframe: timeframe ?? "all",
+        pageError: result.value.message,
+      });
+      return;
+    }
+
+    res.render("events/list", {
+      session: browserSession,
+      events: result.value,
+      activeCategory: category ?? "",
+      activeTimeframe: timeframe ?? "all",
+      pageError: null,
+    });
+  }
 }
 
 export function CreateEventController(
   eventService: IEventService,
   rsvpRepository: IRSVPRepository,
+  logger: ILoggingService,
 ): IEventController {
-  return new EventController(eventService, rsvpRepository);
+  return new EventController(eventService, rsvpRepository, logger);
 }
