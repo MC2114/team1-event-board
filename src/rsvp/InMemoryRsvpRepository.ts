@@ -2,7 +2,7 @@ import { Ok, Err, type Result } from "../lib/result";
 import { IRSVPRepository } from "./RsvpRepository";
 import type { RSVP, RSVPWithEvent } from "./RSVP";
 import { Event } from "../events/Event";
-import { UnexpectedError, type RSVPError } from "./errors";
+import { RSVPError, UnexpectedDependencyError } from "./errors";
 import { DEMO_EVENTS } from "../events/InMemoryEventRepository";
 
 export const DEMO_RSVPS: RSVP[] = [
@@ -55,18 +55,18 @@ class InMemoryRSVPRepository implements IRSVPRepository {
 
             return Ok(result);
         } catch {
-            return Err(UnexpectedError("Unable to read RSVPs."));
+            return Err(UnexpectedDependencyError("Unable to read RSVPs."));
         }
     }
 
-    async findByEvent(eventId: string): Promise<Result<RSVP[], RSVPError>> {
+    async findByEventId(eventId: string): Promise<Result<RSVP[], RSVPError>> {
         try {
             const result = this.rsvps
                 .filter((r) => r.eventId === eventId)
                 .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
             return Ok(result)
         } catch {
-            return Err(UnexpectedError("Unable to read RSVPs for event."))
+            return Err(UnexpectedDependencyError("Unable to read RSVPs for event."))
         }
     }
 
@@ -75,7 +75,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             const match = this.rsvps.find((r) => r.userId === userId && r.eventId === eventId)
             return Ok(match ?? null)
         } catch {
-            return Err(UnexpectedError("Unable to look up RSVP."))
+            return Err(UnexpectedDependencyError("Unable to look up RSVP."))
         }
     }
 
@@ -84,7 +84,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             const count = this.rsvps.filter((r) => r.eventId === eventId && r.status === "going").length;
             return Ok(count);
         } catch {
-            return Err(UnexpectedError("Unable to count attendees."))
+            return Err(UnexpectedDependencyError("Unable to count attendees."))
         }
     }
 
@@ -98,7 +98,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             }
             return Ok(rsvp)
         } catch {
-            return Err(UnexpectedError("Unable to save RSVP."))
+            return Err(UnexpectedDependencyError("Unable to save RSVP."))
         }
     }
 }

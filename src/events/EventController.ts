@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUser, AppSessionStore } from "../session/AppSession";
 import type { IEventService } from "./EventService";
-import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import { NotAuthorizedError, InvalidInputError } from "../errors";
 import type { EventError } from "./errors";
@@ -26,7 +26,7 @@ function parseDate(raw: string): Date {
 export class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
-    private readonly rsvpRepository: IRsvpRepository,
+    private readonly rsvpRepository: IRSVPRepository,
   ) { }
 
   showCreateForm(req: Request, res: Response): void {
@@ -225,7 +225,7 @@ export class EventController implements IEventController {
 
 export function CreateEventController(
   eventService: IEventService,
-  rsvpRepository: IRsvpRepository,
+  rsvpRepository: IRSVPRepository,
 ): IEventController {
   return new EventController(eventService, rsvpRepository);
 }

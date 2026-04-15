@@ -6,7 +6,7 @@ import type { Event, EventCategory, EventDetailView, EventFilters, EventTimefram
 import type { EventError } from "./errors";
 import { EventNotFoundError, InvalidInputError, NotAuthorizedError, UnexpectedDependencyError } from "./errors";
 import type { IEventRepository } from "./EventRepository";
-import type { IRsvpRepository } from "../rsvp/RsvpRepository";
+import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import { randomUUID } from "node:crypto";
 
 export interface IListEventsFilters {
@@ -56,7 +56,7 @@ class EventService implements IEventService {
 
     constructor(
         private readonly eventRepository: IEventRepository,
-        private readonly rsvpRepository: IRsvpRepository,
+        private readonly rsvpRepository: IRSVPRepository,
     ) { }
 
     async getEventById(
@@ -238,7 +238,7 @@ class EventService implements IEventService {
 
 export function CreateEventService(
     eventRepository: IEventRepository,
-    rsvpRepository: IRsvpRepository,
+    rsvpRepository: IRSVPRepository,
 ): IEventService {
     return new EventService(eventRepository, rsvpRepository);
 }
