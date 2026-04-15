@@ -56,7 +56,7 @@
             You are currently on the waitlist for this event.
           </p>
         <% } %>
-       
+
         <form method="post" action="/events/<%= event.id %>/rsvp">
           <% if (!userRSVP || userRSVP.status === "cancelled") { %>
             <button
@@ -80,15 +80,15 @@
             This event is currently at capacity. New RSVPs may be added to the waitlist.
           </p>
         <% } %>
+      <% } %>
 
-        <% if (user.role === "staff" || user.role === "admin") { %>
+      <% if (user.role === "staff" || user.role === "admin") { %>
         <p class="text-sm text-gray-600">
           Staff and admins cannot RSVP to events.
         </p>
       <% } %>
     </div>
 
-    <!-- This provides admin view based on UserRole -->
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
       <div class="flex gap-3">
         <a
