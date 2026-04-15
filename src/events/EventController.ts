@@ -97,7 +97,7 @@ export class EventController implements IEventController {
     if (!result.ok) {
       const error = result.value;
 
-      if (error instanceof NotAuthorizedError) {
+      if (error.name === "NotAuthorizedError") {
         res.status(403).render("partials/error", {
           message: error.message,
           layout: false,
@@ -105,7 +105,7 @@ export class EventController implements IEventController {
         return;
       }
 
-      if (error instanceof InvalidInputError) {
+      if (error.name === "InvalidInputError") {
         res.status(400).render("events/create", {
           pageError: error.message,
           formData: {
