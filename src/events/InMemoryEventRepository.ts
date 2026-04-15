@@ -1,116 +1,144 @@
-import { Err, Result, Ok } from "../lib/result";
-import { EventError, UnexpectedError } from "./errors";
-import { IEventRepository } from "./EventRepository";
-import type { Event } from "./EventTypes";
+import { Err, Ok, type Result } from "../lib/result";
+import { UnexpectedDependencyError, type EventError } from "./errors";
+import type { Event, EventStatus, EventFilters } from "./Event";
+import type { IEventRepository } from "./EventRepository";
 
-const DEMO_EVENTS: Event[] = [
+export const DEMO_EVENTS: Event[] = [
     {
-        id: "event-1",
-        title: "React Meetup",
-        description: "A meetup for React developers",
-        location: "Room 101",
-        category: "technology",
+        id: "event-published-1",
+        title: "Spring Picnic",
+        description: "Food, games, and fun on the lawn.",
+        location: "Campus Pond Lawn",
+        category: "social",
         status: "published",
-        capacity: 30,
-        startDatetime: new Date("2026-05-10T18:00:00"),
-        endDatetime: new Date("2026-05-10T20:00:00"),
+        capacity: 25,
+        startDatetime: new Date("2026-04-20T15:00:00"),
+        endDatetime: new Date("2026-04-20T17:00:00"),
         organizerId: "user-staff",
-        createdAt: new Date("2026-01-01"),
-        updatedAt: new Date("2026-01-01"),
+        createdAt: new Date(),
+        updatedAt: new Date(),
     },
     {
-        id: "event-2",
-        title: "Node Workshop",
-        description: "Hands-on Node.js workshop",
-        location: "Lab B",
-        category: "technology",
-        status: "draft",
-        capacity: 20,
-        startDatetime: new Date("2026-06-01T10:00:00"),
-        endDatetime: new Date("2026-06-01T14:00:00"),
-        organizerId: "user-staff",
-        createdAt: new Date("2026-01-02"),
-        updatedAt: new Date("2026-01-02"),
-    },
-    {
-        id: "event-3",
-        title: "Design Systems Talk",
-        description: "A talk on building design systems",
-        location: "Hall A",
-        category: "design",
-        status: "cancelled",
-        capacity: 50,
-        startDatetime: new Date("2026-03-15T09:00:00"),
-        endDatetime: new Date("2026-03-15T11:00:00"),
-        organizerId: "user-staff",
-        createdAt: new Date("2026-01-03"),
-        updatedAt: new Date("2026-01-03"),
-    },
-    {
-        id: "event-4",
-        title: "Admin Summit",
-        description: "Cross-org admin event",
-        location: "Main Hall",
-        category: "leadership",
+        id: "event-published-2",
+        title: "Graduation Celebration Draft",
+        description: "Come congratulate our Seniors.",
+        location: "Boston, MA",
+        category: "graduation",
         status: "published",
         capacity: 100,
-        startDatetime: new Date("2026-07-01T09:00:00"),
-        endDatetime: new Date("2026-07-01T17:00:00"),
+        startDatetime: new Date("2026-05-15T17:00:00"),
+        endDatetime: new Date("2026-05-15T20:00:00"),
         organizerId: "user-admin",
-        createdAt: new Date("2026-01-04"),
-        updatedAt: new Date("2026-01-04"),
+        createdAt: new Date("2026-04-02T09:00:00"),
+        updatedAt: new Date("2026-04-02T09:00:00"),
+    },
+    {
+        id: "event-draft-1",
+        title: "Draft Planning Meeting",
+        description: "This is still a draft event.",
+        location: "Student Union 201",
+        category: "networking",
+        status: "draft",
+        capacity: 10,
+        startDatetime: new Date("2026-04-24T18:00:00"),
+        endDatetime: new Date("2026-04-24T19:00:00"),
+        organizerId: "user-staff",
+        createdAt: new Date(),
+        updatedAt: new Date(),
     },
 ];
 
-class InMemoryEventRepository implements IEventRepository {
-    constructor(private readonly events: Event[]) { }
+export class InMemoryEventRepository implements IEventRepository {
+    constructor(private readonly events: Event[]) {}
 
-    async findById(eventId: string): Promise<Result<Event | undefined, EventError>> {
+    async findById(eventId: string): Promise<Result<Event | null, EventError>> {
         try {
-            const match = this.events.find((e) => e.id === eventId);
+            const match = this.events.find((event) => event.id === eventId) ?? null;
             return Ok(match);
         } catch {
-            return Err(UnexpectedError("Unable to look up event."))
-        }
-    }
-
-    async findByOrganizer(organizerId: string): Promise<Result<Event[], EventError>> {
-        try {
-            const result = this.events
-                .filter((e) => e.organizerId === organizerId)
-                .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-            return Ok(result);
-        } catch {
-            return Err(UnexpectedError("Unable to fetch events for organizers."))
+            return Err(UnexpectedDependencyError("Unable to read the event."));
         }
     }
 
     async findAll(): Promise<Result<Event[], EventError>> {
         try {
-            const result = [...this.events].sort(
-                (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-            );
-            return Ok(result);
+            return Ok(this.events);
         } catch {
-            return Err(UnexpectedError("Unable to fetch all events."))
+            return Err(UnexpectedDependencyError("Unable to read events."));
         }
     }
 
-    async save(event: Event): Promise<Result<Event, EventError>> {
+    async findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>> {
         try {
-            const index = this.events.findIndex((e) => e.id === event.id);
-            if (index !== -1) {
-                this.events[index] = event;
-            } else {
-                this.events.push(event);
+            const now = new Date();
+            let results: Event[] = this.events.filter((e) => e.status === "published" && e.startDatetime > now);
+
+            if (filters?.category) {
+                results = results.filter((e) => e.category === filters.category);
             }
+
+            if (filters?.timeframe && filters.timeframe !== "all") {
+                const timeframe = filters.timeframe;
+                const cutoffDate = new Date(now);
+
+                if (timeframe === "this_week") {
+                    cutoffDate.setDate(now.getDate() + 7);
+                } else if (timeframe === "this_month") {
+                    cutoffDate.setMonth(now.getMonth() + 1);
+                } else if (timeframe === "this_year") {
+                    cutoffDate.setFullYear(now.getFullYear() + 1);
+                }
+
+                results = results.filter((e) => e.startDatetime <= cutoffDate);
+            }
+
+            return Ok(results);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find the events."));
+        }
+    }
+
+    async create(event: Event): Promise<Result<Event, EventError>> {
+        try {
+            this.events.push(event);
             return Ok(event);
         } catch {
-            return Err(UnexpectedError("Unable to save event."))
+            return Err(UnexpectedDependencyError("Unable to create the event."));
+        }
+    }
+
+    async update(event: Event): Promise<Result<Event | null, EventError>> {
+        try {
+            const index = this.events.findIndex((existing) => existing.id === event.id);
+            if (index === -1) {
+                return Ok(null);
+            }
+            const updatedEvent: Event = {
+                ...event,
+                updatedAt: new Date(),
+            };
+            this.events[index] = updatedEvent;
+            return Ok(updatedEvent);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to update the event."));
+        }
+    }
+
+    async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>> {
+        try {
+            const event = this.events.find((e) => e.id === eventId);
+            if (!event) {
+                return Ok(null);
+            }
+            event.status = status;
+            event.updatedAt = new Date();
+            return Ok(event);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to update the event status."));
         }
     }
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
-    return new InMemoryEventRepository([...DEMO_EVENTS])
+    return new InMemoryEventRepository([...DEMO_EVENTS]);
 }

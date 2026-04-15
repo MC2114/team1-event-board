@@ -1,31 +1,37 @@
-export type EventError =
-    | { name: "EventNotFound"; message: string }
-    | { name: "NotAuthorized"; message: string }
-    | { name: "InvalidEventState"; message: string }
-    | { name: "InvalidInput"; message: string }
-    | { name: "UnexpectedError"; message: string }
+export type EventError = 
+    | { name: "EventNotFoundError"; message: string }
+    | { name: "NotAuthorizedError"; message: string }
+    | { name: "InvalidEventStateError"; message: string }
+    | { name: "InvalidInputError"; message: string }
+    | { name: "InvalidRSVPError"; message: string }
+    | { name: "UnexpectedDependencyError"; message: string };
 
-export const EventNotFound = (message: string): EventError => ({
-    name: "EventNotFound",
+export const EventNotFoundError = (message: string): EventError => ({
+    name: "EventNotFoundError",
     message,
-})
+});
 
-export const NotAuthorized = (message: string): EventError => ({
-    name: "NotAuthorized",
+export const NotAuthorizedError = (message: string): EventError => ({
+    name: "NotAuthorizedError",
     message,
-})
+});
 
-export const InvalidEventState = (message: string): EventError => ({
-    name: "InvalidEventState",
+export const InvalidEventStateError = (message: string): EventError => ({
+    name: "InvalidEventStateError",
     message,
-})
+});
 
-export const InvalidInput = (message: string): EventError => ({
-    name: "InvalidInput",
+export const InvalidInputError = (message: string): EventError => ({
+    name: "InvalidInputError",
     message,
-})
+});
 
-export const UnexpectedError = (message: string): EventError => ({
-    name: "UnexpectedError",
+export const InvalidRSVPError = (message: string): EventError => ({
+    name: "InvalidRSVPError",
     message,
-})
+});
+
+export const UnexpectedDependencyError = (message: string): EventError => ({
+    name: "UnexpectedDependencyError",
+    message,
+});
