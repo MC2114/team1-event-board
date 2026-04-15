@@ -329,7 +329,7 @@ class ExpressApp implements IApp {
         await this.eventController.showEditForm(req, res);
       }),
     );
-  
+
     this.app.post(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
@@ -338,6 +338,19 @@ class ExpressApp implements IApp {
         await this.eventController.handleEditForm(req, res);
       }),
     );
+
+    // -- Organizer Dashboard routes --
+    this.app.get(
+      "/events/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["admin", "staff"], "Only organizers can view the dashboard.")) {
+          return;
+        }
+
+        this.logger.info("GET /events/dashboard");
+        await this.eventController.showOrganizerDashboard(req, res);
+      })
+    )
 
     // ── Error handler ────────────────────────────────────────────────
 
