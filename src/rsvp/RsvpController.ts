@@ -1,4 +1,4 @@
-import { type Response } from "express";
+import type { Response } from "express";
 import type { IRsvpService } from "./RsvpService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
@@ -57,7 +57,7 @@ class RsvpController implements IRsvpController {
             return;
         }
 
-        res.render("rsvps/dashboard", { rsvp: result.value, session });
+        res.render("rsvps/dashboard", { rsvps: result.value, session });
     }
 
     async toggleRsvp(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
