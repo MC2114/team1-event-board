@@ -22,14 +22,18 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const passwordHasher = CreatePasswordHasher();
   const authService = CreateAuthService(authUsers, passwordHasher);
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
-  const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
+  const authController = CreateAuthController(
+    authService,
+    adminUserService,
+    resolvedLogger,
+  );
 
   // Event & RSVP wiring
   const eventRepository = CreateInMemoryEventRepository();
   const rsvpRepository = CreateInMemoryRsvpRepository();
   const eventService = CreateEventService(eventRepository, rsvpRepository);
   const eventController = CreateEventController(eventService, rsvpRepository);
-  const rsvpService = CreateRsvpService(rsvpRepository, resolvedLogger);
+  const rsvpService = CreateRsvpService(rsvpRepository, eventRepository, resolvedLogger);
   const rsvpController = CreateRsvpController(rsvpService, resolvedLogger);
 
   return CreateApp(authController, eventController, rsvpController, resolvedLogger);

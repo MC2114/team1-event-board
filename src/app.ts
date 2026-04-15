@@ -3,7 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import { EventController, IEventController } from "./events/EventController";
+import { IEventController } from "./events/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -272,6 +272,16 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info("POST /events/new");
         await this.eventController.handleCreateForm(req, res);
+      }),
+    );
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.listEventsFromQuery(req, res);
       }),
     );
 

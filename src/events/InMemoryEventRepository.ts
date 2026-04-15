@@ -48,8 +48,8 @@ export const DEMO_EVENTS: Event[] = [
     },
 ];
 
-class InMemoryEventRepository implements IEventRepository {
-    constructor(private readonly events: Event[]) { }
+export class InMemoryEventRepository implements IEventRepository {
+    constructor(private readonly events: Event[]) {}
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
         try {
