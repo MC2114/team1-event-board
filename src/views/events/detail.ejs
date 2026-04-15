@@ -23,11 +23,72 @@
       </p>
     </div>
 
-     <div class="pt-4 border-t border-gray-200">
-      <p class="text-sm text-blue-600 font-medium">RSVP controls coming in a later sprint.</p>
+    <div class="pt-4 border-t border-gray-200 space-y-3">
+      <p class="text-sm font-medium text-gray-800">Attendance</p>
+
+      <p class="text-sm text-gray-600">
+        Current attendance:
+        <strong><%= attendeeCount %></strong>
+        <% if (event.capacity !== null) { %>
+          / <strong><%= event.capacity %></strong>
+        <% } else { %>
+          / <strong>No limit</strong>
+        <% } %>
+      </p>
+
+      <% if (typeof rsvpMessage !== "undefined" && rsvpMessage) { %>
+        <div class="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+          <%= rsvpMessage %>
+        </div>
+      <% } %>
+
+      <% if (user.role === "user") { %>
+        <% if (!userRSVP || userRSVP.status === "cancelled") { %>
+          <p class="text-sm text-gray-600">
+            You are not RSVP'd for this event.
+          </p>
+        <% } else if (userRSVP.status === "going") { %>
+          <p class="text-sm text-green-700 font-medium">
+            You are currently RSVP'd for this event.
+          </p>
+        <% } else if (userRSVP.status === "waitlisted") { %>
+          <p class="text-sm text-yellow-700 font-medium">
+            You are currently on the waitlist for this event.
+          </p>
+        <% } %>
+
+        <form method="post" action="/events/<%= event.id %>/rsvp">
+          <% if (!userRSVP || userRSVP.status === "cancelled") { %>
+            <button
+              type="submit"
+              class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+            >
+              RSVP
+            </button>
+          <% } else { %>
+            <button
+              type="submit"
+              class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+            >
+              Cancel RSVP
+            </button>
+          <% } %>
+        </form>
+
+        <% if (event.capacity !== null && attendeeCount >= event.capacity) { %>
+          <p class="text-xs text-gray-500">
+            This event is currently at capacity. New RSVPs may be added to the waitlist.
+          </p>
+        <% } %>
+      <% } %>
+
+      <% if (user.role === "staff" || user.role === "admin") { %>
+        <p class="text-sm text-gray-600">
+          Staff and admins cannot RSVP to events.
+        </p>
+      <% } %>
     </div>
-    
-    <!-- This provides admin view based on UserRole -->
+
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
       <div class="flex gap-3">
         <a

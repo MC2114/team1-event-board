@@ -5,14 +5,7 @@ import type { ILoggingService } from "../service/LoggingService";
 import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import type { EventError } from "./errors";
-import {
-  isEventCategory,
-  isEventTimeframe,
-  type EventCategory,
-  type EventTimeframe,
-  VALID_CATEGORIES,
-  VALID_TIMEFRAMES,
-} from "./Event";
+import { isEventCategory, isEventTimeframe } from "./Event";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -20,7 +13,6 @@ export interface IEventController {
   showEventDetail(req: Request, res: Response): Promise<void>;
   showEditForm(req: Request, res: Response): Promise<void>;
   handleEditForm(req: Request, res: Response): Promise<void>;
-  listEventsFromQuery(req: Request, res: Response): Promise<void>;
   showEventsList(req: Request, res: Response): Promise<void>;
 }
 
@@ -66,7 +58,10 @@ export class EventController implements IEventController {
       return;
     }
 
+    const browserSession = recordPageView(store);
+
     res.render("events/create", {
+      session: browserSession,
       pageError: null,
       formData: {},
     });
@@ -124,6 +119,7 @@ export class EventController implements IEventController {
 
       if (error.name === "InvalidInputError") {
         res.status(400).render("events/create", {
+          session: recordPageView(store),
           pageError: error.message,
           formData: {
             ...req.body,
@@ -157,6 +153,7 @@ export class EventController implements IEventController {
       return;
     }
 
+    const browserSession = recordPageView(store);
     const eventId = req.params.eventId as string;
 
     const detailResult = await this.eventService.getEventDetailView(
@@ -174,18 +171,22 @@ export class EventController implements IEventController {
     }
 
     const userRSVPResult = await this.rsvpRepository.findByUserAndEvent(
-      eventId,
-      user.userId
+      user.userId,
+      eventId
     );
 
     const userRSVP = userRSVPResult.ok ? userRSVPResult.value : null;
 
+    const rsvpMessage = typeof req.query.rsvpMessage === "string" ? req.query.rsvpMessage : null;
+
     res.render("events/detail", {
+      session: browserSession,
       title: detailResult.value.event.title,
       event: detailResult.value.event,
       attendeeCount: detailResult.value.attendeeCount,
       user,
       userRSVP,
+      rsvpMessage,
     });
   }
 
@@ -206,9 +207,11 @@ export class EventController implements IEventController {
         return;
     }
 
+    const browserSession = recordPageView(store);
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     res.render("events/edit", {
+        session: browserSession,
         pageError: null,
         eventId,
         formData: {},
@@ -280,6 +283,7 @@ export class EventController implements IEventController {
         }
 
         res.status(400).render("events/edit", {
+            session: recordPageView(store),
             pageError: error.message,
             eventId,
             formData: { ...req.body, capacity: rawCapacity },
@@ -289,18 +293,25 @@ export class EventController implements IEventController {
 
     res.redirect(`/events/${result.value.id}`);
   }
-  async listEventsFromQuery(req: Request, res: Response): Promise<void> {
-    const user = getAuthenticatedUser(req.session);
+
+  async showEventsList(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
 
     if (!user) {
       res.redirect("/login");
       return;
     }
 
-    const rawCategory = this.getStringQuery(req, "category");
-    const rawTimeframe = this.getStringQuery(req, "timeframe");
-    const searchQuery = this.getStringQuery(req, "searchQuery");
+    const browserSession = recordPageView(store);
+    const isHtmxRequest = req.get("HX-Request") === "true";
 
+    const rawCategory =
+      typeof req.query.category === "string" ? req.query.category : undefined;
+    const rawTimeframe =
+      typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
+    const searchQuery =
+      typeof req.query.searchQuery === "string" ? req.query.searchQuery : undefined;
 
     const category = rawCategory && isEventCategory(rawCategory)
       ? rawCategory
@@ -315,23 +326,27 @@ export class EventController implements IEventController {
       timeframe,
       searchQuery,
     });
-    const isHtmxRequest = req.get("HX-Request") === "true";
 
     if (result.ok === false) {
-      const error = result.value as EventError;
-      const status = error.name === "InvalidInputError" ? 400 : 500;
+      const status = this.mapErrorStatus(result.value);
+      const log = status >= 500 ? this.logger.error : this.logger.warn;
+      log.call(this.logger, `Failed to list events: ${result.value.message}`);
+
       if (isHtmxRequest) {
         res.status(status).render("partials/error", {
-          message: error.message,
+          message: result.value.message,
           layout: false,
         });
         return;
       }
-      res.status(status).render("events/index", {
-        session: req.session,
+
+      res.status(status).render("events/list", {
+        session: browserSession,
         events: [],
+        activeCategory: category ?? "",
+        activeTimeframe: timeframe ?? "all",
         searchQuery: searchQuery ?? "",
-        pageError: error.message,
+        pageError: result.value.message,
       });
       return;
     }
@@ -339,46 +354,7 @@ export class EventController implements IEventController {
     if (isHtmxRequest) {
       res.render("events/results", {
         events: result.value,
-      });
-      return;
-    }
-
-    res.render("events/index", {
-      session: req.session,
-      events: result.value,
-      searchQuery: searchQuery ?? "",
-      pageError: null,
-    });
-  }
-
-  async showEventsList(req: Request, res: Response): Promise<void> {
-    const store = req.session as AppSessionStore;
-    const browserSession = recordPageView(store);
-
-    const rawCategory =
-      typeof req.query.category === "string" ? req.query.category : undefined;
-    const rawTimeframe =
-      typeof req.query.timeframe === "string" ? req.query.timeframe : undefined;
-
-    const category = VALID_CATEGORIES.includes(rawCategory as EventCategory)
-      ? (rawCategory as EventCategory)
-      : undefined;
-    const timeframe = VALID_TIMEFRAMES.includes(rawTimeframe as EventTimeframe)
-      ? (rawTimeframe as EventTimeframe)
-      : undefined;
-
-    const result = await this.eventService.listEvents({ category, timeframe });
-
-    if (result.ok === false) {
-      const status = this.mapErrorStatus(result.value);
-      const log = status >= 500 ? this.logger.error : this.logger.warn;
-      log.call(this.logger, `Failed to list events: ${result.value.message}`);
-      res.status(status).render("events/list", {
-        session: browserSession,
-        events: [],
-        activeCategory: category ?? "",
-        activeTimeframe: timeframe ?? "all",
-        pageError: result.value.message,
+        layout: false,
       });
       return;
     }
@@ -388,6 +364,7 @@ export class EventController implements IEventController {
       events: result.value,
       activeCategory: category ?? "",
       activeTimeframe: timeframe ?? "all",
+      searchQuery: searchQuery ?? "",
       pageError: null,
     });
   }
