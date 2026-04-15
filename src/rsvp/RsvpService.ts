@@ -42,7 +42,7 @@ class RsvpService implements IRsvpService {
         const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
-            return Err(eventResult.value);
+            return Err(InvalidRSVPError("Unable to verify event."));
         }
 
         const event = eventResult.value;
@@ -75,7 +75,7 @@ class RsvpService implements IRsvpService {
         const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
-            return Err(eventResult.value);
+            return Err(InvalidRSVPError("Unable to verify event."))
         }
 
         const event = eventResult.value;
@@ -96,7 +96,7 @@ class RsvpService implements IRsvpService {
 
         const existing = existingResult.value;
 
-        if (existing && (existing.status === "going" || existing.status === "waitlisted")) {
+        if (existing !== null && (existing.status === "going" || existing.status === "waitlisted")) {
             const updated: RSVP = {
                 id: existing.id,
                 eventId: existing.eventId,
@@ -124,7 +124,8 @@ class RsvpService implements IRsvpService {
         const isFull = event.capacity !== null && countResult.value >= event.capacity;
         const newStatus = isFull ? "waitlisted" : "going";
 
-        const rsvp: RSVP = existing
+        const rsvp: RSVP = 
+            existing !== null
             ? {
                 id: existing.id,
                 eventId: existing.eventId,
@@ -151,10 +152,10 @@ class RsvpService implements IRsvpService {
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>> {
-        const eventResult = await this.rsvpRepo.findByEventId(eventId);
+        const eventResult = await this.eventRepo.findById(eventId); 
 
         if (eventResult.ok === false) {
-            return Err(eventResult.value);
+            return Err(InvalidRSVPError("Unable to verify event."));
         }
 
         const event = eventResult.value;
