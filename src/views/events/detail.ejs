@@ -36,6 +36,12 @@
         >
           Edit Event
         </a>
+        <a
+          href="/events/<%= event.id %>/attendees"
+          class="px-4 py-2 rounded bg-slate-700 text-white"
+        >
+          View Attendees
+        </a>
         <form method="post" action="/events/<%= event.id %>/status">
           <button
             type="submit"
