@@ -307,15 +307,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.get(
-      "/events/:eventId/rsvp",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-      }),
-    );
-
     // -- Event editing routes --
     this.app.get(
       "/events/:id/edit",
