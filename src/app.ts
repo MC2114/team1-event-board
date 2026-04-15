@@ -257,6 +257,7 @@ class ExpressApp implements IApp {
     );
 
     // -- Event routes --
+
     this.app.get(
       "/events/new",
       asyncHandler(async (req, res) => {
