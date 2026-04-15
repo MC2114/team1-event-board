@@ -7,13 +7,19 @@ import { RSVP, RSVPWithEvent } from "./RSVP";
 import { IEventRepository } from "../events/EventRepository";
 import { EventError } from "../events/errors";
 
+export interface IAttendeeGroups {
+    going: RSVP[];
+    waitlisted: RSVP[];
+    cancelled: RSVP[];
+}
+
 export interface IRsvpService {
     getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
     getRSVPsByEvent(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP[], RSVPError | EventError>>;
+    ): Promise<Result<IAttendeeGroups, RSVPError | EventError>>;
     toggleRSVP(
         eventId: string,
         actingUserId: string,
