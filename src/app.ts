@@ -241,16 +241,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.get(
-      "/events",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        await this.eventController.showEventsList(req, res);
-      }),
-    )
-
     // ── Authenticated home page ──────────────────────────────────────
 
     this.app.get(
@@ -267,6 +257,7 @@ class ExpressApp implements IApp {
     );
 
     // -- Event routes --
+
     this.app.get(
       "/events/new",
       asyncHandler(async (req, res) => {
@@ -282,6 +273,26 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info("POST /events/new");
         await this.eventController.handleCreateForm(req, res);
+      }),
+    );
+
+    // -- Event editing routes --
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`GET /events/${req.params.id}/edit`);
+        await this.eventController.showEditForm(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`POST /events/${req.params.id}/edit`);
+        await this.eventController.handleEditForm(req, res);
       }),
     );
 
@@ -323,25 +334,6 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
-      }),
-    );
-
-    // -- Event editing routes --
-    this.app.get(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`GET /events/${req.params.id}/edit`);
-        await this.eventController.showEditForm(req, res);
-      }),
-    );
-  
-    this.app.post(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`POST /events/${req.params.id}/edit`);
-        await this.eventController.handleEditForm(req, res);
       }),
     );
 
