@@ -241,16 +241,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.get(
-      "/events",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        await this.eventController.showEventsList(req, res);
-      }),
-    )
-
     // ── Authenticated home page ──────────────────────────────────────
 
     this.app.get(
@@ -291,7 +281,7 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
-        await this.eventController.listEventsFromQuery(req, res);
+        await this.eventController.showEventsList(req, res);
       }),
     );
 
@@ -314,15 +304,6 @@ class ExpressApp implements IApp {
         const browserSession = touchAppSession(sessionStore(req));
         const eventId = req.params.eventId as string;
         await this.rsvpController.toggleRsvp(res, eventId, browserSession);
-      }),
-    );
-
-    this.app.get(
-      "/events/:eventId/rsvp",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
       }),
     );
 
