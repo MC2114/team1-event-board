@@ -247,18 +247,21 @@ class EventService implements IEventService {
             return Err(NotAuthorizedError("You are not authorized to update the event status."));
         }
 
-        if (newStatus === "published" && event.status !== "draft") {
+        if (newStatus !== "published" && newStatus !== "cancelled") {
             return Err(
                 InvalidEventStateError(
-                    `Cannot publish an event with status "${event.status}". Only drafts can be published.`,
+                    `Invalid target status "${newStatus}". Only "published" or "cancelled" are allowed.`,
                 ),
             );
         }
 
-        if (newStatus === "cancelled" && event.status !== "published") {
+        const isDraftToPublished = event.status === "draft" && newStatus === "published";
+        const isPublishedToCancelled = event.status === "published" && newStatus === "cancelled";
+
+        if (!isDraftToPublished && !isPublishedToCancelled) {
             return Err(
                 InvalidEventStateError(
-                    `Cannot cancel an event with status "${event.status}". Only published events can be cancelled.`,
+                    `Invalid status transition from "${event.status}" to "${newStatus}".`,
                 ),
             );
         }
