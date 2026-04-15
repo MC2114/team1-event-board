@@ -3,7 +3,20 @@
   <p class="text-slate-500">Grouped by RSVP status for this event.</p>
 </section>
 
-<% const groups = attendees ?? { going: [], waitlisted: [], cancelled: [] }; %>
+<%
+  const attendeeSource = attendees ?? rsvps ?? [];
+  const groups = Array.isArray(attendeeSource)
+    ? {
+        going: attendeeSource.filter((person) => person.status === "going"),
+        waitlisted: attendeeSource.filter((person) => person.status === "waitlisted"),
+        cancelled: attendeeSource.filter((person) => person.status === "cancelled"),
+      }
+    : {
+        going: attendeeSource.going ?? [],
+        waitlisted: attendeeSource.waitlisted ?? [],
+        cancelled: attendeeSource.cancelled ?? [],
+      };
+%>
 
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <h2 class="text-xl font-semibold text-slate-900 mb-3">Going</h2>
