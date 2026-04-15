@@ -281,7 +281,7 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
-        await this.eventController.listEventsFromQuery(req, res);
+        await this.eventController.showEventsList(req, res);
       }),
     );
 
