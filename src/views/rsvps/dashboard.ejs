@@ -1,0 +1,28 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+    <h1 class="text-3xl font-bold text-slate-900 mb-3">My RSVPs</h1>
+    <p class="text-slate-500">
+        View and manage all the events you have signed up for!
+    </p>
+</section>
+
+<% if (pageError) { %>
+    <%- include("partials/error", { message: pageError }) %>
+        <% } %>
+
+            <% const upcoming=rsvps.filter(r=>
+                r.event.startDatetime >= new Date() &&
+                r.event.status !== "cancelled" &&
+                (r.status === "going" || r.status === "waitlisted")
+                ).sort((a, b) => a.event.startDatetime - b.event.startDatetime);
+
+                const pastOrCancelled = rsvps.filter(r =>
+                r.event.startDatetime < new Date() || r.event.status==="cancelled" || r.status==="cancelled" ).sort((a,
+                    b)=> b.event.startDatetime - a.event.startDatetime);
+                    %>
+
+                    <%- include("partials/rsvp-section", { title: "Upcoming Events" ,
+                        emptyMessage: "You have no upcoming RSVPs." , items: upcoming, showCancel: true, session }) %>
+
+                        <%- include("partials/rsvp-section", { title: "Past & Cancelled" ,
+                            emptyMessage: "No past or cancelled RSVPs." , items: pastOrCancelled, showCancel: false,
+                            session }) %>
