@@ -321,11 +321,15 @@ export class EventController implements IEventController {
       ? rawTimeframe
       : undefined;
 
-    const result = await this.eventService.listEvents({
-      category,
-      timeframe,
-      searchQuery,
-    });
+    const result = await this.eventService.listEvents(
+      user.userId,
+      user.role,
+      {
+        category,
+        timeframe,
+        searchQuery,
+      },
+    );
 
     if (result.ok === false) {
       const status = this.mapErrorStatus(result.value);
