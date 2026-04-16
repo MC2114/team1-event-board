@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import type { IRsvpService } from "./RsvpService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
@@ -13,6 +13,7 @@ export interface IRsvpController {
         session: IAppBrowserSession,
     ): Promise<void>;
     showEventAttendees(
+        req: Request,
         res: Response,
         eventId: string,
         session: IAppBrowserSession,
@@ -85,8 +86,14 @@ class RsvpController implements IRsvpController {
         res.redirect(`/events/${eventId}?rsvpMessage=${encodeURIComponent(rsvpMessage)}`);
     }
 
-    async showEventAttendees(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
+    async showEventAttendees(
+        req: Request,
+        res: Response,
+        eventId: string,
+        session: IAppBrowserSession,
+    ): Promise<void> {
         const { userId: userId, role } = session.authenticatedUser!;
+        const isHtmxRequest = req.get("HX-Request") === "true";
 
         const result = await this.service.getRSVPsByEvent(eventId, userId, role);
 
@@ -102,6 +109,7 @@ class RsvpController implements IRsvpController {
             attendees: result.value,
             eventId,
             session,
+            layout: isHtmxRequest ? false : undefined,
         });
     }
 }
