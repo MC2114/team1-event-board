@@ -11,6 +11,15 @@
       <strong class="text-slate-700"><%= session.authenticatedUser.role %></strong>).
     </p>
   <% } %>
+
+  <div class="mt-4 flex gap-2">
+  <a
+    href="/events"
+    class="inline-flex items-center px-3 py-1.5 text-sm font-medium border border-slate-200 bg-white text-slate-700 rounded-full hover:bg-slate-50 no-underline"
+  >
+    Events
+  </a>
+</div>
 </section>
 
 <% if (pageError) { %>
