@@ -20,7 +20,7 @@ export const DEMO_EVENTS: Event[] = [
     },
     {
         id: "event-published-2",
-        title: "Graduation Celebration Draft",
+        title: "Graduation Celebration",
         description: "Come congratulate our Seniors.",
         location: "Boston, MA",
         category: "graduation",

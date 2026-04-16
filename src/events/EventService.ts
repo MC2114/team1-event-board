@@ -76,7 +76,11 @@ export interface IEventService {
             endDatetime: Date;
         }>
     ): Promise<Result<Event, EventError>>;
-    listEvents(filters?: IListEventsFilters): Promise<Result<Event[], EventError>>;
+    listEvents(
+        actingUserId: string,
+        actingUserRole: UserRole,
+        filters?: IListEventsFilters,
+    ): Promise<Result<Event[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -391,7 +395,11 @@ class EventService implements IEventService {
         return Ok(updateResult.value);
     }
 
-    async listEvents(filters: IListEventsFilters = {}): Promise<Result<Event[], EventError>> {
+    async listEvents(
+        actingUserId: string,
+        actingUserRole: UserRole,
+        filters: IListEventsFilters = {},
+    ): Promise<Result<Event[], EventError>> {
         const normalizedCategory = filters.category?.trim() || undefined;
         const normalizedTimeframe = filters.timeframe?.trim() || undefined;
         let categoryFilter: EventCategory | undefined;
@@ -411,29 +419,54 @@ class EventService implements IEventService {
             timeframeFilter = normalizedTimeframe;
         }
 
-        const repositoryFilters: EventFilters = {};
+        const allEventsResult = await this.eventRepository.findAll();
+
+        if (!allEventsResult.ok) {
+            return allEventsResult;
+        }
+
+        const now = new Date();
+        let visibleEvents = allEventsResult.value;
+
+        if (actingUserRole === "user") {
+            visibleEvents = visibleEvents.filter(
+                (event) =>
+                    event.status === "published" &&
+                    event.startDatetime > now,
+            );
+        } else if (actingUserRole === "staff") {
+            visibleEvents = visibleEvents.filter(
+                (event) =>
+                    (event.status === "published" && event.startDatetime > now) ||
+                    (event.status === "draft" && event.organizerId === actingUserId),
+            );
+        }
+        // admin sees all events, including drafts
 
         if (categoryFilter !== undefined) {
-            repositoryFilters.category = categoryFilter;
-        }
-        if (timeframeFilter !== undefined) {
-            repositoryFilters.timeframe = timeframeFilter;
+            visibleEvents = visibleEvents.filter((event) => event.category === categoryFilter);
         }
 
-        const repositoryResult = await this.eventRepository.findPublishedUpcoming(
-            Object.keys(repositoryFilters).length > 0 ? repositoryFilters : undefined,
-        );
+        if (timeframeFilter !== undefined && timeframeFilter !== "all") {
+            const cutoffDate = new Date(now);
 
-        if (repositoryResult.ok === false) {
-            return repositoryResult;
+            if (timeframeFilter === "this_week") {
+                cutoffDate.setDate(now.getDate() + 7);
+            } else if (timeframeFilter === "this_month") {
+                cutoffDate.setMonth(now.getMonth() + 1);
+            } else if (timeframeFilter === "this_year") {
+                cutoffDate.setFullYear(now.getFullYear() + 1);
+            }
+
+            visibleEvents = visibleEvents.filter((event) => event.startDatetime <= cutoffDate);
         }
 
         const searchQuery = (filters.searchQuery ?? "").trim().toLowerCase();
         if (searchQuery.length === 0) {
-            return Ok(repositoryResult.value);
+            return Ok(visibleEvents);
         }
 
-        const filteredEvents = repositoryResult.value.filter((event) =>
+        const filteredEvents = visibleEvents.filter((event) =>
             EventService.includesSearchMatch(event, searchQuery),
         );
 
