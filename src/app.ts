@@ -401,11 +401,18 @@ class ExpressApp implements IApp {
     this.app.get(
       "/rsvps",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const user = getAuthenticatedUser(sessionStore(req));
+
+        if (!user || user.role !== "user") {
+          this.logger.warn("Blocked non-member access to RSVP dashboard");
+          res.status(403).render("partials/error", {
+            message: "Only members can access their RSVP dashboard.",
+            layout: false,
+          });
           return;
         }
-
-        this.logger.info("GET /rsvps");
 
         const browserSession = touchAppSession(sessionStore(req));
 
