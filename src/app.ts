@@ -215,6 +215,19 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/events/manage",
+      asyncHandler(async (req, res) => {
+        if (
+          !this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")
+        ) {
+          return;
+        }
+        this.logger.info("GET /events/manage");
+        await this.eventController.showManage(req, res);
+      }),
+    );
+
     this.app.post(
       "/admin/users/:id/delete",
       asyncHandler(async (req, res) => {
@@ -282,17 +295,8 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
+        this.logger.info("GET /events");
         await this.eventController.showEventsList(req, res);
-      }),
-    );
-
-    this.app.get(
-      "/events/:eventId",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        await this.eventController.showEventDetail(req, res);
       }),
     );
 
@@ -320,7 +324,33 @@ class ExpressApp implements IApp {
         await this.rsvpController.showEventAttendees(res, eventId, browserSession);
       }),
     );
-    // -- Event editing routes --
+
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (
+          !this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")
+        ) {
+          return;
+        }
+        this.logger.info(`POST /events/${req.params.id}/publish`);
+        await this.eventController.publishEvent(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/cancel",
+      asyncHandler(async (req, res) => {
+        if (
+          !this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")
+        ) {
+          return;
+        }
+        this.logger.info(`POST /events/${req.params.id}/cancel`);
+        await this.eventController.cancelEvent(req, res);
+      }),
+    );
+
     this.app.get(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
@@ -329,13 +359,23 @@ class ExpressApp implements IApp {
         await this.eventController.showEditForm(req, res);
       }),
     );
-  
+
     this.app.post(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info(`POST /events/${req.params.id}/edit`);
         await this.eventController.handleEditForm(req, res);
+      }),
+    );
+
+    this.app.get(
+      "/events/:eventId",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.showEventDetail(req, res);
       }),
     );
 
