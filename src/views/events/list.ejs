@@ -31,7 +31,7 @@
       <label for="searchQuery" class="text-sm font-medium text-slate-700">
         Search
       </label>
-      <input id="searchQuery" name="searchQuery" type="search" value="<%= searchQuery ?? '' %>"
+      <input id="searchQuery" name="searchQuery" type="search" maxlength="100" value="<%= searchQuery ?? '' %>"
         placeholder="Title, description, or location"
         hx-get="/events"
         hx-trigger="input changed delay:400ms, search"
