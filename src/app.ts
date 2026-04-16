@@ -215,19 +215,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.get(
-      "/events/manage",
-      asyncHandler(async (req, res) => {
-        if (
-          !this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")
-        ) {
-          return;
-        }
-        this.logger.info("GET /events/manage");
-        await this.eventController.showManage(req, res);
-      }),
-    );
-
     this.app.post(
       "/admin/users/:id/delete",
       asyncHandler(async (req, res) => {
@@ -270,24 +257,7 @@ class ExpressApp implements IApp {
     );
 
     // -- Event routes --
-
-    this.app.get(
-      "/events/new",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info("GET /events/new");
-        await this.eventController.showCreateForm(req, res);
-      }),
-    );
-
-    this.app.post(
-      "/events/new",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info("POST /events/new");
-        await this.eventController.handleCreateForm(req, res);
-      }),
-    );
+    // Static paths first — no params
 
     this.app.get(
       "/events",
@@ -300,17 +270,43 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.post(
-      "/events/:eventId/rsvp",
+    this.app.get(
+      "/events/new",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        const browserSession = touchAppSession(sessionStore(req));
-        const eventId = req.params.eventId as string;
-        await this.rsvpController.toggleRsvp(res, eventId, browserSession);
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info("GET /events/new");
+        await this.eventController.showCreateForm(req, res);
       }),
     );
+
+    this.app.get(
+      "/events/manage",
+      asyncHandler(async (req, res) => {
+        if (
+          !this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")
+        ) {
+          return;
+        }
+        this.logger.info("GET /events/manage");
+        await this.eventController.showManage(req, res);
+      }),
+    );
+
+    this.app.get(
+      "/events/dashboard",
+      asyncHandler(async (req, res) => {
+        if (
+          !this.requireRole(req, res, ["admin", "staff"], "Only organizers can view the dashboard.")
+        ) {
+          return;
+        }
+
+        this.logger.info("GET /events/dashboard");
+        await this.eventController.showOrganizerDashboard(req, res);
+      }),
+    );
+
+    // Param routes (catch-all /events/:eventId last)
 
     this.app.get(
       "/events/:eventId/attendees",
@@ -322,6 +318,48 @@ class ExpressApp implements IApp {
         const browserSession = touchAppSession(sessionStore(req));
         const eventId = req.params.eventId as string;
         await this.rsvpController.showEventAttendees(res, eventId, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info(`GET /events/${req.params.id}/edit`);
+        await this.eventController.showEditForm(req, res);
+      }),
+    );
+
+    this.app.get(
+      "/events/:eventId",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.showEventDetail(req, res);
+      }),
+    );
+
+    // POST routes
+
+    this.app.post(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        this.logger.info("POST /events/new");
+        await this.eventController.handleCreateForm(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/:eventId/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        const browserSession = touchAppSession(sessionStore(req));
+        const eventId = req.params.eventId as string;
+        await this.rsvpController.toggleRsvp(res, eventId, browserSession);
       }),
     );
 
@@ -351,43 +389,12 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.get(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        this.logger.info(`GET /events/${req.params.id}/edit`);
-        await this.eventController.showEditForm(req, res);
-      }),
-    );
-
     this.app.post(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info(`POST /events/${req.params.id}/edit`);
         await this.eventController.handleEditForm(req, res);
-      }),
-    );
-
-    // -- Organizer Dashboard routes --
-    this.app.get(
-      "/events/dashboard",
-      asyncHandler(async (req, res) => {
-        if (!this.requireRole(req, res, ["admin", "staff"], "Only organizers can view the dashboard.")) {
-          return;
-        }
-
-        this.logger.info("GET /events/dashboard");
-        await this.eventController.showOrganizerDashboard(req, res);
-      })
-    )
-    this.app.get(
-      "/events/:eventId",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-        await this.eventController.showEventDetail(req, res);
       }),
     );
 
