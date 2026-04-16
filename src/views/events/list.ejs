@@ -107,11 +107,11 @@
         <%- include("../partials/error", { message: pageError }) %>
           <% } %>
 
-      <p id="event-results-loading" class="htmx-indicator text-sm text-slate-500 mb-3">
+      <p id="event-results-loading" class="htmx-indicator text-sm text-slate-500 mb-3" role="status" aria-live="polite">
         Updating events...
       </p>
 
-      <div id="event-results" class="grid gap-4">
+      <div id="event-results" class="grid gap-4" aria-live="polite">
         <%- include("results", { events }) %>
       </div>
 </section>
