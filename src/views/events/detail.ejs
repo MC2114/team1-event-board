@@ -106,7 +106,7 @@
             hx-swap="innerHTML"
             hx-indicator="#attendee-list-loading"
             @click="if (attendeesOpen) { attendeesOpen = false; $event.preventDefault(); } else { attendeesOpen = true; }"
-            class="px-4 py-2 rounded bg-slate-700 text-white"
+            class="px-4 py-2 rounded bg-slate-700 text-white cursor-pointer"
             x-text="attendeesOpen ? 'Hide Attendees' : 'View Attendees'"
           >
             View Attendees
