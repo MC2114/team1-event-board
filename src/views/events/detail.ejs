@@ -90,54 +90,58 @@
     </div>
 
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
-      <div class="flex gap-3 flex-wrap">
-        <a
-          href="/events/<%= event.id %>/edit"
-          class="px-4 py-2 rounded bg-blue-600 text-white"
-        >
-          Edit Event
-        </a>
+      <div x-data="{ attendeesOpen: false }">
+        <div class="flex gap-3 flex-wrap">
+          <a
+            href="/events/<%= event.id %>/edit"
+            class="px-4 py-2 rounded bg-blue-600 text-white"
+          >
+            Edit Event
+          </a>
 
-        <button
-          type="button"
-          hx-get="/events/<%= event.id %>/attendees"
-          hx-target="#attendee-list-panel"
-          hx-swap="innerHTML"
-          hx-indicator="#attendee-list-loading"
-          class="px-4 py-2 rounded bg-slate-700 text-white"
-        >
-          View Attendees
-        </button>
+          <button
+            type="button"
+            hx-get="/events/<%= event.id %>/attendees"
+            hx-target="#attendee-list-panel"
+            hx-swap="innerHTML"
+            hx-indicator="#attendee-list-loading"
+            @click="if (attendeesOpen) { attendeesOpen = false; $event.preventDefault(); } else { attendeesOpen = true; }"
+            class="px-4 py-2 rounded bg-slate-700 text-white"
+            x-text="attendeesOpen ? 'Hide Attendees' : 'View Attendees'"
+          >
+            View Attendees
+          </button>
 
-        <% if (event.status === "draft") { %>
-          <form method="post" action="/events/<%= event.id %>/publish">
-            <button
-              type="submit"
-              class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-            >
-              Publish Event
-            </button>
-          </form>
-        <% } else if (event.status === "published") { %>
-          <form method="post" action="/events/<%= event.id %>/cancel">
-            <button
-              type="submit"
-              class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-            >
-              Cancel Event
-            </button>
-          </form>
-        <% } else if (event.status === "cancelled") { %>
-          <p class="px-4 py-2 rounded bg-slate-100 text-slate-600 text-sm">
-            This event is cancelled.
-          </p>
-        <% } %>
+          <% if (event.status === "draft") { %>
+            <form method="post" action="/events/<%= event.id %>/publish">
+              <button
+                type="submit"
+                class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >
+                Publish Event
+              </button>
+            </form>
+          <% } else if (event.status === "published") { %>
+            <form method="post" action="/events/<%= event.id %>/cancel">
+              <button
+                type="submit"
+                class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+                Cancel Event
+              </button>
+            </form>
+          <% } else if (event.status === "cancelled") { %>
+            <p class="px-4 py-2 rounded bg-slate-100 text-slate-600 text-sm">
+              This event is cancelled.
+            </p>
+          <% } %>
+        </div>
+
+        <p id="attendee-list-loading" class="htmx-indicator mt-4 text-sm text-slate-500" role="status" aria-live="polite">
+          Loading attendees...
+        </p>
+        <div id="attendee-list-panel" class="mt-4" aria-live="polite" x-show="attendeesOpen"></div>
       </div>
-
-      <p id="attendee-list-loading" class="htmx-indicator mt-4 text-sm text-slate-500" role="status" aria-live="polite">
-        Loading attendees...
-      </p>
-      <div id="attendee-list-panel" class="mt-4" aria-live="polite"></div>
     <% } %>
   </div>
 </div>
