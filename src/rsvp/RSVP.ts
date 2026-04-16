@@ -18,11 +18,3 @@ export type RSVPWithEvent = {
     event: Event
 }
 
-export type RSVPAttendee = {
-    id: string
-    eventId: string
-    userId: string
-    displayName: string
-    status: RSVPStatus
-    createdAt: Date
-}

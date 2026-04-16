@@ -6,7 +6,6 @@ import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import type { EventError } from "./errors";
 import { isEventCategory, isEventTimeframe } from "./Event";
-import session from "express-session";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -15,7 +14,6 @@ export interface IEventController {
   showEditForm(req: Request, res: Response): Promise<void>;
   handleEditForm(req: Request, res: Response): Promise<void>;
   showEventsList(req: Request, res: Response): Promise<void>;
-  showManage(req: Request, res: Response): Promise<void>;
   publishEvent(req: Request, res: Response): Promise<void>;
   cancelEvent(req: Request, res: Response): Promise<void>;
   showOrganizerDashboard(req: Request, res: Response): Promise<void>;
@@ -143,10 +141,6 @@ export class EventController implements IEventController {
     }
 
     res.redirect(`/events/${result.value.id}`);
-  }
-
-  private getStringQuery(req: Request, key: string): string | undefined {
-    return typeof req.query[key] === "string" ? req.query[key] : undefined;
   }
 
   async showEventDetail(req: Request, res: Response): Promise<void> {
@@ -410,32 +404,6 @@ export class EventController implements IEventController {
     });
   }
 
-  async showManage(req: Request, res: Response): Promise<void> {
-    const store = req.session as AppSessionStore;
-    const user = getAuthenticatedUser(store);
-
-    if (!user) {
-      res.redirect("/login");
-      return;
-    }
-
-    const result = await this.eventService.getAllEventsForOrganizer(user.userId, user.role);
-
-    if (result.ok === false) {
-      res.status(500).render("partials/error", {
-        message: "Something went wrong.",
-        layout: false,
-      });
-      return;
-    }
-
-    res.render("events/manage", {
-      session: { authenticatedUser: user },
-      events: result.value,
-      pageError: null,
-    });
-  }
-
   async publishEvent(req: Request, res: Response): Promise<void> {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
@@ -471,7 +439,7 @@ export class EventController implements IEventController {
       return;
     }
 
-    res.redirect("/events/manage");
+    res.redirect("/events/dashboard");
   }
 
   async cancelEvent(req: Request, res: Response): Promise<void> {
@@ -509,7 +477,7 @@ export class EventController implements IEventController {
       return;
     }
 
-    res.redirect("/events/manage");
+    res.redirect("/events/dashboard");
   }
 
   async showOrganizerDashboard(req: Request, res: Response): Promise<void> {

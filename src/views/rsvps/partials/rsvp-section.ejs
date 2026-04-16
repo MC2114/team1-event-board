@@ -44,7 +44,7 @@
                                 </span>
 
                                 <% if (showCancel) { %>
-                                    <form method="post" action="/rsvps/<%= item.eventId %>/toggle" class="m-0">
+                                    <form method="post" action="/events/<%= item.eventId %>/rsvp" class="m-0">
                                         <button type="submit"
                                             class="px-3.5 py-2 rounded-lg bg-red-700 text-white font-medium cursor-pointer hover:bg-red-800 text-sm">
                                             Cancel RSVP
