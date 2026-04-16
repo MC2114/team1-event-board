@@ -105,4 +105,20 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain(uniqueTitle);
   });
+
+  it("matches search queries case-insensitively", async () => {
+    const app = createComposedApp().getExpressApp();
+    const staffAgent = request.agent(app);
+    const userAgent = request.agent(app);
+
+    await login(staffAgent, "staff@app.test");
+    const uniqueTitle = "Case Insensitive Query Event";
+    await createAndPublishEvent(staffAgent, uniqueTitle);
+
+    await login(userAgent, "user@app.test");
+    const response = await userAgent.get("/events").query({ searchQuery: "cAsE inSenSitiVe" });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain(uniqueTitle);
+  });
 });
