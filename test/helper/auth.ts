@@ -1,11 +1,7 @@
 import request from "supertest";
-import type express from "express";
+import type { Express } from "express";
 
-export async function loginAs(
-  app: express.Express,
-  email: string,
-  password: string,
-) {
+export async function loginAs(app: Express, email: string, password: string) {
   const agent = request.agent(app);
 
   await agent
