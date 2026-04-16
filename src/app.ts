@@ -269,7 +269,6 @@ class ExpressApp implements IApp {
           res.status(403).render("partials/error", {
             message: "Only members can access their RSVP dashboard.",
             layout: false,
-            pageError: null
           });
           return;
         }
