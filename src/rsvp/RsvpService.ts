@@ -3,14 +3,14 @@ import { Err, Result, Ok } from "../lib/result";
 import { ILoggingService } from "../service/LoggingService";
 import { EventNotFoundError, InvalidRSVPError, NotAuthorizedError, RSVPError } from "./errors";
 import { IRSVPRepository } from "./RsvpRepository";
-import { RSVP, RSVPWithEvent } from "./RSVP";
+import { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
 import { IEventRepository } from "../events/EventRepository";
 import { EventError } from "../events/errors";
 
 export interface IAttendeeGroups {
-    going: RSVP[];
-    waitlisted: RSVP[];
-    cancelled: RSVP[];
+    going: RSVPAttendee[];
+    waitlisted: RSVPAttendee[];
+    cancelled: RSVPAttendee[];
 }
 
 export interface IRsvpService {
@@ -66,7 +66,7 @@ class RsvpService implements IRsvpService {
         }
 
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
-        const rsvpsResult = await this.rsvpRepo.findByEventId(eventId);
+        const rsvpsResult = await this.rsvpRepo.findAttendeesByEventId(eventId);
 
         if (rsvpsResult.ok === false) {
             return Err(rsvpsResult.value);
