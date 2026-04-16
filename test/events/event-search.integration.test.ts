@@ -121,4 +121,17 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain(uniqueTitle);
   });
+
+  it("returns 400 for an invalid search query that exceeds max length", async () => {
+    const app = createComposedApp().getExpressApp();
+    const userAgent = request.agent(app);
+
+    await login(userAgent, "user@app.test");
+    const response = await userAgent
+      .get("/events")
+      .query({ searchQuery: "x".repeat(101) });
+
+    expect(response.status).toBe(400);
+    expect(response.text).toContain("Search query must be 100 characters or fewer.");
+  });
 });
