@@ -15,6 +15,9 @@ export interface IEventController {
   showEditForm(req: Request, res: Response): Promise<void>;
   handleEditForm(req: Request, res: Response): Promise<void>;
   showEventsList(req: Request, res: Response): Promise<void>;
+  showManage(req: Request, res: Response): Promise<void>;
+  publishEvent(req: Request, res: Response): Promise<void>;
+  cancelEvent(req: Request, res: Response): Promise<void>;
   showOrganizerDashboard(req: Request, res: Response): Promise<void>;
 }
 
@@ -369,6 +372,108 @@ export class EventController implements IEventController {
       searchQuery: searchQuery ?? "",
       pageError: null,
     });
+  }
+
+  async showManage(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+  
+    const result = await this.eventService.getAllEventsForOrganizer(user.userId, user.role);
+
+    if (result.ok === false) {
+      res.status(500).render("partials/error", {
+        message: "Something went wrong.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/manage", {
+      session: {authenticatedUser: user},
+      events: result.value,
+      pageError: null,
+    });
+  }
+
+  async publishEvent(req: Request, res: Response): Promise<void> {
+      const store = req.session as AppSessionStore;
+      const user = getAuthenticatedUser(store);
+
+      if (!user){
+        res.redirect("/login")
+        return;
+      }
+
+      const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+      const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
+
+      if (result.ok === false){
+        let status = 500;
+
+        if (result.value.name === "EventNotFoundError"){
+          status = 404;
+        }
+
+        if (result.value.name === "NotAuthorizedError"){
+          status = 403;
+        }
+
+        if (result.value.name === "InvalidEventStateError"){
+          status = 400;
+        }
+
+        res.status(status).render("partials/error", {
+          message: result.value.message,
+          layout: false,
+        });
+        return;
+      }
+
+      res.redirect("/events/manage");
+  }
+
+  async cancelEvent(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user){
+      res.redirect("/login");
+      return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+    const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "cancelled");
+
+    if (result.ok === false){
+      let status = 500;
+
+      if (result.value.name === "EventNotFoundError"){
+        status = 404;
+      }
+
+      if (result.value.name === "NotAuthorizedError"){
+        status = 403;
+      }
+
+      if (result.value.name === "InvalidEventStateError"){
+        status = 400;
+      }
+
+      res.status(status).render("partials/error", {
+        message: result.value.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.redirect("/events/manage");
   }
 
   async showOrganizerDashboard(req: Request, res: Response): Promise<void> {

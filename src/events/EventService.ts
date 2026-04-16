@@ -58,7 +58,7 @@ export interface IEventService {
         actingUserRole: UserRole,
         newStatus: EventStatus,
     ): Promise<Result<Event, EventError>>;
-    getAllEventsForManager(
+    getAllEventsForOrganizer(
         actingUserId: string,
         actingUserRole: UserRole,
     ): Promise<Result<Event[], EventError>>;
@@ -280,26 +280,40 @@ class EventService implements IEventService {
         return Ok(updated);
     }
 
-    async getAllEventsForManager(
+    async getAllEventsForOrganizer(
         actingUserId: string,
         actingUserRole: UserRole,
     ): Promise<Result<Event[], EventError>> {
         if (actingUserRole === "user") {
-            return Err(NotAuthorizedError("You are not authorized to view all events."));
+            return Err(NotAuthorizedError("You are not authorized to view these events."));
         }
 
-        const result = await this.eventRepository.findAll();
+        try {
+            if (actingUserRole === "admin") {
+                const result = await this.eventRepository.findAll();
+                if (!result.ok) {
+                    return result;
+                }
 
-        if (result.ok === false) {
-            return result;
+                const sorted = [...result.value].sort(
+                    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+                )
+                return Ok(sorted);
+            }
+
+            const result = await this.eventRepository.findByOrganizer(actingUserId);
+            if (!result.ok) {
+                return result;
+            }
+
+            const sorted = [...result.value].sort(
+                (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+            );
+
+            return Ok(sorted);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to retrieve events."))
         }
-
-        if (actingUserRole === "admin") {
-            return Ok(result.value);
-        }
-
-        const staffEvents = result.value.filter((event) => event.organizerId === actingUserId);
-        return Ok(staffEvents);
     }
 
     async updateEvent(
