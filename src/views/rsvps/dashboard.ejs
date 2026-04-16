@@ -9,20 +9,31 @@
     <%- include("../partials/error", { message: pageError }) %>
         <% } %>
 
-            <% const now=new Date(); const upcoming=(rsvps ?? []) .filter(r=>
-                r.event &&
-                r.event.startDatetime >= now &&
-                r.event.status !== "cancelled" &&
-                (r.status === "going" || r.status === "waitlisted")
-                )
-                .sort((a, b) => a.event.startDatetime - b.event.startDatetime);
+            <%
+                const now = new Date();
+
+                const upcoming = (rsvps ?? [])
+                    .filter(r =>
+                    r.event &&
+                    r.event.startDatetime >= now &&
+                    r.event.status !== "cancelled" &&
+                    (r.status === "going" || r.status === "waitlisted")
+                    )
+                    .sort((a, b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime());
 
                 const pastOrCancelled = (rsvps ?? [])
-                .filter(r =>
-                !r.event ||
-                r.event.startDatetime < now || r.event.status==="cancelled" || r.status==="cancelled" ) .sort((a, b)=>
-                    b.event.startDatetime - a.event.startDatetime);
-                    %>
+                    .filter(r =>
+                    !r.event ||
+                    r.event.startDatetime < now ||
+                    r.event.status === "cancelled" ||
+                    r.status === "cancelled"
+                    )
+                    .sort((a, b) => {
+                    const aTime = a.event ? a.event.startDatetime.getTime() : 0;
+                    const bTime = b.event ? b.event.startDatetime.getTime() : 0;
+                    return bTime - aTime;
+                    });
+                %>  
 
                     <section class="mb-6">
                         <%- include("partials/rsvp-section", { title: "Upcoming Events" ,
