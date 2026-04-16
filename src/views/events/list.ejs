@@ -39,12 +39,12 @@
         class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white"
       >
         <option value="">All categories</option>
-        <option value="technology" <%= activeCategory === "technology" ? "selected" : "" %>>Technology</option>
-        <option value="business"   <%= activeCategory === "business"   ? "selected" : "" %>>Business</option>
-        <option value="music"      <%= activeCategory === "music"      ? "selected" : "" %>>Music</option>
-        <option value="sports"     <%= activeCategory === "sports"     ? "selected" : "" %>>Sports</option>
-        <option value="networking" <%= activeCategory === "networking" ? "selected" : "" %>>Networking</option>
-        <option value="other"      <%= activeCategory === "other"      ? "selected" : "" %>>Other</option>
+        <% const categories = ["technology", "business", "music", "art", "food", "health", "education", "sports", "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv", "other"]; %>
+        <% categories.forEach(function(cat) { %>
+          <option value="<%= cat %>" <%= activeCategory === cat ? "selected" : "" %>>
+            <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+          </option>
+        <% }); %>
       </select>
     </div>
 
