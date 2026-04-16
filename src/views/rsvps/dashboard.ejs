@@ -33,8 +33,7 @@
                     const bTime = b.event ? b.event.startDatetime.getTime() : 0;
                     return bTime - aTime;
                     });
-                %>  
-
+                %>
                     <section class="mb-6">
                         <%- include("partials/rsvp-section", { title: "Upcoming Events" ,
                             emptyMessage: "You have no upcoming RSVPs." , items: upcoming, showCancel: true, session })
