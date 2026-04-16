@@ -17,3 +17,12 @@ export type RSVPWithEvent = {
     createdAt: Date
     event: Event
 }
+
+export type RSVPAttendee = {
+    id: string
+    eventId: string
+    userId: string
+    displayName: string
+    status: RSVPStatus
+    createdAt: Date
+}

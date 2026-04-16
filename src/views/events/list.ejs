@@ -1,0 +1,139 @@
+<section class="mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-3xl font-bold text-slate-900">Upcoming Events</h1>
+    <div class="flex items-center gap-2">
+      <% if (session.authenticatedUser && 
+            (session.authenticatedUser.role === "staff" || 
+            session.authenticatedUser.role === "admin")) { %>
+        <a href="/events/new" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 no-underline">
+          + Create Event
+        </a>
+      <% } %>
+    </div>
+  </div>
+
+  <form method="GET" action="/events"
+    class="flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm"
+  >
+    <div class="flex items-center gap-2">
+      <label for="searchQuery" class="text-sm font-medium text-slate-700">
+        Search
+      </label>
+      <input
+        id="searchQuery"
+        name="searchQuery"
+        type="search"
+        value="<%= searchQuery ?? '' %>"
+        placeholder="Title, description, or location"
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white min-w-[220px]"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label for="category" class="text-sm font-medium text-slate-700">
+        Category
+      </label>
+      <select
+        id="category"
+        name="category"
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white"
+      >
+        <option value="">All categories</option>
+        <option value="technology" <%= activeCategory === "technology" ? "selected" : "" %>>Technology</option>
+        <option value="business"   <%= activeCategory === "business"   ? "selected" : "" %>>Business</option>
+        <option value="music"      <%= activeCategory === "music"      ? "selected" : "" %>>Music</option>
+        <option value="sports"     <%= activeCategory === "sports"     ? "selected" : "" %>>Sports</option>
+        <option value="networking" <%= activeCategory === "networking" ? "selected" : "" %>>Networking</option>
+        <option value="other"      <%= activeCategory === "other"      ? "selected" : "" %>>Other</option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label for="timeframe" class="text-sm font-medium text-slate-700">
+        When
+      </label>
+      <select
+        id="timeframe"
+        name="timeframe"
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white"
+      >
+        <option value="all"        <%= activeTimeframe === "all" || !activeTimeframe ? "selected" : "" %>>All upcoming</option>
+        <option value="this_week"  <%= activeTimeframe === "this_week"  ? "selected" : "" %>>This week</option>
+        <option value="this_month" <%= activeTimeframe === "this_month" ? "selected" : "" %>>This month</option>
+        <option value="this_year"  <%= activeTimeframe === "this_year"  ? "selected" : "" %>>This year</option>
+      </select>
+    </div>
+
+    <button
+      type="submit"
+      class="px-4 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+    >
+      Apply
+    </button>
+  </form>
+
+  <% if ((searchQuery && searchQuery.trim() !== "") || activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
+    <div class="mb-4">
+      <a
+        href="/events"
+        class="text-sm text-slate-500 hover:text-slate-700 hover:underline"
+      >
+        Clear search and filters
+      </a>
+    </div>
+  <% } %>
+
+  <% if (pageError) { %>
+    <%- include("../partials/error", { message: pageError }) %>
+  <% } %>
+
+  <% if (events.length === 0) { %>
+    <div class="text-center py-16 text-slate-500">
+      <p class="text-lg font-medium">No events found.</p>
+      <% if ((searchQuery && searchQuery.trim() !== "") || activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
+        <p class="text-sm mt-1">
+          Try adjusting your search and filters or
+          <a href="/events" class="text-blue-600 hover:underline">clear them</a>.
+        </p>
+      <% } %>
+    </div>
+  <% } else { %>
+    <div class="grid gap-4">
+      <% events.forEach(function(event) { %>
+        <a
+          href="/events/<%= event.id %>"
+          class="block no-underline text-inherit rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+        <article class="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-2 hover:border-slate-300 hover:shadow transition">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900"><%= event.title %></h2>
+              <p class="text-slate-500 text-sm mt-0.5">
+                <%= event.location %> |
+                <%= new Date(event.startDatetime).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"
+                }) %>
+              </p>
+            </div>
+            <span class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+              <%= event.status %>
+            </span>
+          </div>
+
+          <p class="text-slate-600 text-sm"><%= event.description %></p>
+
+          <p class="text-xs text-slate-400 capitalize mt-1">
+            <%= event.category %>
+            <% if (event.capacity !== null) { %>
+              | Capacity: <%= event.capacity %>
+            <% } %>
+          </p>
+        </article>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
