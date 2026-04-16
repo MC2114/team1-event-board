@@ -1,25 +1,11 @@
-import request, { type SuperAgentTest } from "supertest";
 import { createComposedApp } from "../../src/composition";
-
-async function login(
-  agent: SuperAgentTest,
-  email: string,
-  password = "password123",
-): Promise<void> {
-  const response = await agent
-    .post("/login")
-    .type("form")
-    .send({ email, password });
-
-  expect(response.status).toBe(302);
-}
+import { loginAs } from "../helper/auth";
 
 describe("Feature 12 Sprint 2 - Attendee List integration", () => {
   it("allows staff organizer to view attendee list for their own event", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
+    const staffAgent = await loginAs(app, "staff@app.test", "password123");
 
-    await login(staffAgent, "staff@app.test");
     const response = await staffAgent.get("/events/event-published-1/attendees");
 
     expect(response.status).toBe(200);
@@ -31,9 +17,8 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
   it("shows attendee display names in attendee rows", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
+    const staffAgent = await loginAs(app, "staff@app.test", "password123");
 
-    await login(staffAgent, "staff@app.test");
     const response = await staffAgent.get("/events/event-published-1/attendees");
 
     expect(response.status).toBe(200);
@@ -44,9 +29,8 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
   it("returns attendees sorted by createdAt ascending within each group", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
+    const staffAgent = await loginAs(app, "staff@app.test", "password123");
 
-    await login(staffAgent, "staff@app.test");
     const response = await staffAgent.get("/events/event-published-1/attendees");
 
     expect(response.status).toBe(200);
@@ -65,9 +49,8 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
   it("allows admin to view attendee list for any event", async () => {
     const app = createComposedApp().getExpressApp();
-    const adminAgent = request.agent(app);
+    const adminAgent = await loginAs(app, "admin@app.test", "password123");
 
-    await login(adminAgent, "admin@app.test");
     const response = await adminAgent.get("/events/event-published-1/attendees");
 
     expect(response.status).toBe(200);
@@ -76,9 +59,8 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
   it("rejects member access to attendee list with 403", async () => {
     const app = createComposedApp().getExpressApp();
-    const userAgent = request.agent(app);
+    const userAgent = await loginAs(app, "user@app.test", "password123");
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent.get("/events/event-published-1/attendees");
 
     expect(response.status).toBe(403);
@@ -87,9 +69,8 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
   it("rejects staff access to events they do not own with 403", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
+    const staffAgent = await loginAs(app, "staff@app.test", "password123");
 
-    await login(staffAgent, "staff@app.test");
     const response = await staffAgent.get("/events/event-published-2/attendees");
 
     expect(response.status).toBe(403);
@@ -98,9 +79,8 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
   it("returns 404 when requesting attendee list for a missing event", async () => {
     const app = createComposedApp().getExpressApp();
-    const adminAgent = request.agent(app);
+    const adminAgent = await loginAs(app, "admin@app.test", "password123");
 
-    await login(adminAgent, "admin@app.test");
     const response = await adminAgent.get("/events/does-not-exist/attendees");
 
     expect(response.status).toBe(404);
