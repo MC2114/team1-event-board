@@ -386,7 +386,7 @@ export class EventController implements IEventController {
       res.redirect("/login");
       return;
     }
-  
+
     const result = await this.eventService.getAllEventsForOrganizer(user.userId, user.role);
 
     if (result.ok === false) {
@@ -398,55 +398,55 @@ export class EventController implements IEventController {
     }
 
     res.render("events/manage", {
-      session: {authenticatedUser: user},
+      session: { authenticatedUser: user },
       events: result.value,
       pageError: null,
     });
   }
 
   async publishEvent(req: Request, res: Response): Promise<void> {
-      const store = req.session as AppSessionStore;
-      const user = getAuthenticatedUser(store);
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
 
-      if (!user){
-        res.redirect("/login")
-        return;
+    if (!user) {
+      res.redirect("/login")
+      return;
+    }
+
+    const eventId = typeof req.params.id === "string" ? req.params.id : "";
+
+    const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
+
+    if (result.ok === false) {
+      let status = 500;
+
+      if (result.value.name === "EventNotFoundError") {
+        status = 404;
       }
 
-      const eventId = typeof req.params.id === "string" ? req.params.id : "";
-
-      const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
-
-      if (result.ok === false){
-        let status = 500;
-
-        if (result.value.name === "EventNotFoundError"){
-          status = 404;
-        }
-
-        if (result.value.name === "NotAuthorizedError"){
-          status = 403;
-        }
-
-        if (result.value.name === "InvalidEventStateError"){
-          status = 400;
-        }
-
-        res.status(status).render("partials/error", {
-          message: result.value.message,
-          layout: false,
-        });
-        return;
+      if (result.value.name === "NotAuthorizedError") {
+        status = 403;
       }
 
-      res.redirect("/events/manage");
+      if (result.value.name === "InvalidEventStateError") {
+        status = 400;
+      }
+
+      res.status(status).render("partials/error", {
+        message: result.value.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.redirect("/events/manage");
   }
 
   async cancelEvent(req: Request, res: Response): Promise<void> {
     const store = req.session as AppSessionStore;
     const user = getAuthenticatedUser(store);
 
-    if (!user){
+    if (!user) {
       res.redirect("/login");
       return;
     }
@@ -455,18 +455,18 @@ export class EventController implements IEventController {
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "cancelled");
 
-    if (result.ok === false){
+    if (result.ok === false) {
       let status = 500;
 
-      if (result.value.name === "EventNotFoundError"){
+      if (result.value.name === "EventNotFoundError") {
         status = 404;
       }
 
-      if (result.value.name === "NotAuthorizedError"){
+      if (result.value.name === "NotAuthorizedError") {
         status = 403;
       }
 
-      if (result.value.name === "InvalidEventStateError"){
+      if (result.value.name === "InvalidEventStateError") {
         status = 400;
       }
 
@@ -503,16 +503,17 @@ export class EventController implements IEventController {
       user.role
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
-      log.call(this.logger, `Failed to load organizer dashboard: ${result.value.message}`)
+      log.call(this.logger, `Failed to load organizer dashboard: ${result.value.message}`);
       res.status(status).render("partials/error", {
         message: result.value.message,
         layout: false,
       });
-      return
+      return;
     }
+
     const now = new Date()
     const published = result.value.filter(
       (e) => e.status === "published" && e.endDatetime > now
