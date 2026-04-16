@@ -1,4 +1,4 @@
-import type { SuperAgentTest } from "supertest";
+import request, { type SuperAgentTest } from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { loginAs } from "../helper/auth";
 
@@ -33,6 +33,17 @@ async function createAndPublishEvent(
 }
 
 describe("Feature 10 Sprint 2 - Event Search integration", () => {
+  it("redirects unauthenticated users to login when accessing event search route", async () => {
+    const app = createComposedApp().getExpressApp();
+
+    const response = await request(app)
+      .get("/events")
+      .query({ searchQuery: "spring" });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe("/login");
+  });
+
   it("returns matching results for a valid search query", async () => {
     const app = createComposedApp().getExpressApp();
     const staffAgent = (await loginAs(app, "staff@app.test", "password123")) as SuperAgentTest;
@@ -111,5 +122,24 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
 
     expect(response.status).toBe(400);
     expect(response.text).toContain("Search query must be 100 characters or fewer.");
+  });
+
+  it("returns an HTMX partial (not full page) for an HTMX search request", async () => {
+    const app = createComposedApp().getExpressApp();
+    const staffAgent = (await loginAs(app, "staff@app.test", "password123")) as SuperAgentTest;
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
+
+    const uniqueTitle = "HTMX Partial Search Event";
+    await createAndPublishEvent(staffAgent, uniqueTitle);
+
+    const response = await userAgent
+      .get("/events")
+      .set("HX-Request", "true")
+      .query({ searchQuery: "htmx partial" });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain(uniqueTitle);
+    expect(response.text.toLowerCase()).not.toContain("<!doctype html>");
+    expect(response.text.toLowerCase()).not.toContain("<html");
   });
 });
