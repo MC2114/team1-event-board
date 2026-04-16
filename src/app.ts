@@ -256,6 +256,30 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // -- RSVP routes
+    this.app.get(
+      "/rsvps",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const user = getAuthenticatedUser(sessionStore(req));
+
+        if (!user || user.role !== "user") {
+          this.logger.warn("Blocked non-member access to RSVP dashboard");
+          res.status(403).render("partials/error", {
+            message: "Only members can access their RSVP dashboard.",
+            layout: false,
+            pageError: null
+          });
+          return;
+        }
+
+        const store = sessionStore(req);
+        const session = recordPageView(store);
+        await this.rsvpController.showMyRsvps(res, session);
+      }),
+    );
+
     // -- Event routes --
     // Static paths first — no params
 
@@ -395,28 +419,6 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         this.logger.info(`POST /events/${req.params.id}/edit`);
         await this.eventController.handleEditForm(req, res);
-      }),
-    );
-
-    this.app.get(
-      "/rsvps",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-
-        const user = getAuthenticatedUser(sessionStore(req));
-
-        if (!user || user.role !== "user") {
-          this.logger.warn("Blocked non-member access to RSVP dashboard");
-          res.status(403).render("partials/error", {
-            message: "Only members can access their RSVP dashboard.",
-            layout: false,
-          });
-          return;
-        }
-
-        const browserSession = touchAppSession(sessionStore(req));
-
-        await this.rsvpController.showMyRsvps(res, browserSession);
       }),
     );
 
