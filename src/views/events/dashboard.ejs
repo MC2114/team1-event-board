@@ -1,24 +1,20 @@
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-    <h1 class="text-3xl font-bold text-slate-900 mb-3">
-        <%= user.role==="admin" ? "All Events" : "My Events" %>
-    </h1>
-
-    <p class="text-slate-500">
-        <%= user.role==="admin" ? "Manage and monitor all events across every organizer."
-            : "Manage your events — publish drafts, track attendance, and cancel when needed." %>
-    </p>
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">
+    <%= user.role === "admin" ? "All Events" : "My Events" %>
+  </h1>
+  <p class="text-slate-500">
+    <%= user.role === "admin"
+      ? "Manage and monitor all events across every organizer."
+      : "Manage your events — publish drafts, track attendance, and cancel when needed." %>
+  </p>
 </section>
 
 <% if (pageError) { %>
-    <%- include("partials/error", { message: pageError }) %>
-        <% } %>
+  <%- include("partials/error.ejs", { message: pageError }) %>
+<% } %>
 
-            <%- include("partials/event-dashboard-section", { title: "Published" , emptyMessage: "No published events."
-                , items: published, session, showPublish: false, showCancel: true, }) %>
+<%- include("partials/event-dashboard-section", { title: "Published", emptyMessage: "No published events.", items: published, session: session, showPublish: false, showCancel: true }) %>
 
-                <%- include("partials/event-dashboard-section", { title: "Drafts" , emptyMessage: "No draft events." ,
-                    items: draft, session, showPublish: true, showCancel: true, }) %>
+<%- include("partials/event-dashboard-section", { title: "Drafts", emptyMessage: "No draft events.", items: draft, session: session, showPublish: true, showCancel: true }) %>
 
-                    <%- include("partials/event-dashboard-section", { title: "Cancelled & Past" ,
-                        emptyMessage: "No cancelled or past events." , items: cancelledOrPast, session, showPublish:
-                        false, showCancel: false, }) %>
+<%- include("partials/event-dashboard-section", { title: "Cancelled & Past", emptyMessage: "No cancelled or past events.", items: cancelledOrPast, session: session, showPublish: false, showCancel: false }) %>
