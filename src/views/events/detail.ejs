@@ -90,7 +90,7 @@
     </div>
 
     <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
-      <div class="flex gap-3">
+      <div class="flex gap-3 flex-wrap">
         <a
           href="/events/<%= event.id %>/edit"
           class="px-4 py-2 rounded bg-blue-600 text-white"
@@ -103,14 +103,30 @@
         >
           View Attendees
         </a>
-        <form method="post" action="/events/<%= event.id %>/status">
-          <button
-            type="submit"
-            class="px-4 py-2 rounded bg-red-600 text-white"
-          >
-            Cancel Event
-          </button>
-        </form>
+
+        <% if (event.status === "draft") { %>
+          <form method="post" action="/events/<%= event.id %>/publish">
+            <button
+              type="submit"
+              class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+            >
+              Publish Event
+            </button>
+          </form>
+        <% } else if (event.status === "published") { %>
+          <form method="post" action="/events/<%= event.id %>/cancel">
+            <button
+              type="submit"
+              class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+            >
+              Cancel Event
+            </button>
+          </form>
+        <% } else if (event.status === "cancelled") { %>
+          <p class="px-4 py-2 rounded bg-slate-100 text-slate-600 text-sm">
+            This event is cancelled.
+          </p>
+        <% } %>
       </div>
     <% } %>
   </div>

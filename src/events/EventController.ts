@@ -215,11 +215,43 @@ export class EventController implements IEventController {
     const browserSession = recordPageView(store);
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
+    const eventResult = await this.eventService.getEventById(
+      eventId,
+      user.userId,
+      user.role as UserRole
+    );
+
+    if (eventResult.ok === false) {
+      const error = eventResult.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    const event = eventResult.value;
+
+    const formatDatetime = (date: Date): string => {
+      const d = new Date(date);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
     res.render("events/edit", {
       session: browserSession,
       pageError: null,
       eventId,
-      formData: {},
+      formData: {
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        category: event.category,
+        capacity: event.capacity ?? "",
+        startDatetime: formatDatetime(event.startDatetime),
+        endDatetime: formatDatetime(event.endDatetime),
+      },
     });
   }
 

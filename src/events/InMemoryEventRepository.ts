@@ -9,7 +9,7 @@ export const DEMO_EVENTS: Event[] = [
         title: "Spring Picnic",
         description: "Food, games, and fun on the lawn.",
         location: "Campus Pond Lawn",
-        category: "social",
+        category: "party",
         status: "published",
         capacity: 25,
         startDatetime: new Date("2026-04-20T15:00:00"),

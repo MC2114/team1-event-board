@@ -35,12 +35,12 @@
       </label>
       <select id="category" name="category" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
         <option value="">All categories</option>
-        <option value="technology" <%=activeCategory==="technology" ? "selected" : "" %>>Technology</option>
-        <option value="business" <%=activeCategory==="business" ? "selected" : "" %>>Business</option>
-        <option value="music" <%=activeCategory==="music" ? "selected" : "" %>>Music</option>
-        <option value="sports" <%=activeCategory==="sports" ? "selected" : "" %>>Sports</option>
-        <option value="networking" <%=activeCategory==="networking" ? "selected" : "" %>>Networking</option>
-        <option value="other" <%=activeCategory==="other" ? "selected" : "" %>>Other</option>
+        <% const categories = ["technology", "business", "music", "art", "food", "health", "education", "sports", "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv", "other"]; %>
+        <% categories.forEach(function(cat) { %>
+          <option value="<%= cat %>" <%= activeCategory === cat ? "selected" : "" %>>
+            <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+          </option>
+        <% }); %>
       </select>
     </div>
 
@@ -75,54 +75,59 @@
         <%- include("../partials/error", { message: pageError }) %>
           <% } %>
 
-            <% if (events.length===0) { %>
-              <div class="text-center py-16 text-slate-500">
-                <p class="text-lg font-medium">No events found.</p>
-                <% if ((searchQuery && searchQuery.trim() !=="" ) || activeCategory || (activeTimeframe &&
-                  activeTimeframe !=="all" )) { %>
-                  <p class="text-sm mt-1">
-                    Try adjusting your search and filters or
-                    <a href="/events" class="text-blue-600 hover:underline">clear them</a>.
-                  </p>
-                  <% } %>
-              </div>
-              <% } else { %>
-                <div class="grid gap-4">
-                  <% events.forEach(function(event) { %>
-                    <a href="/events/<%= event.id %>"
-                      class="block no-underline text-inherit rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                      <article
-                        class="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-2 hover:border-slate-300 hover:shadow transition">
-                        <div class="flex items-start justify-between gap-3">
-                          <div>
-                            <h2 class="text-xl font-semibold text-slate-900">
-                              <%= event.title %>
-                            </h2>
-                            <p class="text-slate-500 text-sm mt-0.5">
-                              <%= event.location %> |
-                                <%= new Date(event.startDatetime).toLocaleDateString("en-US", { weekday: "short" ,
-                                  month: "short" , day: "numeric" , year: "numeric" }) %>
-                            </p>
-                          </div>
-                          <span
-                            class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                            <%= event.status %>
-                          </span>
-                        </div>
+  <% if (events.length === 0) { %>
+    <div class="text-center py-16 text-slate-500">
+      <p class="text-lg font-medium">No events found.</p>
+      <% if ((searchQuery && searchQuery.trim() !== "") || activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
+        <p class="text-sm mt-1">
+          Try adjusting your search and filters or
+          <a href="/events" class="text-blue-600 hover:underline">clear them</a>.
+        </p>
+      <% } %>
+    </div>
+  <% } else { %>
+    <div class="grid gap-4">
+      <% events.forEach(function(event) { %>
+        <a
+          href="/events/<%= event.id %>"
+          class="block no-underline text-inherit rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+        <article class="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-2 hover:border-slate-300 hover:shadow transition">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900"><%= event.title %></h2>
+              <p class="text-xs font-medium text-slate-500 mt-0.5 capitalize">
+                Category: <%= event.category %>
+              </p>
+              <p class="text-slate-500 text-sm mt-0.5">
+                <%= event.location %> |
+                <%= new Date(event.startDatetime).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"
+                }) %>
+              </p>
+            </div>
+            <span class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+              <%= event.status %>
+            </span>
+          </div>
 
                         <p class="text-slate-600 text-sm">
                           <%= event.description %>
                         </p>
 
-                        <p class="text-xs text-slate-400 capitalize mt-1">
-                          <%= event.category %>
-                            <% if (event.capacity !==null) { %>
-                              | Capacity: <%= event.capacity %>
-                                <% } %>
-                        </p>
-                      </article>
-                    </a>
-                    <% }) %>
-                </div>
-                <% } %>
+          <p class="text-xs text-slate-400 mt-1">
+            <% if (event.capacity !== null) { %>
+              Capacity: <%= event.capacity %>
+            <% } else { %>
+              Capacity: No limit
+            <% } %>
+          </p>
+        </article>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
 </section>
