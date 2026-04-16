@@ -1,11 +1,9 @@
 import { Ok, Err, type Result } from "../lib/result";
-import { IRSVPRepository } from "./RsvpRepository";
-import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
-import { Event } from "../events/Event";
-import { RSVPError, UnexpectedDependencyError } from "./errors";
+import type { RSVP, RSVPWithEvent } from "./RSVP";
+import type { IRSVPRepository } from "./RsvpRepository";
+import type { Event } from "../events/Event";
+import { UnexpectedDependencyError, type RSVPError } from "./errors";
 import { DEMO_EVENTS } from "../events/InMemoryEventRepository";
-import { DEMO_USERS } from "../auth/InMemoryUserRepository";
-import type { IUserRecord } from "../auth/User";
 
 export const DEMO_RSVPS: RSVP[] = [
     {
@@ -42,7 +40,6 @@ class InMemoryRSVPRepository implements IRSVPRepository {
     constructor(
         private readonly events: Event[],
         private readonly rsvps: RSVP[],
-        private readonly users: IUserRecord[],
     ) { }
 
     async findByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>> {
@@ -70,25 +67,6 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             return Ok(result)
         } catch {
             return Err(UnexpectedDependencyError("Unable to read RSVPs for event."))
-        }
-    }
-
-    async findAttendeesByEventId(eventId: string): Promise<Result<RSVPAttendee[], RSVPError>> {
-        try {
-            const attendees = this.rsvps
-                .filter((r) => r.eventId === eventId)
-                .map((r) => {
-                    const user = this.users.find((u) => u.id === r.userId);
-                    return {
-                        ...r,
-                        displayName: user?.displayName ?? "Unknown User",
-                    };
-                })
-                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-
-            return Ok(attendees);
-        } catch {
-            return Err(UnexpectedDependencyError("Unable to read attendees for event."));
         }
     }
 
@@ -126,5 +104,5 @@ class InMemoryRSVPRepository implements IRSVPRepository {
 }
 
 export function CreateInMemoryRsvpRepository(): IRSVPRepository {
-    return new InMemoryRSVPRepository([...DEMO_EVENTS], [...DEMO_RSVPS], [...DEMO_USERS])
+    return new InMemoryRSVPRepository([...DEMO_EVENTS], [...DEMO_RSVPS])
 }
