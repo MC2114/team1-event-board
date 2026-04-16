@@ -6,7 +6,6 @@ import {
     type Event,
     type EventCategory,
     type EventDetailView,
-    type EventFilters,
     type EventStatus,
     type EventTimeframe,
 } from "./Event";

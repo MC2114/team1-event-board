@@ -6,7 +6,6 @@ import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import type { EventError } from "./errors";
 import { isEventCategory, isEventTimeframe } from "./Event";
-import session from "express-session";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;

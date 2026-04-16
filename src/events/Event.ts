@@ -69,3 +69,9 @@ export type EventDetailView = {
     event: Event;
     attendeeCount: number;
 };
+
+export interface OrganizerDashboard {
+    published: EventDetailView[];
+    draft: EventDetailView[];
+    cancelledOrPast: EventDetailView[];
+}
