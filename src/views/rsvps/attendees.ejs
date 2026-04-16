@@ -1,0 +1,67 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">Attendee List</h1>
+  <p class="text-slate-500">Grouped by RSVP status for this event.</p>
+</section>
+
+<%
+  const attendeeSource = attendees ?? rsvps ?? [];
+  const groups = Array.isArray(attendeeSource)
+    ? {
+        going: attendeeSource.filter((person) => person.status === "going"),
+        waitlisted: attendeeSource.filter((person) => person.status === "waitlisted"),
+        cancelled: attendeeSource.filter((person) => person.status === "cancelled"),
+      }
+    : {
+        going: attendeeSource.going ?? [],
+        waitlisted: attendeeSource.waitlisted ?? [],
+        cancelled: attendeeSource.cancelled ?? [],
+      };
+%>
+
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <h2 class="text-xl font-semibold text-slate-900 mb-3">Going</h2>
+  <% if (groups.going.length === 0) { %>
+    <p class="text-slate-500 text-sm">No attendees are currently marked as going.</p>
+  <% } else { %>
+    <ul class="list-none p-0 m-0 grid gap-3">
+      <% groups.going.forEach((person) => { %>
+        <li class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
+          <span class="font-semibold text-slate-900"><%= person.displayName ?? person.userId %></span>
+          <span class="text-sm text-slate-500"><%= person.createdAt.toLocaleString() %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <h2 class="text-xl font-semibold text-slate-900 mb-3">Waitlisted</h2>
+  <% if (groups.waitlisted.length === 0) { %>
+    <p class="text-slate-500 text-sm">No attendees are currently waitlisted.</p>
+  <% } else { %>
+    <ul class="list-none p-0 m-0 grid gap-3">
+      <% groups.waitlisted.forEach((person) => { %>
+        <li class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
+          <span class="font-semibold text-slate-900"><%= person.displayName ?? person.userId %></span>
+          <span class="text-sm text-slate-500"><%= person.createdAt.toLocaleString() %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <h2 class="text-xl font-semibold text-slate-900 mb-3">Cancelled</h2>
+  <% if (groups.cancelled.length === 0) { %>
+    <p class="text-slate-500 text-sm">No attendees are currently cancelled.</p>
+  <% } else { %>
+    <ul class="list-none p-0 m-0 grid gap-3">
+      <% groups.cancelled.forEach((person) => { %>
+        <li class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
+          <span class="font-semibold text-slate-900"><%= person.displayName ?? person.userId %></span>
+          <span class="text-sm text-slate-500"><%= person.createdAt.toLocaleString() %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
