@@ -10,11 +10,32 @@
 </section>
 
 <% if (pageError) { %>
-  <%- include("partials/error.ejs", { message: pageError }) %>
+  <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
-<%- include("partials/event-dashboard-section", { title: "Published", emptyMessage: "No published events.", items: published, session: session, showPublish: false, showCancel: true }) %>
+<%- include("partials/event-dashboard-section", {
+  title: "Published",
+  emptyMessage: "No published events.",
+  items: published,
+  session: session,
+  showPublish: false,
+  showCancel: true
+}) %>
 
-<%- include("partials/event-dashboard-section", { title: "Drafts", emptyMessage: "No draft events.", items: draft, session: session, showPublish: true, showCancel: true }) %>
+<%- include("partials/event-dashboard-section", {
+  title: "Drafts",
+  emptyMessage: "No draft events.",
+  items: draft,
+  session: session,
+  showPublish: true,
+  showCancel: true
+}) %>
 
-<%- include("partials/event-dashboard-section", { title: "Cancelled & Past", emptyMessage: "No cancelled or past events.", items: cancelledOrPast, session: session, showPublish: false, showCancel: false }) %>
+<%- include("partials/event-dashboard-section", {
+  title: "Cancelled & Past",
+  emptyMessage: "No cancelled or past events.",
+  items: cancelledOrPast,
+  session: session,
+  showPublish: false,
+  showCancel: false
+}) %>
