@@ -398,6 +398,21 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/rsvps",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        this.logger.info("GET /rsvps");
+
+        const browserSession = touchAppSession(sessionStore(req));
+
+        await this.rsvpController.showMyRsvps(res, browserSession);
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
