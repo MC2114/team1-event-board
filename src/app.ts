@@ -327,7 +327,7 @@ class ExpressApp implements IApp {
         this.logger.info(`GET /events/${req.params.eventId}/attendees`);
         const browserSession = touchAppSession(sessionStore(req));
         const eventId = req.params.eventId as string;
-        await this.rsvpController.showEventAttendees(res, eventId, browserSession);
+        await this.rsvpController.showEventAttendees(req, res, eventId, browserSession);
       }),
     );
 
