@@ -6,6 +6,7 @@ import type { IRSVPRepository } from "../rsvp/RsvpRepository";
 import type { UserRole } from "../auth/User";
 import type { EventError } from "./errors";
 import { isEventCategory, isEventTimeframe } from "./Event";
+import session from "express-session";
 
 export interface IEventController {
   showCreateForm(req: Request, res: Response): void;
@@ -17,6 +18,7 @@ export interface IEventController {
   showManage(req: Request, res: Response): Promise<void>;
   publishEvent(req: Request, res: Response): Promise<void>;
   cancelEvent(req: Request, res: Response): Promise<void>;
+  showOrganizerDashboard(req: Request, res: Response): Promise<void>;
 }
 
 function parseCapacity(raw: string): number | null {
@@ -34,7 +36,7 @@ export class EventController implements IEventController {
     private readonly eventService: IEventService,
     private readonly rsvpRepository: IRSVPRepository,
     private readonly logger: ILoggingService,
-  ) {}
+  ) { }
 
   private mapErrorStatus(error: EventError): number {
     if (error.name === "InvalidInputError") return 400;
@@ -198,26 +200,26 @@ export class EventController implements IEventController {
     const user = getAuthenticatedUser(store);
 
     if (!user) {
-        res.redirect("/login");
-        return;
+      res.redirect("/login");
+      return;
     }
 
     if (user.role === "user") {
-        res.status(403).render("partials/error", {
-            message: "Only organizers and admins can edit events.",
-            layout: false,
-        });
-        return;
+      res.status(403).render("partials/error", {
+        message: "Only organizers and admins can edit events.",
+        layout: false,
+      });
+      return;
     }
 
     const browserSession = recordPageView(store);
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     res.render("events/edit", {
-        session: browserSession,
-        pageError: null,
-        eventId,
-        formData: {},
+      session: browserSession,
+      pageError: null,
+      eventId,
+      formData: {},
     });
   }
 
@@ -226,21 +228,21 @@ export class EventController implements IEventController {
     const user = getAuthenticatedUser(store);
 
     if (!user) {
-        res.redirect("/login");
-        return;
+      res.redirect("/login");
+      return;
     }
 
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
     const rawCapacity = typeof req.body.capacity === "string" ? req.body.capacity : "";
 
     const data: Partial<{
-        title: string;
-        description: string;
-        location: string;
-        category: string;
-        capacity: number | null;
-        startDatetime: Date;
-        endDatetime: Date;
+      title: string;
+      description: string;
+      location: string;
+      category: string;
+      capacity: number | null;
+      startDatetime: Date;
+      endDatetime: Date;
     }> = {};
 
     if (req.body.title) data.title = req.body.title;
@@ -252,46 +254,46 @@ export class EventController implements IEventController {
     if (req.body.endDatetime) data.endDatetime = parseDate(req.body.endDatetime);
 
     const result = await this.eventService.updateEvent(
-        eventId,
-        user.userId,
-        user.role,
-        data
+      eventId,
+      user.userId,
+      user.role,
+      data
     );
 
     if (result.ok === false) {
-        const error = result.value;
+      const error = result.value;
 
-        if (error.name === "NotAuthorizedError") {
-            res.status(403).render("partials/error", {
-                message: error.message,
-                layout: false,
-            });
-            return;
-        }
-
-        if (error.name === "EventNotFoundError") {
-            res.status(404).render("partials/error", {
-                message: error.message,
-                layout: false,
-            });
-            return;
-        }
-
-        if (error.name === "InvalidEventStateError") {
-            res.status(400).render("partials/error", {
-                message: error.message,
-                layout: false,
-            });
-            return;
-        }
-
-        res.status(400).render("events/edit", {
-            session: recordPageView(store),
-            pageError: error.message,
-            eventId,
-            formData: { ...req.body, capacity: rawCapacity },
+      if (error.name === "NotAuthorizedError") {
+        res.status(403).render("partials/error", {
+          message: error.message,
+          layout: false,
         });
         return;
+      }
+
+      if (error.name === "EventNotFoundError") {
+        res.status(404).render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
+
+      if (error.name === "InvalidEventStateError") {
+        res.status(400).render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
+
+      res.status(400).render("events/edit", {
+        session: recordPageView(store),
+        pageError: error.message,
+        eventId,
+        formData: { ...req.body, capacity: rawCapacity },
+      });
+      return;
     }
 
     res.redirect(`/events/${result.value.id}`);
@@ -385,7 +387,7 @@ export class EventController implements IEventController {
       return;
     }
   
-    const result = await this.eventService.getAllEventsForManager(user.userId, user.role);
+    const result = await this.eventService.getAllEventsForOrganizer(user.userId, user.role);
 
     if (result.ok === false) {
       res.status(500).render("partials/error", {
@@ -476,6 +478,58 @@ export class EventController implements IEventController {
     }
 
     res.redirect("/events/manage");
+  }
+
+  async showOrganizerDashboard(req: Request, res: Response): Promise<void> {
+    const store = req.session as AppSessionStore;
+    const user = getAuthenticatedUser(store);
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You are not authorized to view this page.",
+        layout: false,
+      });
+      return;
+    }
+
+    const browserSession = recordPageView(store);
+    const result = await this.eventService.getAllEventsForOrganizer(
+      user.userId,
+      user.role
+    );
+
+    if (!result.ok) {
+      const status = this.mapErrorStatus(result.value);
+      const log = status >= 500 ? this.logger.error : this.logger.warn;
+      log.call(this.logger, `Failed to load organizer dashboard: ${result.value.message}`)
+      res.status(status).render("partials/error", {
+        message: result.value.message,
+        layout: false,
+      });
+      return
+    }
+    const now = new Date()
+    const published = result.value.filter(
+      (e) => e.status === "published" && e.endDatetime > now
+    );
+
+    const draft = result.value.filter((e) => e.status === "draft");
+    const cancelledOrPast = result.value.filter(
+      (e) => e.status === "cancelled" || e.endDatetime < now
+    );
+
+    res.render("events/dashboard", {
+      session: browserSession,
+      published,
+      draft,
+      cancelledOrPast,
+      user,
+    })
   }
 }
 

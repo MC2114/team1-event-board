@@ -369,6 +369,20 @@ class ExpressApp implements IApp {
       }),
     );
 
+<<<<<<< HEAD
+    // -- Organizer Dashboard routes --
+    this.app.get(
+      "/events/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["admin", "staff"], "Only organizers can view the dashboard.")) {
+          return;
+        }
+
+        this.logger.info("GET /events/dashboard");
+        await this.eventController.showOrganizerDashboard(req, res);
+      })
+    )
+=======
     this.app.get(
       "/events/:eventId",
       asyncHandler(async (req, res) => {
@@ -378,6 +392,7 @@ class ExpressApp implements IApp {
         await this.eventController.showEventDetail(req, res);
       }),
     );
+>>>>>>> dev
 
     // ── Error handler ────────────────────────────────────────────────
 
