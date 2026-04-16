@@ -16,6 +16,20 @@
     class="flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm"
   >
     <div class="flex items-center gap-2">
+      <label for="searchQuery" class="text-sm font-medium text-slate-700">
+        Search
+      </label>
+      <input
+        id="searchQuery"
+        name="searchQuery"
+        type="search"
+        value="<%= searchQuery ?? '' %>"
+        placeholder="Title, description, or location"
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white min-w-[220px]"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
       <label for="category" class="text-sm font-medium text-slate-700">
         Category
       </label>
@@ -54,17 +68,17 @@
       type="submit"
       class="px-4 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
     >
-      Filter
+      Apply
     </button>
   </form>
 
-  <% if (activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
+  <% if ((searchQuery && searchQuery.trim() !== "") || activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
     <div class="mb-4">
       <a
         href="/events"
         class="text-sm text-slate-500 hover:text-slate-700 hover:underline"
       >
-        Clear filters
+        Clear search and filters
       </a>
     </div>
   <% } %>
@@ -76,9 +90,9 @@
   <% if (events.length === 0) { %>
     <div class="text-center py-16 text-slate-500">
       <p class="text-lg font-medium">No events found.</p>
-      <% if (activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
+      <% if ((searchQuery && searchQuery.trim() !== "") || activeCategory || (activeTimeframe && activeTimeframe !== "all")) { %>
         <p class="text-sm mt-1">
-          Try adjusting your filters or
+          Try adjusting your search and filters or
           <a href="/events" class="text-blue-600 hover:underline">clear them</a>.
         </p>
       <% } %>
