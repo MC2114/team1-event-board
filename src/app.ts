@@ -369,7 +369,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-<<<<<<< HEAD
     // -- Organizer Dashboard routes --
     this.app.get(
       "/events/dashboard",
@@ -382,7 +381,6 @@ class ExpressApp implements IApp {
         await this.eventController.showOrganizerDashboard(req, res);
       })
     )
-=======
     this.app.get(
       "/events/:eventId",
       asyncHandler(async (req, res) => {
@@ -392,7 +390,6 @@ class ExpressApp implements IApp {
         await this.eventController.showEventDetail(req, res);
       }),
     );
->>>>>>> dev
 
     // ── Error handler ────────────────────────────────────────────────
 
