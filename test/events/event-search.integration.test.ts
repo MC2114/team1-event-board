@@ -1,18 +1,6 @@
-import request, { type SuperAgentTest } from "supertest";
+import type { SuperAgentTest } from "supertest";
 import { createComposedApp } from "../../src/composition";
-
-async function login(
-  agent: SuperAgentTest,
-  email: string,
-  password = "password123",
-): Promise<void> {
-  const response = await agent
-    .post("/login")
-    .type("form")
-    .send({ email, password });
-
-  expect(response.status).toBe(302);
-}
+import { loginAs } from "../helper/auth";
 
 async function createAndPublishEvent(
   staffAgent: SuperAgentTest,
@@ -47,14 +35,12 @@ async function createAndPublishEvent(
 describe("Feature 10 Sprint 2 - Event Search integration", () => {
   it("returns matching results for a valid search query", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
-    const userAgent = request.agent(app);
+    const staffAgent = (await loginAs(app, "staff@app.test", "password123")) as SuperAgentTest;
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
 
-    await login(staffAgent, "staff@app.test");
     const uniqueTitle = "Search Match Sprint Two Event";
     await createAndPublishEvent(staffAgent, uniqueTitle);
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent.get("/events").query({ searchQuery: "sprint two event" });
 
     expect(response.status).toBe(200);
@@ -63,9 +49,8 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
 
   it("returns no-results state when query has no matches", async () => {
     const app = createComposedApp().getExpressApp();
-    const userAgent = request.agent(app);
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent
       .get("/events")
       .query({ searchQuery: "no-match-abcxyz-12345" });
@@ -76,14 +61,12 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
 
   it("treats an empty query as all published upcoming events", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
-    const userAgent = request.agent(app);
+    const staffAgent = (await loginAs(app, "staff@app.test", "password123")) as SuperAgentTest;
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
 
-    await login(staffAgent, "staff@app.test");
     const uniqueTitle = "Empty Query All Events Case";
     await createAndPublishEvent(staffAgent, uniqueTitle);
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent.get("/events").query({ searchQuery: "   " });
 
     expect(response.status).toBe(200);
@@ -92,14 +75,12 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
 
   it("matches events by location text", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
-    const userAgent = request.agent(app);
+    const staffAgent = (await loginAs(app, "staff@app.test", "password123")) as SuperAgentTest;
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
 
-    await login(staffAgent, "staff@app.test");
     const uniqueTitle = "Location Match Sprint Two Event";
     await createAndPublishEvent(staffAgent, uniqueTitle);
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent.get("/events").query({ searchQuery: "engineering hall" });
 
     expect(response.status).toBe(200);
@@ -108,14 +89,12 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
 
   it("matches search queries case-insensitively", async () => {
     const app = createComposedApp().getExpressApp();
-    const staffAgent = request.agent(app);
-    const userAgent = request.agent(app);
+    const staffAgent = (await loginAs(app, "staff@app.test", "password123")) as SuperAgentTest;
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
 
-    await login(staffAgent, "staff@app.test");
     const uniqueTitle = "Case Insensitive Query Event";
     await createAndPublishEvent(staffAgent, uniqueTitle);
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent.get("/events").query({ searchQuery: "cAsE inSenSitiVe" });
 
     expect(response.status).toBe(200);
@@ -124,9 +103,8 @@ describe("Feature 10 Sprint 2 - Event Search integration", () => {
 
   it("returns 400 for an invalid search query that exceeds max length", async () => {
     const app = createComposedApp().getExpressApp();
-    const userAgent = request.agent(app);
+    const userAgent = (await loginAs(app, "user@app.test", "password123")) as SuperAgentTest;
 
-    await login(userAgent, "user@app.test");
     const response = await userAgent
       .get("/events")
       .query({ searchQuery: "x".repeat(101) });
