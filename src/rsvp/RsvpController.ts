@@ -57,7 +57,7 @@ class RsvpController implements IRsvpController {
             return;
         }
 
-        res.render("rsvps/dashboard", { rsvps: result.value, session });
+        res.render("rsvps/dashboard", { rsvps: result.value, session, pageError: null, });
     }
 
     async toggleRsvp(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
