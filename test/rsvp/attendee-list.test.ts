@@ -4,7 +4,7 @@ import { EventNotFoundError, NotAuthorizedError } from "../../src/rsvp/errors";
 import type { IEventRepository } from "../../src/events/EventRepository";
 import type { Event } from "../../src/events/Event";
 import type { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
-import type { RSVP } from "../../src/rsvp/RSVP";
+import type { RSVP, RSVPAttendee } from "../../src/rsvp/RSVP";
 import type { ILoggingService } from "../../src/service/LoggingService";
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -25,11 +25,12 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
   };
 }
 
-function makeRsvp(overrides: Partial<RSVP> = {}): RSVP {
+function makeAttendee(overrides: Partial<RSVPAttendee> = {}): RSVPAttendee {
   return {
     id: "rsvp-1",
     eventId: "event-1",
     userId: "user-1",
+    displayName: "Una User",
     status: "going",
     createdAt: new Date("2099-06-01T10:00:00.000Z"),
     ...overrides,
@@ -48,10 +49,11 @@ function makeEventRepo(event: Event | null): jest.Mocked<IEventRepository> {
   };
 }
 
-function makeRsvpRepo(rsvps: RSVP[]): jest.Mocked<IRSVPRepository> {
+function makeRsvpRepo(rsvps: RSVPAttendee[]): jest.Mocked<IRSVPRepository> {
   return {
     findByUser: jest.fn(),
-    findByEventId: jest.fn().mockResolvedValue(Ok(rsvps)),
+    findByEventId: jest.fn(),
+    findAttendeesByEventId: jest.fn().mockResolvedValue(Ok(rsvps)),
     findByUserAndEvent: jest.fn(),
     countGoing: jest.fn(),
     save: jest.fn(),
@@ -70,9 +72,9 @@ describe("Feature 12 Sprint 2 - Attendee List unit", () => {
   it("groups attendee RSVPs into going, waitlisted, and cancelled", async () => {
     const service = CreateRsvpService(
       makeRsvpRepo([
-        makeRsvp({ id: "rsvp-going", status: "going" }),
-        makeRsvp({ id: "rsvp-waitlisted", status: "waitlisted" }),
-        makeRsvp({ id: "rsvp-cancelled", status: "cancelled" }),
+        makeAttendee({ id: "rsvp-going", status: "going" }),
+        makeAttendee({ id: "rsvp-waitlisted", status: "waitlisted" }),
+        makeAttendee({ id: "rsvp-cancelled", status: "cancelled" }),
       ]),
       makeEventRepo(makeEvent()),
       makeLogger(),
