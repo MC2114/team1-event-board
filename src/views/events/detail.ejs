@@ -97,12 +97,17 @@
         >
           Edit Event
         </a>
-        <a
-          href="/events/<%= event.id %>/attendees"
+
+        <button
+          type="button"
+          hx-get="/events/<%= event.id %>/attendees"
+          hx-target="#attendee-list-panel"
+          hx-swap="innerHTML"
+          hx-indicator="#attendee-list-loading"
           class="px-4 py-2 rounded bg-slate-700 text-white"
         >
           View Attendees
-        </a>
+        </button>
 
         <% if (event.status === "draft") { %>
           <form method="post" action="/events/<%= event.id %>/publish">
@@ -128,6 +133,11 @@
           </p>
         <% } %>
       </div>
+
+      <p id="attendee-list-loading" class="htmx-indicator mt-4 text-sm text-slate-500" role="status" aria-live="polite">
+        Loading attendees...
+      </p>
+      <div id="attendee-list-panel" class="mt-4" aria-live="polite"></div>
     <% } %>
   </div>
 </div>
