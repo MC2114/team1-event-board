@@ -562,6 +562,7 @@ export class EventController implements IEventController {
       draft,
       cancelledOrPast,
       user,
+      pageError: null,
     })
   }
 }
