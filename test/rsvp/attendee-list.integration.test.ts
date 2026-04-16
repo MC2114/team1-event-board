@@ -73,4 +73,37 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain("Attendee List");
   });
+
+  it("rejects member access to attendee list with 403", async () => {
+    const app = createComposedApp().getExpressApp();
+    const userAgent = request.agent(app);
+
+    await login(userAgent, "user@app.test");
+    const response = await userAgent.get("/events/event-published-1/attendees");
+
+    expect(response.status).toBe(403);
+    expect(response.text).toContain("Users cannot view attendee lists");
+  });
+
+  it("rejects staff access to events they do not own with 403", async () => {
+    const app = createComposedApp().getExpressApp();
+    const staffAgent = request.agent(app);
+
+    await login(staffAgent, "staff@app.test");
+    const response = await staffAgent.get("/events/event-published-2/attendees");
+
+    expect(response.status).toBe(403);
+    expect(response.text).toContain("Staff can only view attendees for their own events");
+  });
+
+  it("returns 404 when requesting attendee list for a missing event", async () => {
+    const app = createComposedApp().getExpressApp();
+    const adminAgent = request.agent(app);
+
+    await login(adminAgent, "admin@app.test");
+    const response = await adminAgent.get("/events/does-not-exist/attendees");
+
+    expect(response.status).toBe(404);
+    expect(response.text).toContain("Event does-not-exist not found");
+  });
 });
