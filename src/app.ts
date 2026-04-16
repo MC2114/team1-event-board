@@ -303,19 +303,6 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
-      "/events/manage",
-      asyncHandler(async (req, res) => {
-        if (
-          !this.requireRole(req, res, ["admin", "staff"], "Only admins and staff can manage events.")
-        ) {
-          return;
-        }
-        this.logger.info("GET /events/manage");
-        await this.eventController.showManage(req, res);
-      }),
-    );
-
-    this.app.get(
       "/events/dashboard",
       asyncHandler(async (req, res) => {
         if (
