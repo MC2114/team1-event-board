@@ -4,10 +4,13 @@ import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import type { RSVPError } from "./errors";
 import type { EventError } from "../events/errors";
+import type { IEventService } from "../events/EventService";
+import type { UserRole } from "../auth/User";
 
 export interface IRsvpController {
     showMyRsvps(res: Response, session: IAppBrowserSession): Promise<void>;
     toggleRsvp(
+        req: Request,
         res: Response,
         eventId: string,
         session: IAppBrowserSession,
@@ -23,6 +26,7 @@ export interface IRsvpController {
 class RsvpController implements IRsvpController {
     constructor(
         private readonly service: IRsvpService,
+        private readonly eventService: IEventService,
         private readonly logger: ILoggingService,
     ) { }
 
@@ -61,28 +65,75 @@ class RsvpController implements IRsvpController {
         res.render("rsvps/dashboard", { rsvps: result.value, session, pageError: null, });
     }
 
-    async toggleRsvp(res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
-        const { userId: userId, role } = session.authenticatedUser!;
+    async toggleRsvp(req: Request, res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {
+        const { userId, role } = session.authenticatedUser!;
         const result = await this.service.toggleRSVP(eventId, userId, role);
 
         if (result.ok === false) {
             const status = this.mapErrorStatus(result.value);
             this.logger.warn(`toggleRsvp failed: ${result.value.message}`);
-            res.status(status).render("partials/error", { message: result.value.message, layout: false });
+            res.status(status).render("partials/error", {
+                message: result.value.message,
+                layout: false,
+            });
             return;
         }
 
         this.logger.info(`User ${userId} toggled RSVP for event ${eventId} - status: ${result.value.status}`);
+
         let rsvpMessage = "";
 
         if (result.value.status === "going") {
-        rsvpMessage = "You have successfully RSVPed to this event.";
+            rsvpMessage = "You have successfully RSVPed to this event.";
         } else if (result.value.status === "waitlisted") {
-        rsvpMessage = "This event is full. You have been added to the waitlist.";
+            rsvpMessage = "This event is full. You have been added to the waitlist.";
         } else if (result.value.status === "cancelled") {
-        rsvpMessage = "Your RSVP has been cancelled.";
+            rsvpMessage = "Your RSVP has been cancelled.";
         }
 
+        const hxHeader = req.get("HX-Request");
+        const isHtmxRequest = hxHeader === "true";
+
+        this.logger.info(`HX-Request header: ${hxHeader ?? "missing"}`);
+
+        if (isHtmxRequest) {
+            this.logger.info("HTMX request detected -> returning partial RSVP section");
+
+            const detailResult = await this.eventService.getEventDetailView(
+                eventId,
+                userId,
+                role as UserRole,
+            );
+
+            if (detailResult.ok === false) {
+                const status = this.mapErrorStatus(detailResult.value);
+                res.status(status).render("partials/error", {
+                    message: detailResult.value.message,
+                    layout: false,
+                });
+                return;
+            }
+
+            const userRSVPResult = await this.service.getRSVPsByUser(userId);
+            let userRSVP = null;
+
+            if (userRSVPResult.ok) {
+                const match = userRSVPResult.value.find((r) => r.eventId === eventId);
+                userRSVP = match ?? null;
+            }
+
+            res.render("events/partials/rsvp-section", {
+                event: detailResult.value.event,
+                attendeeCount: detailResult.value.attendeeCount,
+                user: session.authenticatedUser,
+                userRSVP,
+                rsvpMessage,
+                layout: false,
+            });
+            return;
+        }
+
+        this.logger.info("Standard request detected -> redirecting for full page reload");
         res.redirect(`/events/${eventId}?rsvpMessage=${encodeURIComponent(rsvpMessage)}`);
     }
 
@@ -116,7 +167,8 @@ class RsvpController implements IRsvpController {
 
 export function CreateRsvpController(
     service: IRsvpService,
+    eventService: IEventService,
     logger: ILoggingService,
 ): IRsvpController {
-    return new RsvpController(service, logger);
+    return new RsvpController(service, eventService, logger);
 }

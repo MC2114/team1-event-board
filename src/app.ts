@@ -369,7 +369,7 @@ class ExpressApp implements IApp {
         }
         const browserSession = touchAppSession(sessionStore(req));
         const eventId = req.params.eventId as string;
-        await this.rsvpController.toggleRsvp(res, eventId, browserSession);
+        await this.rsvpController.toggleRsvp(req, res, eventId, browserSession);
       }),
     );
 
