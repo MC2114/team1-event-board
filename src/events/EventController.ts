@@ -441,7 +441,7 @@ export class EventController implements IEventController {
     }
 
     if (isHtmxRequest){
-      res.render("event/partial/event-status-controls", {
+      res.render("events/partials/event-status-controls", {
         event: result.value,
         layout: false
       });
@@ -488,7 +488,7 @@ export class EventController implements IEventController {
     }
 
     if (isHtmxRequest){
-      res.render("event/partial/event-status-controls", {
+      res.render("events/partials/event-status-controls", {
         event: result.value,
         layout: false
       });
