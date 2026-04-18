@@ -48,16 +48,23 @@
         Category
       </label>
       <select id="category" name="category"
+        hx-get="/events"
+        hx-trigger="change"
+        hx-target="#event-results"
+        hx-swap="innerHTML"
+        hx-include="#event-search-form"
+        hx-push-url="true"
+        hx-indicator="#event-results-loading"
         class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
         <option value="">All categories</option>
-        <% const categories=["technology", "business" , "music" , "art" , "food" , "health" , "education" , "sports"
-          , "gaming" , "networking" , "party" , "holiday" , "birthday" , "graduation" , "wedding" , "movies and tv"
-          , "other" ]; %>
-          <% categories.forEach(function(cat) { %>
-            <option value="<%= cat %>" <%=activeCategory===cat ? "selected" : "" %>>
-              <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
-            </option>
-            <% }); %>
+        <% const categories=["technology", "business", "music", "art", "food", "health", "education", "sports",
+          "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv",
+          "other"]; %>
+        <% categories.forEach(function(cat)) { %>
+          <option value="<%= cat %>" <%= activeCategory === cat ? "selected" : "" %>>
+            <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+          </option>
+        <% }); %>
       </select>
     </div>
 
