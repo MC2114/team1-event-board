@@ -14,6 +14,7 @@ import {
     EventNotFoundError,
     InvalidEventStateError,
     InvalidInputError,
+    InvalidSearchQueryError,
     NotAuthorizedError,
     UnexpectedDependencyError,
 } from "./errors";
@@ -83,6 +84,8 @@ export interface IEventService {
 }
 
 class EventService implements IEventService {
+    private static readonly MAX_SEARCH_QUERY_LENGTH = 100;
+
     private static includesSearchMatch(event: Event, searchQuery: string): boolean {
         const title = event.title.toLowerCase();
         const description = event.description.toLowerCase();
@@ -461,6 +464,14 @@ class EventService implements IEventService {
         }
 
         const searchQuery = (filters.searchQuery ?? "").trim().toLowerCase();
+        if (searchQuery.length > EventService.MAX_SEARCH_QUERY_LENGTH) {
+            return Err(
+                InvalidSearchQueryError(
+                    `Search query must be ${EventService.MAX_SEARCH_QUERY_LENGTH} characters or fewer.`,
+                ),
+            );
+        }
+
         if (searchQuery.length === 0) {
             return Ok(visibleEvents);
         }

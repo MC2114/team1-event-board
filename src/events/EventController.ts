@@ -38,6 +38,7 @@ export class EventController implements IEventController {
 
   private mapErrorStatus(error: EventError): number {
     if (error.name === "InvalidInputError") return 400;
+    if (error.name === "InvalidSearchQueryError") return 400;
     if (error.name === "EventNotFoundError") return 404;
     if (error.name === "NotAuthorizedError") return 403;
     if (error.name === "InvalidEventStateError") return 400;
