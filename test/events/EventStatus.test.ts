@@ -119,4 +119,39 @@ describe("Feature 2: EventService.updateEventStatus", () => {
         expect(result.value.status).toEqual("cancelled");
     }
   });
+
+  it("returns EventNotFoundError when the event does not exist", async () => {
+    const eventRepo = makeEventRepo(Ok(null),);
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "missing",
+        "user-staff",
+        "staff",
+        "published",
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok){
+        expect(result.value).toEqual(EventNotFoundError("No event exists with the given ID."));
+    }
+  });
+
+  it("returns NotAuthorizedError when a user tries to publish a draft event", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ status: "draft", organizerId: "someone-else" })),
+        Ok(makeEvent({ status: "published", organizerId: "someone-else" })),
+    );
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "event-1",
+        "user-reader",
+        "user",
+        "published",
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+        expect(result.value).toEqual(NotAuthorizedError("You are not authorized to update the event status."));
+    }
+  });
 });
