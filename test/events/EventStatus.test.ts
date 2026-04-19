@@ -30,7 +30,7 @@ describe("Feature 2: EventService.updateEventStatus", () => {
       findPublishedUpcoming: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
-      updateStatus: jest.fn().mockResolvedValue(eventResult),
+      updateStatus: jest.fn().mockResolvedValue(updateResult),
     };
   }
 
@@ -38,13 +38,14 @@ describe("Feature 2: EventService.updateEventStatus", () => {
     return {
       findByUser: jest.fn(),
       findByEventId: jest.fn(),
+      findAttendeesByEventId: jest.fn(),
       findByUserAndEvent: jest.fn(),
       countGoing: jest.fn().mockResolvedValue(Ok(0)),
       save: jest.fn(),
     };
   }
 
-  it("allows staffto publish their own draft event", async () => {
+  it("allows staff to publish their own draft event", async () => {
     const eventRepo = makeEventRepo(
         Ok(makeEvent({ status: "draft", organizerId: "user-staff" })),
         Ok(makeEvent({ status: "published", organizerId: "user-staff" })),
@@ -63,7 +64,7 @@ describe("Feature 2: EventService.updateEventStatus", () => {
     }
   });
 
-  it("allows staff to cancel their own pbulished event", async () => {
+  it("allows staff to cancel their own published event", async () => {
     const eventRepo = makeEventRepo(
         Ok(makeEvent({ status: "published", organizerId: "user-staff" })),
         Ok(makeEvent({ status: "cancelled", organizerId: "user-staff" })),
@@ -131,7 +132,7 @@ describe("Feature 2: EventService.updateEventStatus", () => {
     );
 
     expect(result.ok).toBe(false);
-    if (result.ok){
+    if (!result.ok) {
         expect(result.value).toEqual(EventNotFoundError("No event exists with the given ID."));
     }
   });
@@ -150,8 +151,103 @@ describe("Feature 2: EventService.updateEventStatus", () => {
     );
 
     expect(result.ok).toBe(false);
-    if (result.ok) {
+    if (!result.ok) {
         expect(result.value).toEqual(NotAuthorizedError("You are not authorized to update the event status."));
+    }
+  });
+
+  it("return NotAuthorizedError when staff tries to publish someone else's draft event", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ status: "draft", organizerId: "someone-else" })),
+        Ok(makeEvent({ status: "published", organizerId: "someone-else" })),
+    );
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "event-1",
+        "user-staff",
+        "staff",
+        "published",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+        expect(result.value).toEqual(NotAuthorizedError("You are not authorized to update the event status."));
+    }
+  });
+
+  it("returns InvalidEventStateError when a staff tries to publish a published event", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ status: "published", organizerId: "user-staff" })),
+        Ok(makeEvent({ status: "published", organizerId: "user-staff" })),
+    );
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "event-1",
+        "user-staff",
+        "staff",
+        "published",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+        expect(result.value).toEqual(InvalidEventStateError("Invalid status transition from \"published\" to \"published\"."));
+    }
+  });
+
+  it("returns InvalidEventStateError when a staff tries to cancel a cancelled event", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ status: "cancelled", organizerId: "user-staff" })),
+        Ok(makeEvent({ status: "cancelled", organizerId: "user-staff" })),
+    );
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "event-1",
+        "user-staff",
+        "staff",
+        "cancelled",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+        expect(result.value).toEqual(InvalidEventStateError("Invalid status transition from \"cancelled\" to \"cancelled\"."));
+    }
+  });
+
+  it("returns InvalidEventStateError when a staff tries to publish a cancelled event", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ status: "cancelled", organizerId: "user-staff" })),
+        Ok(makeEvent({ status: "published", organizerId: "user-staff" })),
+    );
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "event-1",
+        "user-staff",
+        "staff",
+        "published",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+        expect(result.value).toEqual(InvalidEventStateError("Invalid status transition from \"cancelled\" to \"published\"."));
+    }
+  });
+
+  it("returns InvalidEventStateError when a staff tries to cancel a draft event", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ status: "draft", organizerId: "user-staff" })),
+        Ok(makeEvent({ status: "cancelled", organizerId: "user-staff" })),
+    );
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
+    const result = await service.updateEventStatus(
+        "event-1",
+        "user-staff",
+        "staff",
+        "cancelled",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+        expect(result.value).toEqual(InvalidEventStateError("Invalid status transition from \"draft\" to \"cancelled\"."));
     }
   });
 });
