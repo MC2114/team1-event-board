@@ -58,6 +58,7 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     return {
       findByUser: jest.fn(),
       findByEventId: jest.fn(),
+      findAttendeesByEventId: jest.fn().mockResolvedValue(Ok([])),
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoing: jest.fn().mockResolvedValue(Ok(0)),
       save: jest.fn().mockImplementation(async (rsvp: RSVP) => Ok(rsvp)),

@@ -414,6 +414,7 @@ export class EventController implements IEventController {
       return;
     }
 
+    const isHtmxRequest = req.get("HX-Request") === "true"
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
@@ -440,6 +441,14 @@ export class EventController implements IEventController {
       return;
     }
 
+    if (isHtmxRequest){
+      res.render("events/partials/event-status-controls", {
+        event: result.value,
+        layout: false
+      });
+      return;
+    }
+
     res.redirect("/events/dashboard");
   }
 
@@ -452,6 +461,7 @@ export class EventController implements IEventController {
       return;
     }
 
+    const isHtmxRequest = req.get("HX-Request") === "true"
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "cancelled");
@@ -474,6 +484,14 @@ export class EventController implements IEventController {
       res.status(status).render("partials/error", {
         message: result.value.message,
         layout: false,
+      });
+      return;
+    }
+
+    if (isHtmxRequest){
+      res.render("events/partials/event-status-controls", {
+        event: result.value,
+        layout: false
       });
       return;
     }
