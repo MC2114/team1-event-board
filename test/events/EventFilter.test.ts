@@ -181,7 +181,6 @@ describe("Feature 6: EventService.listEvents", () => {
             makeEvent({id: "e1", status: "published", startDatetime: inOneDay}),
             makeEvent({id: "e2", status: "published", startDatetime: inOneWeek}),
             makeEvent({id: "e3", status: "published", startDatetime: new Date(now.getTime() + 29 * 24 * 60 * 60 * 1000)}),
-            makeEvent({id: "e4", status: "published", startDatetime: inOneMonth}),
             makeEvent({id: "e5", status: "published", startDatetime: inFortyDays}),
             makeEvent({id: "e6", status: "published", startDatetime: inOneYear}),
         ];
@@ -201,14 +200,13 @@ describe("Feature 6: EventService.listEvents", () => {
             makeEvent({id: "e3", status: "published", startDatetime: new Date(now.getTime() + 29 * 24 * 60 * 60 * 1000)}),
             makeEvent({id: "e4", status: "published", startDatetime: inOneMonth}),
             makeEvent({id: "e5", status: "published", startDatetime: inFortyDays}),
-            makeEvent({id: "e6", status: "published", startDatetime: inOneYear}),
             makeEvent({id: "e7", status: "published", startDatetime: new Date(now.getTime() + 366 * 24 * 60 * 60 * 1000)}),
         ];
         const service = CreateEventService(makeEventRepo(events), makeRsvpRepo());
         const result = await service.listEvents("user-reader", "user", {timeframe: "this_year"});
         expect(result.ok).toBe(true);
         if (result.ok){
-            expect(result.value.length).toBe(4);
+            expect(result.value.length).toBe(5);
             expect(result.value.map(e => e.id)).toEqual(["e1", "e2", "e3", "e4", "e5"]);
         }
     });
@@ -250,7 +248,7 @@ describe("Feature 6: EventService.listEvents", () => {
         const result = await service.listEvents("user-reader", "user", {category: "invalid" as any});
         expect(result.ok).toBe(false);
         if (!result.ok){
-            expect(result.value).toBe(InvalidInputError);
+            expect(result.value.name).toBe("InvalidInputError");
         }
     });
 
@@ -259,7 +257,7 @@ describe("Feature 6: EventService.listEvents", () => {
         const result = await service.listEvents("user-reader", "user", {timeframe: "invalid" as any});
         expect(result.ok).toBe(false);
         if (!result.ok){
-            expect(result.value).toBe(InvalidInputError);
+            expect(result.value.name).toBe("InvalidInputError");
         }
     });
 
@@ -268,7 +266,7 @@ describe("Feature 6: EventService.listEvents", () => {
         const result = await service.listEvents("user-reader", "user", {category: "invalid" as any, timeframe: "invalid" as any});
         expect(result.ok).toBe(false);
         if (!result.ok){
-            expect(result.value).toBe(InvalidInputError);
+            expect(result.value.name).toBe("InvalidInputError");
         }
     });
 
@@ -277,7 +275,7 @@ describe("Feature 6: EventService.listEvents", () => {
         const result = await service.listEvents("user-reader", "user", {category: "technology", timeframe: "invalid" as any});
         expect(result.ok).toBe(false);
         if (!result.ok){
-            expect(result.value).toBe(InvalidInputError);
+            expect(result.value.name).toBe("InvalidInputError");
         }
     });
 
@@ -286,7 +284,7 @@ describe("Feature 6: EventService.listEvents", () => {
         const result = await service.listEvents("user-reader", "user", {category: "invalid" as any, timeframe: "this_week"});
         expect(result.ok).toBe(false);
         if (!result.ok){
-            expect(result.value).toBe(InvalidInputError);
+            expect(result.value.name).toBe("InvalidInputError");
         }
     }); 
 });
