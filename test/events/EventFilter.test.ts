@@ -3,6 +3,7 @@ import { CreateEventService } from "../../src/events/EventService";
 import { Event } from "../../src/events/Event";
 import { IEventRepository } from "../../src/events/EventRepository";
 import { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
+import { InvalidInputError } from "../../src/events/errors";
 
 describe("Feature 6: EventService.listEvents", () => {
     const now = new Date();
@@ -243,5 +244,49 @@ describe("Feature 6: EventService.listEvents", () => {
             expect(result.value.map(e => e.id)).toEqual(["e1", "e2"]);
         }
     });
-    
+
+    it("return InvalidInputError when category is invalid", async () => {
+        const service = CreateEventService(makeEventRepo(), makeRsvpRepo());
+        const result = await service.listEvents("user-reader", "user", {category: "invalid" as any});
+        expect(result.ok).toBe(false);
+        if (!result.ok){
+            expect(result.value).toBe(InvalidInputError);
+        }
+    });
+
+    it("returns InvalidInputError when timeframe is invalid", async () => {
+        const service = CreateEventService(makeEventRepo(), makeRsvpRepo());
+        const result = await service.listEvents("user-reader", "user", {timeframe: "invalid" as any});
+        expect(result.ok).toBe(false);
+        if (!result.ok){
+            expect(result.value).toBe(InvalidInputError);
+        }
+    });
+
+    it("returns InvalidInputError when category and timeframe are invalid", async () => {
+        const service = CreateEventService(makeEventRepo(), makeRsvpRepo());
+        const result = await service.listEvents("user-reader", "user", {category: "invalid" as any, timeframe: "invalid" as any});
+        expect(result.ok).toBe(false);
+        if (!result.ok){
+            expect(result.value).toBe(InvalidInputError);
+        }
+    });
+
+    it("return InvalidInputError when category is valid and timeframe is invalid", async () => {
+        const service = CreateEventService(makeEventRepo(), makeRsvpRepo());
+        const result = await service.listEvents("user-reader", "user", {category: "technology", timeframe: "invalid" as any});
+        expect(result.ok).toBe(false);
+        if (!result.ok){
+            expect(result.value).toBe(InvalidInputError);
+        }
+    });
+
+    it("return InvalidInputError when category is invalid and timeframe is valid", async () => {
+        const service = CreateEventService(makeEventRepo(), makeRsvpRepo());
+        const result = await service.listEvents("user-reader", "user", {category: "invalid" as any, timeframe: "this_week"});
+        expect(result.ok).toBe(false);
+        if (!result.ok){
+            expect(result.value).toBe(InvalidInputError);
+        }
+    }); 
 });
