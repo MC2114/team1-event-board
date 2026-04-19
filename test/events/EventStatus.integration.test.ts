@@ -3,7 +3,7 @@ import type { Express } from "express";
 import { createComposedApp } from "../../src/composition";
 import { loginAs } from "../helper/auth";
 
-describe("Feature 2: Event Publishing and Cancellation", () => {
+describe("Feature 5: Event Publishing and Cancellation", () => {
   let app: Express;
 
   beforeEach(() => {
@@ -105,13 +105,13 @@ describe("Feature 2: Event Publishing and Cancellation", () => {
 
   it("returns 403 when staff tries to publish someone else's draft event", async () => {
     const agent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
-    const res = await agent.post(`/events/event-draft-1/publish`);
+    const res = await agent.post(`/events/event-draft-admin/publish`);
     expect(res.status).toBe(403);
   });
 
   it("returns 403 when staff tries to cancel someone else's published event", async () => {
     const agent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
-    const res = await agent.post(`/events/event-published-1/cancel`);
+    const res = await agent.post(`/events/event-published-2/cancel`);
     expect(res.status).toBe(403);
   });
 
