@@ -54,29 +54,8 @@
             View Attendees
           </button>
 
-          <% if (event.status === "draft") { %>
-            <form method="post" action="/events/<%= event.id %>/publish">
-              <button
-                type="submit"
-                class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-              >
-                Publish Event
-              </button>
-            </form>
-          <% } else if (event.status === "published") { %>
-            <form method="post" action="/events/<%= event.id %>/cancel">
-              <button
-                type="submit"
-                class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-              >
-                Cancel Event
-              </button>
-            </form>
-          <% } else if (event.status === "cancelled") { %>
-            <p class="px-4 py-2 rounded bg-slate-100 text-slate-600 text-sm">
-              This event is cancelled.
-            </p>
-          <% } %>
+          <%- include("partials/event-status-controls", { event }) %>
+          
         </div>
 
         <p id="attendee-list-loading" class="htmx-indicator mt-4 text-sm text-slate-500" role="status" aria-live="polite">
