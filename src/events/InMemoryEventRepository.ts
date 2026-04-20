@@ -191,5 +191,5 @@ export class InMemoryEventRepository implements IEventRepository {
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
-    return new InMemoryEventRepository([...DEMO_EVENTS]);
+    return new InMemoryEventRepository(DEMO_EVENTS.map(e => ({ ...e })));
 }
