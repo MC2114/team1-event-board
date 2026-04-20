@@ -204,4 +204,44 @@ describe("EventService.createEvent", () => {
             expect(result.value.name).toBe("InvalidInputError");
         }
     });
+
+    it("rejects when capacity is zero", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            capacity: 0,
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("Capacity must be a positive whole number.");
+        }
+    });
+
+    it("rejects when capacity is a negative number", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            capacity: -5,
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+        }
+    });
+
+    it("rejects when capacity is a decimal", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            capacity: 10.5,
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+        }
+    });
 });
