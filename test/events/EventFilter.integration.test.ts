@@ -107,4 +107,22 @@ describe("Feature 6: Ctaegory and Date Filter", () => {
         expect(res.text).toContain("No events found");
     });
 
+    it("return 400 for an invalid category filter", async () => {
+        const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+        const res = await agent.get("/events").query({ category: "invalid" });
+        expect(res.status).toBe(400);
+    });
+
+    it("return 400 for an invalid timeframe filter", async () => {
+        const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+        const res = await agent.get("/events").query({ timeframe: "invalid" });
+        expect(res.status).toBe(400);
+    });
+
+    it("redirects to login page for unauthenticated users", async () => {
+        const res = await request(app).get("/events");
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toBe("/login");
+    });
+
 });
