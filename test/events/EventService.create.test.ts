@@ -147,4 +147,61 @@ describe("EventService.createEvent", () => {
             expect(result.value.message).toBe("Category is required.");
         }
     });
+
+    it("rejects when startDatetime is invalid", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            startDatetime: new Date("invalid"),
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("Start date and time is invalid.");
+        }
+    });
+
+    it("rejects when endDatetime is invalid", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            endDatetime: new Date("invalid"),
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("End date and time is invalid.");
+        }
+    });
+
+    it("rejects when endDatetime is before startDatetime", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            startDatetime: new Date("2027-06-01T12:00:00"),
+            endDatetime: new Date("2027-06-01T10:00:00"),
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("End date and time must be after start date and time.");
+        }
+    });
+
+    it("rejects when endDatetime equals startDatetime", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            startDatetime: new Date("2027-06-01T10:00:00"),
+            endDatetime: new Date("2027-06-01T10:00:00"),
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+        }
+    });
 });
