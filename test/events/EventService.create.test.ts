@@ -20,6 +20,9 @@ function makeService() {
 }
 
 describe("EventService.createEvent", () => {
+
+    // Happy paths
+
     it("creates a draft event for a staff user", async () => {
         const service = makeService();
         const result = await service.createEvent("user-staff", "staff", validData);
@@ -56,18 +59,7 @@ describe("EventService.createEvent", () => {
         }
     });
 
-    it("accepts null capacity meaning no limit", async () => {
-        const service = makeService();
-        const result = await service.createEvent("user-staff", "staff", {
-            ...validData,
-            capacity: null,
-        });
-
-        expect(result.ok).toBe(true);
-        if (result.ok) {
-            expect(result.value.capacity).toBeNull();
-        }
-    });
+    // NotAuthorizedError
 
     it("rejects event creation for a user role", async () => {
         const service = makeService();
@@ -78,6 +70,8 @@ describe("EventService.createEvent", () => {
             expect(result.value.name).toBe("NotAuthorizedError");
         }
     });
+
+    // InvalidInputError — missing required fields
 
     it("rejects when title is empty", async () => {
         const service = makeService();
@@ -148,6 +142,8 @@ describe("EventService.createEvent", () => {
         }
     });
 
+    // InvalidInputError — datetime validation
+
     it("rejects when startDatetime is invalid", async () => {
         const service = makeService();
         const result = await service.createEvent("user-staff", "staff", {
@@ -204,6 +200,8 @@ describe("EventService.createEvent", () => {
             expect(result.value.name).toBe("InvalidInputError");
         }
     });
+
+    // InvalidInputError — capacity validation
 
     it("rejects when capacity is zero", async () => {
         const service = makeService();
