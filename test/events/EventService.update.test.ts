@@ -20,6 +20,9 @@ const validUpdate = {
 };
 
 describe("EventService.updateEvent", () => {
+
+    // Happy paths
+
     it("allows staff to update their own draft event", async () => {
         const service = makeService();
         const result = await service.updateEvent(
@@ -66,6 +69,8 @@ describe("EventService.updateEvent", () => {
         }
     });
 
+    // EventNotFoundError
+
     it("rejects when event does not exist", async () => {
         const service = makeService();
         const result = await service.updateEvent(
@@ -80,6 +85,8 @@ describe("EventService.updateEvent", () => {
             expect(result.value.name).toBe("EventNotFoundError");
         }
     });
+
+    // NotAuthorizedError
 
     it("rejects when staff tries to edit another organizer's event", async () => {
         const service = makeService();
@@ -111,6 +118,8 @@ describe("EventService.updateEvent", () => {
         }
     });
 
+    // InvalidEventStateError
+
     it("rejects editing a cancelled event", async () => {
         const service = makeService();
         const result = await service.updateEvent(
@@ -140,6 +149,8 @@ describe("EventService.updateEvent", () => {
             expect(result.value.name).toBe("InvalidEventStateError");
         }
     });
+
+    // InvalidInputError
 
     it("rejects when title is set to empty string", async () => {
         const service = makeService();
