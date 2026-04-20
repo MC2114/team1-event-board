@@ -2,8 +2,7 @@ import { Ok } from "../../src/lib/result";
 import { CreateEventService } from "../../src/events/EventService";
 import { Event } from "../../src/events/Event";
 import { IEventRepository } from "../../src/events/EventRepository";
-import { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
-import { InvalidInputError } from "../../src/events/errors";
+import { makeEvent as authMakeEvent, makeRsvpRepo } from "../helper/auth";
 
 describe("Feature 6: EventService.listEvents", () => {
     const now = new Date();
@@ -15,21 +14,17 @@ describe("Feature 6: EventService.listEvents", () => {
     const inFiveDays = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
     const oneHour = 60 * 60 * 1000;
 
-    const makeEvent = (overrides: Partial<Event> = {}): Event => ({
-        id: "event-1",
-        title: "Test Event",
-        description: "A test event description",
-        location: "Amherst, MA",
-        category: "technology",
-        status: "published",
-        capacity: 50,
-        startDatetime: inFiveDays,
-        endDatetime: new Date(inFiveDays.getTime() + oneHour),
-        organizerId: "user-staff",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...overrides,
-    });
+    const makeEvent = (overrides: Partial<Event> = {}): Event =>
+        authMakeEvent({
+            title: "Test Event",
+            description: "A test event description",
+            location: "Amherst, MA",
+            category: "technology",
+            capacity: 50,
+            startDatetime: inFiveDays,
+            endDatetime: new Date(inFiveDays.getTime() + oneHour),
+            ...overrides,
+        });
 
     function makeEventRepo(events: Event[] = [makeEvent()]): jest.Mocked<IEventRepository> {
         return {
@@ -40,17 +35,6 @@ describe("Feature 6: EventService.listEvents", () => {
             create: jest.fn(),
             update: jest.fn(),
             updateStatus: jest.fn(),
-        };
-    }
-
-    function makeRsvpRepo(): jest.Mocked<IRSVPRepository> {
-        return {
-            findByUser: jest.fn(),
-            findByEventId: jest.fn(),
-            findAttendeesByEventId: jest.fn(),
-            findByUserAndEvent: jest.fn(),
-            countGoing: jest.fn().mockResolvedValue(Ok(0)),
-            save: jest.fn(),
         };
     }
 
