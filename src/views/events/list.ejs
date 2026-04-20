@@ -48,16 +48,23 @@
         Category
       </label>
       <select id="category" name="category"
+        hx-get="/events"
+        hx-trigger="change"
+        hx-target="#event-results"
+        hx-swap="innerHTML"
+        hx-include="#event-search-form"
+        hx-push-url="true"
+        hx-indicator="#event-results-loading"
         class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
         <option value="">All categories</option>
-        <% const categories=["technology", "business" , "music" , "art" , "food" , "health" , "education" , "sports"
-          , "gaming" , "networking" , "party" , "holiday" , "birthday" , "graduation" , "wedding" , "movies and tv"
-          , "other" ]; %>
-          <% categories.forEach(function(cat) { %>
-            <option value="<%= cat %>" <%=activeCategory===cat ? "selected" : "" %>>
-              <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
-            </option>
-            <% }); %>
+        <% const categories=["technology", "business", "music", "art", "food", "health", "education", "sports",
+          "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv",
+          "other"]; %>
+        <% categories.forEach(function(cat) { %>
+          <option value="<%= cat %>" <%= activeCategory === cat ? "selected" : "" %>>
+            <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+          </option>
+        <% }); %>
       </select>
     </div>
 
@@ -66,18 +73,20 @@
         When
       </label>
       <select id="timeframe" name="timeframe"
+        hx-get="/events"
+        hx-trigger="change"
+        hx-target="#event-results"
+        hx-swap="innerHTML"
+        hx-include="#event-search-form"
+        hx-push-url="true"
+        hx-indicator="#event-results-loading"
         class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
-        <option value="all" <%=activeTimeframe==="all" || !activeTimeframe ? "selected" : "" %>>All upcoming</option>
-        <option value="this_week" <%=activeTimeframe==="this_week" ? "selected" : "" %>>This week</option>
-        <option value="this_month" <%=activeTimeframe==="this_month" ? "selected" : "" %>>This month</option>
-        <option value="this_year" <%=activeTimeframe==="this_year" ? "selected" : "" %>>This year</option>
+        <option value="all" <%= activeTimeframe === "all" || !activeTimeframe ? "selected" : "" %>>All upcoming</option>
+        <option value="this_week" <%= activeTimeframe === "this_week" ? "selected" : "" %>>This week</option>
+        <option value="this_month" <%= activeTimeframe === "this_month" ? "selected" : "" %>>This month</option>
+        <option value="this_year" <%= activeTimeframe === "this_year" ? "selected" : "" %>>This year</option>
       </select>
     </div>
-
-    <button type="submit"
-      class="px-4 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
-      Apply
-    </button>
   </form>
 
   <% if ((searchQuery && searchQuery.trim() !=="" ) || activeCategory || (activeTimeframe && activeTimeframe !=="all" ))
