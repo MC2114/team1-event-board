@@ -91,7 +91,7 @@ describe("Feature 6: Category and Date Filter", () => {
         expect(res.text).toContain("Cancelled Hackathon");
     });
 
-    it("returns HTMX partila when HX-Request header is present", async () => {
+    it("returns HTMX partial when HX-Request header is present", async () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
         const res = await agent.get("/events").set("HX-Request", "true").query({ category: "party" });
         expect(res.status).toBe(200);
