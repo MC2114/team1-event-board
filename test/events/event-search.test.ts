@@ -52,7 +52,12 @@ describe("Feature 10 Sprint 2 - Event Search unit", () => {
       makeEvent({ id: "event-match", title: "Case Insensitive Event" }),
       makeEvent({ id: "event-other", title: "Another Event", location: "Library" }),
     ];
-    const service = CreateEventService(makeEventRepo(events), makeRsvpRepo());
+
+    const eventRepo = makeEventRepo();
+    eventRepo.findAll.mockResolvedValue(Ok(events));
+    eventRepo.findPublishedUpcoming.mockResolvedValue(Ok(events));
+
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
 
     const result = await service.listEvents("user-1", "user", {
       searchQuery: "cAsE inSENsItive",
@@ -71,7 +76,12 @@ describe("Feature 10 Sprint 2 - Event Search unit", () => {
       makeEvent({ id: "event-past", startDatetime: new Date("2000-01-01T00:00:00.000Z") }),
       makeEvent({ id: "event-draft", status: "draft" }),
     ];
-    const service = CreateEventService(makeEventRepo(events), makeRsvpRepo());
+
+    const eventRepo = makeEventRepo();
+    eventRepo.findAll.mockResolvedValue(Ok(events));
+    eventRepo.findPublishedUpcoming.mockResolvedValue(Ok(events));
+
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
 
     const result = await service.listEvents("user-1", "user", { searchQuery: "   " });
 
@@ -86,7 +96,12 @@ describe("Feature 10 Sprint 2 - Event Search unit", () => {
       makeEvent({ id: "event-one", title: "Spring Picnic", location: "Campus Green" }),
       makeEvent({ id: "event-two", title: "Night Study Session", location: "Library" }),
     ];
-    const service = CreateEventService(makeEventRepo(events), makeRsvpRepo());
+
+    const eventRepo = makeEventRepo();
+    eventRepo.findAll.mockResolvedValue(Ok(events));
+    eventRepo.findPublishedUpcoming.mockResolvedValue(Ok(events));
+
+    const service = CreateEventService(eventRepo, makeRsvpRepo());
 
     const result = await service.listEvents("user-1", "user", { searchQuery: "zebra" });
 
@@ -97,7 +112,7 @@ describe("Feature 10 Sprint 2 - Event Search unit", () => {
   });
 
   it("returns InvalidSearchQueryError when search query exceeds maximum length", async () => {
-    const service = CreateEventService(makeEventRepo([makeEvent()]), makeRsvpRepo());
+    const service = CreateEventService(makeEventRepo(), makeRsvpRepo());
 
     const result = await service.listEvents("user-1", "user", {
       searchQuery: "x".repeat(101),
