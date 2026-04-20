@@ -110,4 +110,34 @@ describe("EventService.updateEvent", () => {
             expect(result.value.name).toBe("NotAuthorizedError");
         }
     });
+
+    it("rejects editing a cancelled event", async () => {
+        const service = makeService();
+        const result = await service.updateEvent(
+            "event-cancelled-1",
+            "user-staff",
+            "staff",
+            validUpdate,
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidEventStateError");
+        }
+    });
+
+    it("rejects editing a past event", async () => {
+        const service = makeService();
+        const result = await service.updateEvent(
+            "event-past-1",
+            "user-admin",
+            "admin",
+            validUpdate,
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidEventStateError");
+        }
+    });
 });
