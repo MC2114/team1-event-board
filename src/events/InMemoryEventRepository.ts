@@ -87,7 +87,21 @@ export const DEMO_EVENTS: Event[] = [
         organizerId: "user-admin",
         createdAt: new Date(),
         updatedAt: new Date(),
-    }
+    },
+    {
+        id: "event-draft-admin",
+        title: "Admin Draft Event",
+        description: "A draft owned by admin for cross-organizer testing.",
+        location: "Admin Office",
+        category: "networking",
+        status: "draft",
+        capacity: 10,
+        startDatetime: new Date("2027-05-01T10:00:00"),
+        endDatetime: new Date("2027-05-01T11:00:00"),
+        organizerId: "user-admin",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    },
 ];
 
 export class InMemoryEventRepository implements IEventRepository {
