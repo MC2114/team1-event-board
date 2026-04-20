@@ -3,7 +3,7 @@ import { Express } from "express";
 import { createComposedApp } from "../../src/composition";
 import { loginAs } from "../helper/auth";
 
-describe("Feature 6: Ctaegory and Date Filter", () => {
+describe("Feature 6: Category and Date Filter", () => {
     let app: Express;
 
     beforeEach(() => {
