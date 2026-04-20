@@ -80,7 +80,7 @@ export const DEMO_EVENTS: Event[] = [
         description: "An old music event that already happened.",
         location: "Campus Auditorium",
         category: "music",
-        status: "published",
+        status: "past",
         capacity: 75,
         startDatetime: new Date("2026-03-01T19:00:00"),
         endDatetime: new Date("2026-03-01T22:00:00"),
