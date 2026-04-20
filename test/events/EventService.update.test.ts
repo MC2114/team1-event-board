@@ -62,7 +62,7 @@ describe("EventService.updateEvent", () => {
         expect(result.ok).toBe(true);
         if (result.ok) {
             expect(result.value.title).toBe("Just the title changed");
-            expect(result.value.location).toBe("Cape Code Lounge");
+            expect(result.value.location).toBe("Student Union 201");
         }
     });
 
@@ -78,6 +78,36 @@ describe("EventService.updateEvent", () => {
         expect(result.ok).toBe(false);
         if (!result.ok) {
             expect(result.value.name).toBe("EventNotFoundError");
+        }
+    });
+
+    it("rejects when staff tries to edit another organizer's event", async () => {
+        const service = makeService();
+        const result = await service.updateEvent(
+            "event-draft-1",
+            "user-other-staff",
+            "staff",
+            validUpdate,
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("NotAuthorizedError");
+        }
+    });
+
+    it("rejects when user role tries to edit an event", async () => {
+        const service = makeService();
+        const result = await service.updateEvent(
+            "event-draft-1",
+            "user-reader",
+            "user",
+            validUpdate,
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("NotAuthorizedError");
         }
     });
 });
