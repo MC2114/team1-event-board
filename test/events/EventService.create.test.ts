@@ -68,4 +68,14 @@ describe("EventService.createEvent", () => {
             expect(result.value.capacity).toBeNull();
         }
     });
+
+    it("rejects event creation for a user role", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-reader", "user", validData);
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("NotAuthorizedError");
+        }
+    });
 });
