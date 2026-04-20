@@ -78,4 +78,73 @@ describe("EventService.createEvent", () => {
             expect(result.value.name).toBe("NotAuthorizedError");
         }
     });
+
+    it("rejects when title is empty", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            title: "",
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("Title is required.");
+        }
+    });
+
+    it("rejects when title is only whitespace", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            title: "   ",
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+        }
+    });
+
+    it("rejects when description is empty", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            description: "",
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("Description is required.");
+        }
+    });
+
+    it("rejects when location is empty", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            location: "",
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("Location is required.");
+        }
+    });
+
+    it("rejects when category is empty", async () => {
+        const service = makeService();
+        const result = await service.createEvent("user-staff", "staff", {
+            ...validData,
+            category: "",
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidInputError");
+            expect(result.value.message).toBe("Category is required.");
+        }
+    });
 });
