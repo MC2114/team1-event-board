@@ -5,7 +5,7 @@ import type { Event } from "../../src/events/Event";
 import type { IEventRepository } from "../../src/events/EventRepository";
 import type { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
 
-describe("Feature 2: EventService.updateEventStatus", () => {
+describe("Feature 5: EventService.updateEventStatus", () => {
   const makeEvent = (overrides: Partial<Event> = {}): Event => ({
     id: "event-1",
     title: "Spring Picnic",
