@@ -5,7 +5,7 @@ import type { Express } from "express";
 import type { IEventRepository } from "../../src/events/EventRepository";
 import type { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
 import type { RSVPError } from "../../src/rsvp/errors";
-import type { Event } from "../../src/events/Event";
+import type { Event as AppEvent } from "../../src/events/Event";
 
 export async function loginAs(app: Express, email: string, password: string) {
   const agent = request.agent(app);
@@ -18,7 +18,7 @@ export async function loginAs(app: Express, email: string, password: string) {
   return agent;
 }
 
-export const makeEvent = (overrides: Partial<Event> = {}): Event => ({
+export const makeEvent = (overrides: Partial<AppEvent> = {}): AppEvent => ({
     id: "event-1",
     title: "Spring Picnic",
     description: "Food, games, and fun on the lawn.",
@@ -35,7 +35,7 @@ export const makeEvent = (overrides: Partial<Event> = {}): Event => ({
   });
 
 export function makeEventRepo(
-    eventResult = Ok<Event | null>(makeEvent()),
+    eventResult: Result<AppEvent | null, any> = Ok(makeEvent()),
   ): jest.Mocked<IEventRepository> {
     return {
       findById: jest.fn().mockResolvedValue(eventResult),
