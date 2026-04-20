@@ -1,29 +1,13 @@
 import { Ok } from "../../src/lib/result";
 import { CreateRsvpService } from "../../src/rsvp/RsvpService";
 import { EventNotFoundError, NotAuthorizedError } from "../../src/rsvp/errors";
-import type { IEventRepository } from "../../src/events/EventRepository";
-import type { Event } from "../../src/events/Event";
-import type { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
-import type { RSVP, RSVPAttendee } from "../../src/rsvp/RSVP";
+import type { RSVPAttendee } from "../../src/rsvp/RSVP";
 import type { ILoggingService } from "../../src/service/LoggingService";
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: "event-1",
-    title: "Spring Picnic",
-    description: "Food and games for everyone.",
-    location: "Campus Green",
-    category: "party",
-    status: "published",
-    capacity: 50,
-    startDatetime: new Date("2099-06-15T18:00:00.000Z"),
-    endDatetime: new Date("2099-06-15T20:00:00.000Z"),
-    organizerId: "user-staff",
-    createdAt: new Date("2099-05-01T00:00:00.000Z"),
-    updatedAt: new Date("2099-05-01T00:00:00.000Z"),
-    ...overrides,
-  };
-}
+import {
+  makeEvent,
+  makeEventRepo,
+  makeRsvpRepo,
+} from "../helper/auth";
 
 function makeAttendee(overrides: Partial<RSVPAttendee> = {}): RSVPAttendee {
   return {
@@ -37,29 +21,6 @@ function makeAttendee(overrides: Partial<RSVPAttendee> = {}): RSVPAttendee {
   };
 }
 
-function makeEventRepo(event: Event | null): jest.Mocked<IEventRepository> {
-  return {
-    findById: jest.fn().mockResolvedValue(Ok(event)),
-    findByOrganizer: jest.fn(),
-    findAll: jest.fn(),
-    findPublishedUpcoming: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    updateStatus: jest.fn(),
-  };
-}
-
-function makeRsvpRepo(rsvps: RSVPAttendee[]): jest.Mocked<IRSVPRepository> {
-  return {
-    findByUser: jest.fn(),
-    findByEventId: jest.fn(),
-    findAttendeesByEventId: jest.fn().mockResolvedValue(Ok(rsvps)),
-    findByUserAndEvent: jest.fn(),
-    countGoing: jest.fn(),
-    save: jest.fn(),
-  };
-}
-
 function makeLogger(): jest.Mocked<ILoggingService> {
   return {
     info: jest.fn(),
@@ -70,17 +31,27 @@ function makeLogger(): jest.Mocked<ILoggingService> {
 
 describe("Feature 12 Sprint 2 - Attendee List unit", () => {
   it("groups attendee RSVPs into going, waitlisted, and cancelled", async () => {
-    const service = CreateRsvpService(
-      makeRsvpRepo([
+    const rsvpRepo = makeRsvpRepo();
+
+    rsvpRepo.findAttendeesByEventId.mockResolvedValue(
+      Ok([
         makeAttendee({ id: "rsvp-going", status: "going" }),
         makeAttendee({ id: "rsvp-waitlisted", status: "waitlisted" }),
         makeAttendee({ id: "rsvp-cancelled", status: "cancelled" }),
       ]),
-      makeEventRepo(makeEvent()),
+    );
+
+    const service = CreateRsvpService(
+      rsvpRepo,
+      makeEventRepo(Ok(makeEvent())),
       makeLogger(),
     );
 
-    const result = await service.getRSVPsByEvent("event-1", "user-staff", "staff");
+    const result = await service.getRSVPsByEvent(
+      "event-1",
+      "user-staff",
+      "staff",
+    );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -92,8 +63,8 @@ describe("Feature 12 Sprint 2 - Attendee List unit", () => {
 
   it("returns NotAuthorizedError when a member requests attendee list", async () => {
     const service = CreateRsvpService(
-      makeRsvpRepo([]),
-      makeEventRepo(makeEvent()),
+      makeRsvpRepo(),
+      makeEventRepo(Ok(makeEvent())),
       makeLogger(),
     );
 
@@ -107,8 +78,8 @@ describe("Feature 12 Sprint 2 - Attendee List unit", () => {
 
   it("returns EventNotFoundError for a missing event", async () => {
     const service = CreateRsvpService(
-      makeRsvpRepo([]),
-      makeEventRepo(null),
+      makeRsvpRepo(),
+      makeEventRepo(Ok(null)),
       makeLogger(),
     );
 
