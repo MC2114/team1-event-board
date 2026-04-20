@@ -39,6 +39,7 @@ function makeRsvpRepo(): jest.Mocked<IRSVPRepository> {
   return {
     findByUser: jest.fn(),
     findByEventId: jest.fn(),
+    findAttendeesByEventId: jest.fn(),
     findByUserAndEvent: jest.fn(),
     countGoing: jest.fn(),
     save: jest.fn(),
