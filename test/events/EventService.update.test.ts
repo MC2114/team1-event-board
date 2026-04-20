@@ -65,4 +65,19 @@ describe("EventService.updateEvent", () => {
             expect(result.value.location).toBe("Cape Code Lounge");
         }
     });
+
+    it("rejects when event does not exist", async () => {
+        const service = makeService();
+        const result = await service.updateEvent(
+            "event-does-not-exist",
+            "user-staff",
+            "staff",
+            validUpdate,
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("EventNotFoundError");
+        }
+    });
 });
