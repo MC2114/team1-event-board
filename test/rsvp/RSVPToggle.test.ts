@@ -5,28 +5,15 @@ import {
   InvalidRSVPError,
   UnexpectedDependencyError,
 } from "../../src/rsvp/errors";
-import type { IRSVPRepository } from "../../src/rsvp/RsvpRepository";
-import type { IEventRepository } from "../../src/events/EventRepository";
 import type { RSVP } from "../../src/rsvp/RSVP";
-import type { Event } from "../../src/events/Event";
 import type { ILoggingService } from "../../src/service/LoggingService";
+import {
+  makeEvent,
+  makeEventRepo,
+  makeRsvpRepo,
+} from "../helper/auth";
 
 describe("Feature 4: RsvpService.toggleRSVP", () => {
-  const makeEvent = (overrides: Partial<Event> = {}): Event => ({
-    id: "event-1",
-    title: "Spring Picnic",
-    description: "Food, games, and fun on the lawn.",
-    location: "Campus Pond Lawn",
-    category: "party",
-    status: "published",
-    capacity: 25,
-    startDatetime: new Date("2099-04-20T15:00:00.000Z"),
-    endDatetime: new Date("2099-04-20T17:00:00.000Z"),
-    organizerId: "user-staff",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...overrides,
-  });
 
   const makeRsvp = (overrides: Partial<RSVP> = {}): RSVP => ({
     id: "rsvp-1",
@@ -36,35 +23,6 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     createdAt: new Date("2099-04-01T10:00:00.000Z"),
     ...overrides,
   });
-
-  function makeEventRepo(
-    overrides: Partial<jest.Mocked<IEventRepository>> = {},
-  ): jest.Mocked<IEventRepository> {
-    return {
-      findById: jest.fn().mockResolvedValue(Ok(makeEvent())),
-      findByOrganizer: jest.fn(),
-      findAll: jest.fn(),
-      findPublishedUpcoming: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      updateStatus: jest.fn(),
-      ...overrides,
-    };
-  }
-
-  function makeRsvpRepo(
-    overrides: Partial<jest.Mocked<IRSVPRepository>> = {},
-  ): jest.Mocked<IRSVPRepository> {
-    return {
-      findByUser: jest.fn(),
-      findByEventId: jest.fn(),
-      findAttendeesByEventId: jest.fn().mockResolvedValue(Ok([])),
-      findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
-      countGoing: jest.fn().mockResolvedValue(Ok(0)),
-      save: jest.fn().mockImplementation(async (rsvp: RSVP) => Ok(rsvp)),
-      ...overrides,
-    };
-  }
 
   function makeLogger(): jest.Mocked<ILoggingService> {
     return {
@@ -76,13 +34,11 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
 
   // success path: not RSVP'd + space available -> going
   it("returns a going RSVP when the user has no existing RSVP and the event has capacity", async () => {
-    const eventRepo = makeEventRepo({
-      findById: jest.fn().mockResolvedValue(Ok(makeEvent({ capacity: 10 }))),
-    });
-    const rsvpRepo = makeRsvpRepo({
-      findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
-      countGoing: jest.fn().mockResolvedValue(Ok(2)),
-    });
+    const eventRepo = makeEventRepo(
+      Ok(makeEvent({ capacity: 10 })),
+    );
+    const rsvpRepo = makeRsvpRepo(Ok(2));
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(Ok(null));
     const logger = makeLogger();
 
     const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
@@ -100,13 +56,11 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
 
   // success path: no existing RSVP + event full capacity -> waitlisted
   it("returns a waitlisted RSVP when the event is full", async () => {
-    const eventRepo = makeEventRepo({
-      findById: jest.fn().mockResolvedValue(Ok(makeEvent({ capacity: 2 }))),
-    });
-    const rsvpRepo = makeRsvpRepo({
-      findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
-      countGoing: jest.fn().mockResolvedValue(Ok(2)),
-    });
+    const eventRepo = makeEventRepo(
+      Ok(makeEvent({ capacity: 2 })),
+    );
+    const rsvpRepo = makeRsvpRepo(Ok(2));
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(Ok(null));
     const logger = makeLogger();
 
     const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
@@ -123,11 +77,10 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
   // success path: existing active RSVP -> cancelled
   it("cancels an existing going RSVP when the user toggles again", async () => {
     const eventRepo = makeEventRepo();
-    const rsvpRepo = makeRsvpRepo({
-      findByUserAndEvent: jest.fn().mockResolvedValue(
-        Ok(makeRsvp({ status: "going" })),
-      ),
-    });
+    const rsvpRepo = makeRsvpRepo();
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(
+      Ok(makeRsvp({ status: "going" })),
+    );
     const logger = makeLogger();
 
     const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
@@ -145,11 +98,10 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
   // success path: existing waitlisted RSVP -> cancelled
   it("cancels an existing waitlisted RSVP when the user toggles again", async () => {
     const eventRepo = makeEventRepo();
-    const rsvpRepo = makeRsvpRepo({
-      findByUserAndEvent: jest.fn().mockResolvedValue(
-        Ok(makeRsvp({ status: "waitlisted" })),
-      ),
-    });
+    const rsvpRepo = makeRsvpRepo();
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(
+      Ok(makeRsvp({ status: "waitlisted" })),
+    );
     const logger = makeLogger();
 
     const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
@@ -183,9 +135,7 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
 
   // error path: event does not exist
   it("returns EventNotFoundError when the event does not exist", async () => {
-    const eventRepo = makeEventRepo({
-      findById: jest.fn().mockResolvedValue(Ok(null)),
-    });
+    const eventRepo = makeEventRepo(Ok(null));
     const rsvpRepo = makeRsvpRepo();
     const logger = makeLogger();
 
@@ -203,11 +153,9 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
 
   // error path: cancelled event
   it("returns InvalidRSVPError when the event is cancelled", async () => {
-    const eventRepo = makeEventRepo({
-      findById: jest.fn().mockResolvedValue(
-        Ok(makeEvent({ status: "cancelled" })),
-      ),
-    });
+    const eventRepo = makeEventRepo(
+      Ok(makeEvent({ status: "cancelled" })),
+    );
     const rsvpRepo = makeRsvpRepo();
     const logger = makeLogger();
 
@@ -225,11 +173,9 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
 
   // error path: past event
   it("returns InvalidRSVPError when the event is past", async () => {
-    const eventRepo = makeEventRepo({
-      findById: jest.fn().mockResolvedValue(
-        Ok(makeEvent({ status: "past" })),
-      ),
-    });
+    const eventRepo = makeEventRepo(
+      Ok(makeEvent({ status: "past" })),
+    );
     const rsvpRepo = makeRsvpRepo();
     const logger = makeLogger();
 
@@ -248,11 +194,10 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
   // error path: existing RSVP lookup fails
   it("propagates RSVP repository errors when existing RSVP lookup fails", async () => {
     const eventRepo = makeEventRepo();
-    const rsvpRepo = makeRsvpRepo({
-      findByUserAndEvent: jest.fn().mockResolvedValue(
-        Err(UnexpectedDependencyError("Unable to look up RSVP.")),
-      ),
-    });
+    const rsvpRepo = makeRsvpRepo();
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(
+      Err(UnexpectedDependencyError("Unable to look up RSVP.")),
+    );
     const logger = makeLogger();
 
     const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
@@ -270,12 +215,11 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
   // error path: countGoing fails during capacity check
   it("propagates RSVP repository errors when attendee counting fails", async () => {
     const eventRepo = makeEventRepo();
-    const rsvpRepo = makeRsvpRepo({
-      findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
-      countGoing: jest.fn().mockResolvedValue(
-        Err(UnexpectedDependencyError("Unable to count attendees.")),
-      ),
-    });
+    const rsvpRepo = makeRsvpRepo();
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(Ok(null));
+    rsvpRepo.countGoing.mockResolvedValue(
+      Err(UnexpectedDependencyError("Unable to count attendees.")),
+    );
     const logger = makeLogger();
 
     const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
