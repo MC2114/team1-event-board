@@ -124,5 +124,4 @@ describe("Feature 6: Ctaegory and Date Filter", () => {
         expect(res.status).toBe(302);
         expect(res.headers.location).toBe("/login");
     });
-
 });
