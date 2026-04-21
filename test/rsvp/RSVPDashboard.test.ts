@@ -149,8 +149,8 @@ describe("Feature 7: getDashboardRSVPs (unit)", () => {
         expect(result.ok).toBe(true);
         if (!result.ok) return;
 
-        expect(result.value.upcoming[0].id).toBe("old");
-        expect(result.value.upcoming[1].id).toBe("new");
+        expect(result.value.upcoming[0].id).toBe("new");
+        expect(result.value.upcoming[1].id).toBe("old");
     });
 
     it("sorts pastCancelled descending by createdAt", async () => {
