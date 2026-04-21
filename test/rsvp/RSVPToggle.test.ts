@@ -11,6 +11,7 @@ import {
   makeEvent,
   makeEventRepo,
   makeRsvpRepo,
+  makeLogger,
 } from "../helper/auth";
 
 describe("Feature 4: RsvpService.toggleRSVP", () => {
@@ -23,14 +24,6 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     createdAt: new Date("2099-04-01T10:00:00.000Z"),
     ...overrides,
   });
-
-  function makeLogger(): jest.Mocked<ILoggingService> {
-    return {
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-    };
-  }
 
   // success path: not RSVP'd + space available -> going
   it("returns a going RSVP when the user has no existing RSVP and the event has capacity", async () => {
