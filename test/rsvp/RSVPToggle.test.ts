@@ -6,7 +6,6 @@ import {
   UnexpectedDependencyError,
 } from "../../src/rsvp/errors";
 import type { RSVP } from "../../src/rsvp/RSVP";
-import type { ILoggingService } from "../../src/service/LoggingService";
 import {
   makeEvent,
   makeEventRepo,

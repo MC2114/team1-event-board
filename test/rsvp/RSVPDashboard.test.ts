@@ -1,7 +1,6 @@
 import { Ok } from "../../src/lib/result";
 import { CreateRsvpService } from "../../src/rsvp/RsvpService";
 import type { RSVPWithEvent } from "../../src/rsvp/RSVP";
-import type { ILoggingService } from "../../src/service/LoggingService";
 import {
     makeEvent,
     makeEventRepo,
@@ -45,5 +44,22 @@ describe("Feature 7: getRSVPsByUser (Dashboard)", () => {
         expect(result.value[1].id).toBe("old");
     });
 
+    it("returns empty array when user has no RSVPs", async () => {
+        const rsvpRepo = makeRsvpRepo();
+        rsvpRepo.findByUser.mockResolvedValue(Ok([]));
+
+        const service = CreateRsvpService(
+            rsvpRepo,
+            makeEventRepo(),
+            makeLogger(),
+        );
+
+        const result = await service.getRSVPsByUser("user-1");
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+
+        expect(result.value).toEqual([]);
+    });
+
     
-})
+}) 
