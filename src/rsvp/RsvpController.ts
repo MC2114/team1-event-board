@@ -53,7 +53,7 @@ class RsvpController implements IRsvpController {
 
     async showMyRsvps(res: Response, session: IAppBrowserSession): Promise<void> {
         const userId = session.authenticatedUser!.userId
-        const result = await this.service.getRSVPsByUser(userId);
+        const result = await this.service.getDashboardRSVPs(userId);
 
         if (result.ok === false) {
             const status = this.mapErrorStatus(result.value)
@@ -62,7 +62,7 @@ class RsvpController implements IRsvpController {
             return;
         }
 
-        res.render("rsvps/dashboard", { rsvps: result.value, session, pageError: null, });
+        res.render("rsvps/dashboard", { upcoming: result.value.upcoming, pastCancelled: result.value.pastCancelled, session, pageError: null });
     }
 
     async toggleRsvp(req: Request, res: Response, eventId: string, session: IAppBrowserSession): Promise<void> {

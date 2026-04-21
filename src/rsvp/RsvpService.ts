@@ -13,8 +13,14 @@ export interface IAttendeeGroups {
     cancelled: RSVPAttendee[];
 }
 
+export interface IUserDashboardRSVPs {
+    upcoming: RSVPWithEvent[];
+    pastCancelled: RSVPWithEvent[];
+}
+
 export interface IRsvpService {
     getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
+    getDashboardRSVPs(userId: string): Promise<Result<IUserDashboardRSVPs, RSVPError>>;
     getRSVPsByEvent(
         eventId: string,
         actingUserId: string,
@@ -37,7 +43,44 @@ class RsvpService implements IRsvpService {
 
     async getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>> {
         this.logger.info(`Fetching RSVPs for user ${userId}`);
-        return this.rsvpRepo.findByUser(userId);
+        const result = await this.rsvpRepo.findByUser(userId);
+        if (!result.ok) return result;
+        const sorted = [...result.value].sort(
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        return Ok(sorted);
+    }
+
+    async getDashboardRSVPs(userId: string): Promise<Result<IUserDashboardRSVPs, RSVPError>> {
+        this.logger.info(`Fetching RSVPs for user ${userId}`);
+        const result = await this.rsvpRepo.findByUser(userId);
+        if (result.ok === false) return Err(result.value);
+        const now = new Date();
+
+        const upcoming: RSVPWithEvent[] = [];
+        const pastCancelled: RSVPWithEvent[] = [];
+
+        for (const rsvp of result.value) {
+            const isPast = rsvp.event.startDatetime < now;
+            const isCancelled = rsvp.status === "cancelled";
+
+            if (isPast || isCancelled) {
+                pastCancelled.push(rsvp);
+            } else {
+                upcoming.push(rsvp);
+            }
+        }
+
+        const sortDesc = (a: RSVPWithEvent, b: RSVPWithEvent) =>
+            b.createdAt.getTime() - a.createdAt.getTime();
+
+        upcoming.sort(sortDesc);
+        pastCancelled.sort(sortDesc);
+
+        return Ok({
+            upcoming,
+            pastCancelled,
+        });
     }
 
     async getRSVPsByEvent(
@@ -146,22 +189,22 @@ class RsvpService implements IRsvpService {
         const isFull = event.capacity !== null && countResult.value >= event.capacity;
         const newStatus = isFull ? "waitlisted" : "going";
 
-        const rsvp: RSVP = 
+        const rsvp: RSVP =
             existing !== null
-            ? {
-                id: existing.id,
-                eventId: existing.eventId,
-                userId: existing.userId,
-                status: newStatus,
-                createdAt: existing.createdAt,
-            }
-            : {
-                id: `rsvp-${Date.now()}`,
-                eventId,
-                userId: actingUserId,
-                status: newStatus,
-                createdAt: new Date(),
-            };
+                ? {
+                    id: existing.id,
+                    eventId: existing.eventId,
+                    userId: existing.userId,
+                    status: newStatus,
+                    createdAt: existing.createdAt,
+                }
+                : {
+                    id: `rsvp-${Date.now()}`,
+                    eventId,
+                    userId: actingUserId,
+                    status: newStatus,
+                    createdAt: new Date(),
+                };
 
         const saveResult = await this.rsvpRepo.save(rsvp);
 
@@ -174,7 +217,7 @@ class RsvpService implements IRsvpService {
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>> {
-        const eventResult = await this.eventRepo.findById(eventId); 
+        const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
             return Err(InvalidRSVPError("Unable to verify event."));
