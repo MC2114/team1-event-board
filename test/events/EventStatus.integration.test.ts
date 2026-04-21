@@ -150,4 +150,42 @@ describe("Feature 5: Event Publishing and Cancellation", () => {
     const res = await agent.post(`/events/event-draft-1/cancel`);
     expect(res.status).toBe(400);
   });
+
+  it("event detail shows Cancel button after publishing via regular form", async () => {
+    const agent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
+    await agent.post("/events/event-draft-1/publish");
+    const res = await agent.get("/events/event-draft-1");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Cancel Event");
+    expect(res.text).not.toContain("Publish Event");
+  });
+
+  it("event detail shows cancelled message after cancelling via regular form", async () => {
+      const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+      await agent.post("/events/event-published-1/cancel");
+      const res = await agent.get("/events/event-published-1");
+      expect(res.status).toBe(200);
+      expect(res.text).toContain("This event is cancelled.");
+      expect(res.text).not.toContain("Cancel Event");
+  }); 
+
+  it("cancelled event no longer appears in public event list", async () => {
+    const staffAgent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
+    await staffAgent.post("/events/event-published-1/cancel");
+
+    const userAgent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+    const res = await userAgent.get("/events");
+    expect(res.status).toBe(200);
+    expect(res.text).not.toContain("Spring Picnic");
+  });
+
+  it("published event appears in public event list after publishing", async () => {
+    const staffAgent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
+    await staffAgent.post("/events/event-draft-1/publish");
+
+    const userAgent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+    const res = await userAgent.get("/events");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Draft Planning Meeting");
+  });
 });
