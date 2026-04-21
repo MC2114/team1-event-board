@@ -13,8 +13,14 @@ export interface IAttendeeGroups {
     cancelled: RSVPAttendee[];
 }
 
+export interface IUserDashboardRSVPs {
+    upcoming: RSVPWithEvent[];
+    pastCancelled: RSVPWithEvent[];
+}
+
 export interface IRsvpService {
     getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
+    getDashboardRSVPs(userId: string): Promise<Result<IUserDashboardRSVPs, RSVPError>>;
     getRSVPsByEvent(
         eventId: string,
         actingUserId: string,
@@ -43,6 +49,38 @@ class RsvpService implements IRsvpService {
             (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
         );
         return Ok(sorted);
+    }
+
+    async getDashboardRSVPs(userId: string): Promise<Result<IUserDashboardRSVPs, RSVPError>> {
+        this.logger.info(`Fetching RSVPs for user ${userId}`);
+        const result = await this.rsvpRepo.findByUser(userId);
+        if (result.ok === false) return Err(result.value);
+        const now = new Date();
+
+        const upcoming: RSVPWithEvent[] = [];
+        const pastCancelled: RSVPWithEvent[] = [];
+
+        for (const rsvp of result.value) {
+            const isPast = rsvp.event.startDatetime < now;
+            const isCancelled = rsvp.status === "cancelled";
+
+            if (isPast || isCancelled) {
+                pastCancelled.push(rsvp);
+            } else {
+                upcoming.push(rsvp);
+            }
+        }
+
+        const sortDesc = (a: RSVPWithEvent, b: RSVPWithEvent) =>
+            b.createdAt.getTime() - a.createdAt.getTime();
+
+        upcoming.sort(sortDesc);
+        pastCancelled.sort(sortDesc);
+
+        return Ok({
+            upcoming,
+            pastCancelled,
+        });
     }
 
     async getRSVPsByEvent(
