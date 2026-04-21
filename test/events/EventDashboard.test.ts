@@ -12,20 +12,17 @@ describe("Feature 8: Event Dashboard Service (Unit)", () => {
     ];
 
     const makeService = (allEvents: Event[]) => {
-        const eventRepo = makeEventRepo(
-            Ok(makeEvent()),               // findById (not used here)
-        );
-
-        // override findAll explicitly (IMPORTANT FIX)
+        const eventRepo = makeEventRepo(Ok(makeEvent()));
+        eventRepo.findByOrganizer.mockImplementation(async (userId: string) => {
+            return Ok(allEvents.filter(e => e.organizerId === userId));
+        });
         eventRepo.findAll.mockResolvedValue(Ok(allEvents));
-
         const rsvpRepo = makeRsvpRepo();
         return CreateEventService(eventRepo, rsvpRepo);
     };
 
     it("organizer only sees their own events", async () => {
         const service = makeService(baseEvents);
-
         const res = await service.getAllEventsForOrganizer("org-1", "staff");
 
         expect(res.ok).toBe(true);
@@ -36,7 +33,6 @@ describe("Feature 8: Event Dashboard Service (Unit)", () => {
 
     it("admin sees all events across organizers", async () => {
         const service = makeService(baseEvents);
-
         const res = await service.getAllEventsForOrganizer("admin-1", "admin");
 
         expect(res.ok).toBe(true);
@@ -47,9 +43,7 @@ describe("Feature 8: Event Dashboard Service (Unit)", () => {
 
     it("members are rejected from dashboard service", async () => {
         const service = makeService(baseEvents);
-
         const res = await service.getAllEventsForOrganizer("user-1", "user");
-
         expect(res.ok).toBe(false);
     });
 });
