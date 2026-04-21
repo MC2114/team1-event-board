@@ -124,4 +124,27 @@ describe("Feature 6: Category and Date Filter", () => {
         expect(res.status).toBe(302);
         expect(res.headers.location).toBe("/login");
     });
+
+    it("does not show events from other categories when filtering by category", async () => {
+        const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+        const res = await agent.get("/events").query({ category: "party" });
+        expect(res.status).toBe(200);
+        expect(res.text).toContain("Spring Picnic");
+        expect(res.text).not.toContain("Startup Networking Night");
+    });
+
+    it("does not show other organizer drafts to staff", async () => {
+        const agent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
+        const res = await agent.get("/events");
+        expect(res.status).toBe(200);
+        expect(res.text).toContain("Draft Planning Meeting");
+        expect(res.text).not.toContain("Admin Draft Event");
+    });
+
+    it("does not show cancelled events to regular users", async () => {
+        const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+        const res = await agent.get("/events");
+        expect(res.status).toBe(200);
+        expect(res.text).not.toContain("Cancelled Hackathon");
+    });
 });
