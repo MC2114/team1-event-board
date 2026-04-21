@@ -21,7 +21,7 @@ describe("Feature 7: getRSVPsByUser (Dashboard)", () => {
         ...overrides,
     });
 
-    it("returns RSVPs sorted by createdAt ascending", async () => {
+    it("returns RSVPs sorted by createdAt descending", async () => {
         const rsvps = [
             makeRSVPWithEvent({ id: "old", createdAt: new Date("2020-01-01") }),
             makeRSVPWithEvent({ id: "new", createdAt: new Date("2030-01-01") }),
@@ -40,8 +40,8 @@ describe("Feature 7: getRSVPsByUser (Dashboard)", () => {
         expect(result.ok).toBe(true);
         if (!result.ok) return;
 
-        expect(result.value[0].id).toBe("old");
-        expect(result.value[1].id).toBe("new");
+        expect(result.value[0].id).toBe("new");
+        expect(result.value[1].id).toBe("old");
     });
 
     it("returns empty array when user has no RSVPs", async () => {

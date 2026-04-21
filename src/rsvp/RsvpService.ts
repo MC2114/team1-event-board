@@ -37,7 +37,12 @@ class RsvpService implements IRsvpService {
 
     async getRSVPsByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>> {
         this.logger.info(`Fetching RSVPs for user ${userId}`);
-        return this.rsvpRepo.findByUser(userId);
+        const result = await this.rsvpRepo.findByUser(userId);
+        if (!result.ok) return result;
+        const sorted = [...result.value].sort(
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        return Ok(sorted);
     }
 
     async getRSVPsByEvent(
@@ -146,22 +151,22 @@ class RsvpService implements IRsvpService {
         const isFull = event.capacity !== null && countResult.value >= event.capacity;
         const newStatus = isFull ? "waitlisted" : "going";
 
-        const rsvp: RSVP = 
+        const rsvp: RSVP =
             existing !== null
-            ? {
-                id: existing.id,
-                eventId: existing.eventId,
-                userId: existing.userId,
-                status: newStatus,
-                createdAt: existing.createdAt,
-            }
-            : {
-                id: `rsvp-${Date.now()}`,
-                eventId,
-                userId: actingUserId,
-                status: newStatus,
-                createdAt: new Date(),
-            };
+                ? {
+                    id: existing.id,
+                    eventId: existing.eventId,
+                    userId: existing.userId,
+                    status: newStatus,
+                    createdAt: existing.createdAt,
+                }
+                : {
+                    id: `rsvp-${Date.now()}`,
+                    eventId,
+                    userId: actingUserId,
+                    status: newStatus,
+                    createdAt: new Date(),
+                };
 
         const saveResult = await this.rsvpRepo.save(rsvp);
 
@@ -174,7 +179,7 @@ class RsvpService implements IRsvpService {
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, RSVPError>> {
-        const eventResult = await this.eventRepo.findById(eventId); 
+        const eventResult = await this.eventRepo.findById(eventId);
 
         if (eventResult.ok === false) {
             return Err(InvalidRSVPError("Unable to verify event."));
