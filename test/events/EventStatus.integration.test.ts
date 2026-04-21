@@ -168,4 +168,24 @@ describe("Feature 5: Event Publishing and Cancellation", () => {
       expect(res.text).toContain("This event is cancelled.");
       expect(res.text).not.toContain("Cancel Event");
   }); 
+
+  it("cancelled event no longer appears in public event list", async () => {
+    const staffAgent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
+    await staffAgent.post("/events/event-published-1/cancel");
+
+    const userAgent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+    const res = await userAgent.get("/events");
+    expect(res.status).toBe(200);
+    expect(res.text).not.toContain("Spring Picnic");
+  });
+
+  it("published event appears in public event list after publishing", async () => {
+    const staffAgent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
+    await staffAgent.post("/events/event-draft-1/publish");
+
+    const userAgent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+    const res = await userAgent.get("/events");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Draft Planning Meeting");
+  });
 });
