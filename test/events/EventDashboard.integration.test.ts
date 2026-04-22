@@ -41,4 +41,29 @@ describe("Feature 8: Organizer Dashboard (Integration)", () => {
         expect(res.status).toBe(200);
         expect(res.text).toContain("published");
     });
+
+    it("HTMX publish returns partial response", async () => {
+        const agent = await loginAs(app, STAFF_EMAIL, PASSWORD);
+        const res = await agent
+            .post("/events/event-draft-1/publish")
+            .set("HX-Request", "true");
+
+        expect(res.status).toBe(200);
+        expect(res.text).not.toContain("<html");
+        expect(res.text).toContain("Cancel Event");
+        expect(res.text).not.toContain("Publish Event");
+    });
+
+    it("HTMX cancel returns partial response", async () => {
+        const agent = await loginAs(app, STAFF_EMAIL, PASSWORD);
+        const res = await agent
+            .post("/events/event-published-1/cancel")
+            .set("HX-Request", "true");
+
+        expect(res.status).toBe(200);
+        expect(res.text).not.toContain("<html");
+        expect(res.text).toContain("This event is cancelled.");
+        expect(res.text).not.toContain("Cancel Event");
+        expect(res.text).not.toContain("Publish Event");
+    });
 });
