@@ -1,4 +1,5 @@
 import { createComposedApp } from "../../src/composition";
+import request from "supertest";
 import { loginAs } from "../helper/auth";
 
 describe("Feature 12 Sprint 2 - Attendee List integration", () => {
@@ -67,6 +68,15 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
     expect(response.text).toContain("Users cannot view attendee lists");
   });
 
+  it("redirects unauthenticated requests to login", async () => {
+    const app = createComposedApp().getExpressApp();
+
+    const response = await request(app).get("/events/event-published-1/attendees");
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe("/login");
+  });
+
   it("rejects staff access to events they do not own with 403", async () => {
     const app = createComposedApp().getExpressApp();
     const staffAgent = await loginAs(app, "staff@app.test", "password123");
@@ -85,5 +95,19 @@ describe("Feature 12 Sprint 2 - Attendee List integration", () => {
 
     expect(response.status).toBe(404);
     expect(response.text).toContain("Event does-not-exist not found");
+  });
+
+  it("returns an HTMX partial attendee list when HX-Request is true", async () => {
+    const app = createComposedApp().getExpressApp();
+    const staffAgent = await loginAs(app, "staff@app.test", "password123");
+
+    const response = await staffAgent
+      .get("/events/event-published-1/attendees")
+      .set("HX-Request", "true");
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("Attendee List");
+    expect(response.text.toLowerCase()).not.toContain("<!doctype html>");
+    expect(response.text.toLowerCase()).not.toContain("<html");
   });
 });
