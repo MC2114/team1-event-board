@@ -234,7 +234,7 @@ EventService.listEvents(filters?: {
   timeframe?: "all" | "this_week" | "this_month" | "this_year" 
   //More challenging but we could also change timeframe to accept startdate & enddate and make a calender UI
   searchQuery?: string
-}): Result<Event[], InvalidInputError>
+}): Result<Event[], InvalidInputError | InvalidSearchQueryError>
 ```
 
 **Success — `{ ok: true, value: Event[] }`**
@@ -246,6 +246,7 @@ Returns an array of `Event` objects. Only `"published"` events with a `startDate
 |      Error class    |                             When                              |
 |---------------------|---------------------------------------------------------------|
 | `InvalidInputError` | `category` or `timeframe` is a value outside the accepted set |
+| `InvalidSearchQueryError` | `searchQuery` exceeds allowed length |
 
 ---
 

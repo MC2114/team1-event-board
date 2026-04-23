@@ -9,39 +9,17 @@
     <%- include("../partials/error", { message: pageError }) %>
         <% } %>
 
-            <%
-                const now = new Date();
+            <% const upcomingList=upcoming ?? []; %>
+                <% const pastList=pastCancelled ?? []; %>
 
-                const upcoming = (rsvps ?? [])
-                    .filter(r =>
-                    r.event &&
-                    r.event.startDatetime >= now &&
-                    r.event.status !== "cancelled" &&
-                    (r.status === "going" || r.status === "waitlisted")
-                    )
-                    .sort((a, b) => a.event.startDatetime.getTime() - b.event.startDatetime.getTime());
-
-                const pastOrCancelled = (rsvps ?? [])
-                    .filter(r =>
-                    !r.event ||
-                    r.event.startDatetime < now ||
-                    r.event.status === "cancelled" ||
-                    r.status === "cancelled"
-                    )
-                    .sort((a, b) => {
-                    const aTime = a.event ? a.event.startDatetime.getTime() : 0;
-                    const bTime = b.event ? b.event.startDatetime.getTime() : 0;
-                    return bTime - aTime;
-                    });
-                %>
                     <section class="mb-6">
                         <%- include("partials/rsvp-section", { title: "Upcoming Events" ,
-                            emptyMessage: "You have no upcoming RSVPs." , items: upcoming, showCancel: true, session })
-                            %>
+                            emptyMessage: "You have no upcoming RSVPs." , items: upcomingList, showCancel: true, session
+                            }) %>
                     </section>
 
                     <section class="mb-6">
                         <%- include("partials/rsvp-section", { title: "Past & Cancelled Events" ,
-                            emptyMessage: "No past or cancelled RSVPs." , items: pastOrCancelled, showCancel: false,
-                            session }) %>
+                            emptyMessage: "No past or cancelled RSVPs." , items: pastList, showCancel: false, session })
+                            %>
                     </section>

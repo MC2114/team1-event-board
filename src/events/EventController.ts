@@ -38,6 +38,7 @@ export class EventController implements IEventController {
 
   private mapErrorStatus(error: EventError): number {
     if (error.name === "InvalidInputError") return 400;
+    if (error.name === "InvalidSearchQueryError") return 400;
     if (error.name === "EventNotFoundError") return 404;
     if (error.name === "NotAuthorizedError") return 403;
     if (error.name === "InvalidEventStateError") return 400;
@@ -413,6 +414,7 @@ export class EventController implements IEventController {
       return;
     }
 
+    const isHtmxRequest = req.get("HX-Request") === "true"
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
@@ -439,6 +441,14 @@ export class EventController implements IEventController {
       return;
     }
 
+    if (isHtmxRequest){
+      res.render("events/partials/event-status-controls", {
+        event: result.value,
+        layout: false
+      });
+      return;
+    }
+
     res.redirect("/events/dashboard");
   }
 
@@ -451,6 +461,7 @@ export class EventController implements IEventController {
       return;
     }
 
+    const isHtmxRequest = req.get("HX-Request") === "true"
     const eventId = typeof req.params.id === "string" ? req.params.id : "";
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "cancelled");
@@ -473,6 +484,14 @@ export class EventController implements IEventController {
       res.status(status).render("partials/error", {
         message: result.value.message,
         layout: false,
+      });
+      return;
+    }
+
+    if (isHtmxRequest){
+      res.render("events/partials/event-status-controls", {
+        event: result.value,
+        layout: false
       });
       return;
     }

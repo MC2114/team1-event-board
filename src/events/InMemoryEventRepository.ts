@@ -80,14 +80,28 @@ export const DEMO_EVENTS: Event[] = [
         description: "An old music event that already happened.",
         location: "Campus Auditorium",
         category: "music",
-        status: "published",
+        status: "past",
         capacity: 75,
         startDatetime: new Date("2026-03-01T19:00:00"),
         endDatetime: new Date("2026-03-01T22:00:00"),
         organizerId: "user-admin",
         createdAt: new Date(),
         updatedAt: new Date(),
-    }
+    },
+    {
+        id: "event-draft-admin",
+        title: "Admin Draft Event",
+        description: "A draft owned by admin for cross-organizer testing.",
+        location: "Admin Office",
+        category: "networking",
+        status: "draft",
+        capacity: 10,
+        startDatetime: new Date("2027-05-01T10:00:00"),
+        endDatetime: new Date("2027-05-01T11:00:00"),
+        organizerId: "user-admin",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    },
 ];
 
 export class InMemoryEventRepository implements IEventRepository {
@@ -191,5 +205,5 @@ export class InMemoryEventRepository implements IEventRepository {
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
-    return new InMemoryEventRepository([...DEMO_EVENTS]);
+    return new InMemoryEventRepository(DEMO_EVENTS.map(e => ({ ...e })));
 }
