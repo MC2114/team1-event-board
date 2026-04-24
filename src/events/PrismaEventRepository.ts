@@ -9,7 +9,14 @@ export class PrismaEventRepository implements IEventRepository {
     constructor(private readonly prisma: PrismaClient) {}
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
-        throw new Error("Not implemented");
+        try {
+        const event = await this.prisma.event.findUnique({
+            where: { id: eventId },
+        });
+            return Ok(event ? this.toEvent(event) : null);
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find event."));
+        }
     }
 
     async findByOrganizer(organizerId: string): Promise<Result<Event[], EventError>> {
@@ -50,6 +57,7 @@ export class PrismaEventRepository implements IEventRepository {
                     cutoffDate.setFullYear(now.getFullYear() + 1);
                 }
                 where.startDatetime = {
+                    gte: now,
                     lte: cutoffDate,
                 };
             }
@@ -72,7 +80,7 @@ export class PrismaEventRepository implements IEventRepository {
         throw new Error("Not implemented");
     }
 
-    toEvent(prismaEvent: PrismaEvent): Event {
+    private toEvent(prismaEvent: PrismaEvent): Event {
         return {
             id: prismaEvent.id,
             title: prismaEvent.title,
