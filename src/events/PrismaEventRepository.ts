@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Prisma, Event as PrismaEvent} from "@prisma/client";
 import { Ok, Err } from "../lib/result";
 import type { Result } from "../lib/result";
 import type { Event, EventStatus, EventFilters } from "./Event";
@@ -19,7 +19,7 @@ export class PrismaEventRepository implements IEventRepository {
     async findAll(): Promise<Result<Event[], EventError>> {
         try {
             const events = await this.prisma.event.findMany();
-            return Ok(events);
+            return Ok(events.map(this.toEvent));
         } catch {
             return Err(UnexpectedDependencyError("Unable to find the events."));
         }
@@ -28,7 +28,7 @@ export class PrismaEventRepository implements IEventRepository {
     async findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>> {
         try{
             const now = new Date();
-            const where: any = {
+            const where: Prisma.EventWhereInput = {
                 status: "published",
                 startDatetime: {
                     gt: now,
@@ -54,7 +54,7 @@ export class PrismaEventRepository implements IEventRepository {
                 };
             }
             const events = await this.prisma.event.findMany({ where });
-            return Ok(events);
+            return Ok(events.map(this.toEvent));
         } catch {
             return Err(UnexpectedDependencyError("Unable to find the events."));
         }
@@ -71,4 +71,21 @@ export class PrismaEventRepository implements IEventRepository {
     async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>> {
         throw new Error("Not implemented");
     }
+
+    toEvent(prismaEvent: PrismaEvent): Event {
+        return {
+            id: prismaEvent.id,
+            title: prismaEvent.title,
+            description: prismaEvent.description,
+            location: prismaEvent.location,
+            category: prismaEvent.category,
+            status: prismaEvent.status as EventStatus,
+            capacity: prismaEvent.capacity,
+            startDatetime: prismaEvent.startDatetime,
+            endDatetime: prismaEvent.endDatetime,
+            organizerId: prismaEvent.organizerId,
+            createdAt: prismaEvent.createdAt,
+            updatedAt: prismaEvent.updatedAt,
+        };
+    }   
 }
