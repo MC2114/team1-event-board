@@ -1,5 +1,5 @@
 import request from "supertest";
-import { createComposedApp, createComposedAppWithPrismaEventRepository } from "../../src/composition";
+import { createComposedApp, createComposedAppWithPrisma } from "../../src/composition";
 import { loginAs } from "../helper/auth";
 
   const USER_EMAIL = "user@app.test";
@@ -84,7 +84,7 @@ describe("Feature 2: Event Detail Page", () => {
   });
 
   describe("Feature 2: Event Detail Page with PrismaEventRepository", () => {
-    const app = createComposedAppWithPrismaEventRepository().getExpressApp();
+    const app = createComposedAppWithPrisma({usePrismaEvent: true,}).getExpressApp();
     // success path: published event is loaded from Prisma and visible to logged-in user
     it("returns 200 and renders a published event detail page from Prisma", async () => {
       const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
