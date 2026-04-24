@@ -1,5 +1,8 @@
+import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { Ok, Err } from "../../src/lib/result";
 import { CreateEventService } from "../../src/events/EventService";
+import { PrismaEventRepository } from "../../src/events/PrismaEventRepository";
 import {
   EventNotFoundError,
   NotAuthorizedError,
@@ -14,8 +17,8 @@ import {
   makeRsvpRepo,
 } from "../helper/auth";
 
+// Uses mocked repositories to test EventService logic without depending on the database.
 describe("Feature 2: EventService.getEventDetailView", () => {
-
   // success path: all required fields exist and startDatetime < endDatetime
   it("returns event detail with all required fields populated", async () => {
     const eventRepo = makeEventRepo();
@@ -66,7 +69,7 @@ describe("Feature 2: EventService.getEventDetailView", () => {
     expect(rsvpRepo.countGoing).toHaveBeenCalledWith("event-1");
   });
 
-  // error path: EventNotFoundError; HTTP 404
+  // error path: missing event becomes EventNotFoundError
   it("returns EventNotFoundError when the event does not exist", async () => {
     const eventRepo = makeEventRepo(Ok(null));
     const rsvpRepo = makeRsvpRepo();
@@ -133,6 +136,246 @@ describe("Feature 2: EventService.getEventDetailView", () => {
 
     expect(result.value).toEqual(
         EventUnexpectedDependencyError("Unable to count attendees."),
+    );
+  });
+});
+
+// Uses the real PrismaEventRepository against seeded database records
+// RSVP is still mocked so this specifically tests the Prisma-backed event lookup
+describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
+  const adapter = new PrismaBetterSqlite3({
+    url: "file:./prisma/dev.db",
+  });
+
+  const prisma = new PrismaClient({ adapter });
+
+  beforeAll(async () => {
+    await prisma.rSVP.deleteMany({
+      where: {
+        eventId: {
+          in: [
+            "prisma-published-event",
+            "prisma-draft-event",
+            "prisma-admin-draft-event",
+          ],
+        },
+      },
+    });
+
+    await prisma.event.deleteMany({
+      where: {
+        id: {
+          in: [
+            "prisma-published-event",
+            "prisma-draft-event",
+            "prisma-admin-draft-event",
+          ],
+        },
+      },
+    });
+
+    const start = new Date("2030-04-20T15:00:00.000Z");
+    const end = new Date("2030-04-20T17:00:00.000Z");
+
+    await prisma.event.createMany({
+      data: [
+        {
+          id: "prisma-published-event",
+          title: "Prisma Published Picnic",
+          description: "This event comes from the Prisma database.",
+          location: "Campus Pond Lawn",
+          category: "party",
+          status: "published",
+          capacity: 25,
+          startDatetime: start,
+          endDatetime: end,
+          organizerId: "user-staff",
+        },
+
+        {
+          id: "prisma-draft-event",
+          title: "Prisma Draft Planning Meeting",
+          description: "This draft comes from the Prisma database.",
+          location: "Student Union 201",
+          category: "networking",
+          status: "draft",
+          capacity: 10,
+          startDatetime: start,
+          endDatetime: end,
+          organizerId: "user-staff",
+        },
+
+        {
+          id: "prisma-admin-draft-event",
+          title: "Prisma Admin Draft",
+          description: "This draft is owned by admin.",
+          location: "Admin Office",
+          category: "networking",
+          status: "draft",
+          capacity: 10,
+          startDatetime: start,
+          endDatetime: end,
+          organizerId: "user-admin",
+        },
+      ],
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.rSVP.deleteMany({
+      where: {
+        eventId: {
+          in: [
+            "prisma-published-event",
+            "prisma-draft-event",
+            "prisma-admin-draft-event",
+          ],
+        },
+      },
+    });
+
+    await prisma.event.deleteMany({
+      where: {
+        id: {
+          in: [
+            "prisma-published-event",
+            "prisma-draft-event",
+            "prisma-admin-draft-event",
+          ],
+        },
+      },
+    });
+
+    await prisma.$disconnect();
+  });
+
+  // Success path: published events can be loaded through Prisma and viewed by a regular user
+  it("returns a published event from Prisma for a regular user", async () => {
+    const eventRepo = new PrismaEventRepository(prisma);
+    const rsvpRepo = makeRsvpRepo(Ok(0));
+    const service = CreateEventService(eventRepo, rsvpRepo);
+
+    const result = await service.getEventDetailView(
+      "prisma-published-event",
+      "user-reader",
+      "user",
+
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.event.title).toBe("Prisma Published Picnic");
+    expect(result.value.event.location).toBe("Campus Pond Lawn");
+    expect(result.value.attendeeCount).toBe(0);
+  });
+
+  // Success path: staff can view their own drafts and published events
+  it("allows staff to view their own draft event and all published events from Prisma", async () => {
+    const eventRepo = new PrismaEventRepository(prisma);
+    const rsvpRepo = makeRsvpRepo(Ok(0));
+    const service = CreateEventService(eventRepo, rsvpRepo);
+
+    const draftResult = await service.getEventDetailView(
+      "prisma-draft-event",
+      "user-staff",
+      "staff",
+    );
+
+    expect(draftResult.ok).toBe(true);
+    if (!draftResult.ok) return;
+
+    expect(draftResult.value.event.title).toBe("Prisma Draft Planning Meeting");
+    expect(draftResult.value.event.status).toBe("draft");
+
+    const publishedResult = await service.getEventDetailView(
+      "prisma-published-event",
+      "user-staff",
+      "staff",
+    );
+
+    expect(publishedResult.ok).toBe(true);
+    if (!publishedResult.ok) return;
+
+    expect(publishedResult.value.event.title).toBe("Prisma Published Picnic");
+    expect(publishedResult.value.event.status).toBe("published");
+    expect(publishedResult.value.event.organizerId).toBe("user-staff");
+  });
+
+  // Success path: allows admin to view drafts regardless of organizer
+  it("allows admin to view a draft event from Prisma", async () => {
+    const eventRepo = new PrismaEventRepository(prisma);
+    const rsvpRepo = makeRsvpRepo(Ok(0));
+    const service = CreateEventService(eventRepo, rsvpRepo);
+
+    const result = await service.getEventDetailView(
+      "prisma-draft-event",
+      "user-admin",
+      "admin",
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.event.status).toBe("draft");
+  });
+
+  // error path: blocks users from viewing drafts 
+  it("blocks regular users from viewing a draft event from Prisma", async () => {
+    const eventRepo = new PrismaEventRepository(prisma);
+    const rsvpRepo = makeRsvpRepo(Ok(0));
+    const service = CreateEventService(eventRepo, rsvpRepo);
+
+    const result = await service.getEventDetailView(
+      "prisma-draft-event",
+      "user-reader",
+      "user",
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.value).toEqual(
+      NotAuthorizedError("You are not authorized to view this event."),
+    );
+  });
+
+  // error path: blocks staff from viewing drafts that are not their own
+  it("blocks staff from viewing draft events they did not create from Prisma", async () => {
+    const eventRepo = new PrismaEventRepository(prisma);
+    const rsvpRepo = makeRsvpRepo(Ok(0));
+    const service = CreateEventService(eventRepo, rsvpRepo);
+    const result = await service.getEventDetailView(
+      "prisma-admin-draft-event",
+      "user-staff",
+      "staff",
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.value).toEqual(
+      NotAuthorizedError("You are not authorized to view this event."),
+    );
+  });
+
+  // error path: missing event becomes EventNotFoundError
+  it("returns EventNotFoundError for a missing Prisma event", async () => {
+    const eventRepo = new PrismaEventRepository(prisma);
+    const rsvpRepo = makeRsvpRepo(Ok(0));
+    const service = CreateEventService(eventRepo, rsvpRepo);
+
+    const result = await service.getEventDetailView(
+      "missing-prisma-event",
+      "user-reader",
+      "user",
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.value).toEqual(
+      EventNotFoundError("No event exists with the given ID."),
     );
   });
 });
