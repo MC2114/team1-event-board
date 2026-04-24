@@ -28,5 +28,7 @@ model RSVP {
   userId    String
   status    String
   createdAt DateTime @default(now())
-  event     Event    @relation(fields: [eventId], references: [id])
+  updatedAt DateTime @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id]) 
+  @@unique([userId, eventId])
 }
