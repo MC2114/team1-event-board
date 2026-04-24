@@ -48,14 +48,14 @@ describe("Feature 6: Category and Date Filter", () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
         const res = await agent.get("/events").query({ timeframe: "this_year" });
         expect(res.status).toBe(200);
-        expect(res.text).toContain("Spring Picnic");
+        expect(res.text).toContain("Graduation Celebration");
     });
 
     it("returns 200 and filters by both category and timeframe", async () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
-        const res = await agent.get("/events").query({ category: "party", timeframe: "this_year" });
+        const res = await agent.get("/events").query({ category: "graduation", timeframe: "this_year" });
         expect(res.status).toBe(200);
-        expect(res.text).toContain("Spring Picnic");
+        expect(res.text).toContain("Graduation Celebration");
     });
 
     it("does not show draft events to regular users", async () => {
@@ -198,14 +198,14 @@ describe("Feature 6: Category and Date Filter - Prisma", () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
         const res = await agent.get("/events").query({ timeframe: "this_year" });
         expect(res.status).toBe(200);
-        expect(res.text).toContain("Spring Picnic");
+        expect(res.text).toContain("Graduation Celebration");
     });
 
     it("returns 200 and filters by both category and timeframe", async () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
-        const res = await agent.get("/events").query({ category: "party", timeframe: "this_year" });
+        const res = await agent.get("/events").query({ category: "graduation", timeframe: "this_year" });
         expect(res.status).toBe(200);
-        expect(res.text).toContain("Spring Picnic");
+        expect(res.text).toContain("Graduation Celebration");
     });
 
     it("does not show draft events to regular users", async () => {
