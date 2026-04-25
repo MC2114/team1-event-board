@@ -1,6 +1,6 @@
-import { Result } from "../lib/result";
+import type { Result } from "../lib/result";
 import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
-import type { RSVPError } from "./errors.ts"
+import type { RSVPError } from "./errors"
 
 export interface IRSVPRepository {
     findByUser(userId: string): Promise<Result<RSVPWithEvent[], RSVPError>>;
