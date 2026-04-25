@@ -9,7 +9,14 @@ import {
     type EventStatus,
     type EventTimeframe,
 } from "./Event";
-import type { EventError } from "./errors";
+import type {
+  EventNotFoundError as EventNotFoundErrorType,
+  InvalidEventStateError as InvalidEventStateErrorType,
+  InvalidInputError as InvalidInputErrorType,
+  InvalidSearchQueryError as InvalidSearchQueryErrorType,
+  NotAuthorizedError as NotAuthorizedErrorType,
+  UnexpectedDependencyError as UnexpectedDependencyErrorType,
+} from "./errors";
 import {
     EventNotFoundError,
     InvalidEventStateError,
@@ -28,17 +35,52 @@ export interface IListEventsFilters {
     searchQuery?: string;
 }
 
+type GetEventByIdError =
+  | EventNotFoundErrorType
+  | NotAuthorizedErrorType
+  | UnexpectedDependencyErrorType;
+
+type EventDetailError =
+  GetEventByIdError;
+
+type CreateEventError =
+  | NotAuthorizedErrorType
+  | InvalidInputErrorType
+  | UnexpectedDependencyErrorType;
+
+type UpdateEventStatusError =
+  | EventNotFoundErrorType
+  | NotAuthorizedErrorType
+  | InvalidEventStateErrorType
+  | UnexpectedDependencyErrorType;
+
+type GetAllEventsForOrganizerError =
+  | NotAuthorizedErrorType
+  | UnexpectedDependencyErrorType;
+
+type UpdateEventError =
+  | EventNotFoundErrorType
+  | NotAuthorizedErrorType
+  | InvalidEventStateErrorType
+  | InvalidInputErrorType
+  | UnexpectedDependencyErrorType;
+
+type ListEventsError =
+  | InvalidInputErrorType
+  | InvalidSearchQueryErrorType
+  | UnexpectedDependencyErrorType;
+
 export interface IEventService {
     getEventById(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<Event, EventError>>;
+    ): Promise<Result<Event, GetEventByIdError>>;
     getEventDetailView(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<EventDetailView, EventError>>;
+    ): Promise<Result<EventDetailView, EventDetailError>>;
     createEvent(
         actingUserId: string,
         actingUserRole: UserRole,
@@ -51,17 +93,17 @@ export interface IEventService {
             startDatetime: Date;
             endDatetime: Date;
         },
-    ): Promise<Result<Event, EventError>>;
+    ): Promise<Result<Event, CreateEventError>>;
     updateEventStatus(
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
         newStatus: EventStatus,
-    ): Promise<Result<Event, EventError>>;
+    ): Promise<Result<Event, UpdateEventStatusError>>;
     getAllEventsForOrganizer(
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<Event[], EventError>>;
+    ): Promise<Result<Event[], GetAllEventsForOrganizerError>>;
     updateEvent(
         eventId: string,
         actingUserId: string,
@@ -75,12 +117,12 @@ export interface IEventService {
             startDatetime: Date;
             endDatetime: Date;
         }>
-    ): Promise<Result<Event, EventError>>;
+    ): Promise<Result<Event, UpdateEventError>>;
     listEvents(
         actingUserId: string,
         actingUserRole: UserRole,
         filters?: IListEventsFilters,
-    ): Promise<Result<Event[], EventError>>;
+    ): Promise<Result<Event[], ListEventsError>>;
 }
 
 class EventService implements IEventService {
@@ -107,11 +149,11 @@ class EventService implements IEventService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<Event, EventError>> {
+    ): Promise<Result<Event, GetEventByIdError>> {
         const eventResult = await this.eventRepository.findById(eventId);
 
         if (!eventResult.ok) {
-            return eventResult;
+            return Err(UnexpectedDependencyError(eventResult.value.message));
         }
 
         const event = eventResult.value;
@@ -148,23 +190,17 @@ class EventService implements IEventService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<EventDetailView, EventError>> {
+    ): Promise<Result<EventDetailView, EventDetailError>> {
         const eventResult = await this.getEventById(eventId, actingUserId, actingUserRole);
 
-        if (eventResult.ok === false) {
+        if (!eventResult.ok) {
             return Err(eventResult.value);
         }
         const event = eventResult.value;
         const attendeeCountResult = await this.rsvpRepository.countGoing(eventId);
 
         if (!attendeeCountResult.ok) {
-            const error = attendeeCountResult.value;
-            const message =
-                typeof error === "object" && error !== null && "message" in error
-                    ? error.message
-                    : "Unknown RSVP error";
-
-            return Err(UnexpectedDependencyError(message));
+            return Err(UnexpectedDependencyError(attendeeCountResult.value.message));
         }
 
         return Ok({
@@ -185,7 +221,7 @@ class EventService implements IEventService {
             startDatetime: Date;
             endDatetime: Date;
         },
-    ): Promise<Result<Event, EventError>> {
+    ): Promise<Result<Event, CreateEventError>> {
         if (actingUserRole === "user") {
             return Err(NotAuthorizedError("Only organizers and admins can create events."));
         }
@@ -225,7 +261,13 @@ class EventService implements IEventService {
             updatedAt: now,
         };
 
-        return await this.eventRepository.create(event);
+        const createResult = await this.eventRepository.create(event);
+        
+        if (!createResult.ok) {
+            return Err(UnexpectedDependencyError(createResult.value.message));
+        }
+
+        return Ok(createResult.value);
     }
 
     async updateEventStatus(
@@ -233,11 +275,11 @@ class EventService implements IEventService {
         actingUserId: string,
         actingUserRole: UserRole,
         newStatus: EventStatus,
-    ): Promise<Result<Event, EventError>> {
+    ): Promise<Result<Event, UpdateEventStatusError>> {
         const result = await this.eventRepository.findById(eventId);
 
         if (!result.ok) {
-            return result;
+            return Err(UnexpectedDependencyError(result.value.message));
         }
 
         const event = result.value;
@@ -274,8 +316,8 @@ class EventService implements IEventService {
 
         const updateResult = await this.eventRepository.updateStatus(eventId, newStatus);
 
-        if (updateResult.ok === false) {
-            return updateResult;
+        if (!updateResult.ok) {
+            return Err(UnexpectedDependencyError(updateResult.value.message));
         }
 
         const updated = updateResult.value;
@@ -289,37 +331,34 @@ class EventService implements IEventService {
     async getAllEventsForOrganizer(
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<Event[], EventError>> {
+    ): Promise<Result<Event[], GetAllEventsForOrganizerError>> {
         if (actingUserRole === "user") {
             return Err(NotAuthorizedError("You are not authorized to view these events."));
         }
+    
+        if (actingUserRole === "admin") {
+            const result = await this.eventRepository.findAll();
 
-        try {
-            if (actingUserRole === "admin") {
-                const result = await this.eventRepository.findAll();
-                if (!result.ok) {
-                    return result;
-                }
-
-                const sorted = [...result.value].sort(
-                    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-                )
-                return Ok(sorted);
-            }
-
-            const result = await this.eventRepository.findByOrganizer(actingUserId);
             if (!result.ok) {
-                return result;
+                return Err(UnexpectedDependencyError(result.value.message));
             }
 
             const sorted = [...result.value].sort(
                 (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
             );
-
             return Ok(sorted);
-        } catch {
-            return Err(UnexpectedDependencyError("Unable to retrieve events."))
         }
+
+        const result = await this.eventRepository.findByOrganizer(actingUserId);
+        if (!result.ok) {
+            return Err(UnexpectedDependencyError(result.value.message));
+        }
+
+        const sorted = [...result.value].sort(
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        return Ok(sorted);
+        
     }
 
     async updateEvent(
@@ -335,10 +374,10 @@ class EventService implements IEventService {
             startDatetime: Date;
             endDatetime: Date;
         }>,
-    ): Promise<Result<Event, EventError>> {
+    ): Promise<Result<Event, UpdateEventError>> {
         const findResult = await this.eventRepository.findById(eventId);
         if (!findResult.ok) {
-            return findResult;
+            return Err(UnexpectedDependencyError(findResult.value.message));
         }
 
         const existing = findResult.value;
@@ -387,7 +426,7 @@ class EventService implements IEventService {
         const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
 
         if (!updateResult.ok) {
-            return updateResult;
+            return Err(UnexpectedDependencyError(updateResult.value.message));
         }
 
         if (!updateResult.value) {
@@ -401,7 +440,7 @@ class EventService implements IEventService {
         actingUserId: string,
         actingUserRole: UserRole,
         filters: IListEventsFilters = {},
-    ): Promise<Result<Event[], EventError>> {
+    ): Promise<Result<Event[], ListEventsError>> {
         const normalizedCategory = filters.category?.trim() || undefined;
         const normalizedTimeframe = filters.timeframe?.trim() || undefined;
         let categoryFilter: EventCategory | undefined;
@@ -424,7 +463,7 @@ class EventService implements IEventService {
         const allEventsResult = await this.eventRepository.findAll();
 
         if (!allEventsResult.ok) {
-            return allEventsResult;
+            return Err(UnexpectedDependencyError(allEventsResult.value.message));
         }
 
         const now = new Date();
