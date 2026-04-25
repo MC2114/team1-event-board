@@ -26,7 +26,7 @@ export class PrismaEventRepository implements IEventRepository {
     async findAll(): Promise<Result<Event[], EventError>> {
         try {
             const events = await this.prisma.event.findMany();
-            return Ok(events.map(this.toEvent));
+            return Ok(events.map((event) => this.toEvent(event)));
         } catch {
             return Err(UnexpectedDependencyError("Unable to find the events."));
         }
@@ -62,7 +62,7 @@ export class PrismaEventRepository implements IEventRepository {
                 };
             }
             const events = await this.prisma.event.findMany({ where });
-            return Ok(events.map(this.toEvent));
+            return Ok(events.map((event) => this.toEvent(event)));
         } catch {
             return Err(UnexpectedDependencyError("Unable to find the events."));
         }

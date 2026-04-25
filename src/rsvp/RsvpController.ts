@@ -55,7 +55,7 @@ class RsvpController implements IRsvpController {
         const userId = session.authenticatedUser!.userId
         const result = await this.service.getDashboardRSVPs(userId);
 
-        if (result.ok === false) {
+        if (!result.ok) {
             const status = this.mapErrorStatus(result.value)
             this.logger.error(`showMyRsvps failed: ${result.value.message}`)
             res.status(status).render("partials/error", { message: result.value.message, layout: false })
@@ -69,7 +69,7 @@ class RsvpController implements IRsvpController {
         const { userId, role } = session.authenticatedUser!;
         const result = await this.service.toggleRSVP(eventId, userId, role);
 
-        if (result.ok === false) {
+        if (!result.ok) {
             const status = this.mapErrorStatus(result.value);
             this.logger.warn(`toggleRsvp failed: ${result.value.message}`);
             res.status(status).render("partials/error", {
@@ -105,7 +105,7 @@ class RsvpController implements IRsvpController {
                 role as UserRole,
             );
 
-            if (detailResult.ok === false) {
+            if (!detailResult.ok) {
                 const status = this.mapErrorStatus(detailResult.value);
                 res.status(status).render("partials/error", {
                     message: detailResult.value.message,
@@ -148,7 +148,7 @@ class RsvpController implements IRsvpController {
 
         const result = await this.service.getRSVPsByEvent(eventId, userId, role);
 
-        if (result.ok === false) {
+        if (!result.ok) {
             const status = this.mapErrorStatus(result.value);
             this.logger.warn(`showEventAttendees failed: ${result.value.message}`);
             res.status(status).render("partials/error", { message: result.value.message, layout: false });
