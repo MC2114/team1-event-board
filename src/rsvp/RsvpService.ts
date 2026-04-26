@@ -75,7 +75,7 @@ class RsvpService implements IRsvpService {
         this.logger.info(`Fetching RSVPs for user ${userId}`);
         const result = await this.rsvpRepo.findByUser(userId);
 
-        if (!result.ok) {
+        if (result.ok === false ) {
             return Err(UnexpectedDependencyError(result.value.message));
         }
 
@@ -89,7 +89,7 @@ class RsvpService implements IRsvpService {
         this.logger.info(`Fetching RSVPs for user ${userId}`);
         const result = await this.rsvpRepo.findByUser(userId);
 
-        if (!result.ok) {
+        if (result.ok === false) {
             return Err(UnexpectedDependencyError(result.value.message));
         }
         
@@ -127,7 +127,7 @@ class RsvpService implements IRsvpService {
     ): Promise<Result<IAttendeeGroups, GetRsvpsByEventError>> {
         const eventResult = await this.eventRepo.findById(eventId);
 
-        if (!eventResult.ok) {
+        if (eventResult.ok === false) {
             return Err(UnexpectedDependencyError(eventResult.value.message));
         }
 
@@ -148,7 +148,7 @@ class RsvpService implements IRsvpService {
         this.logger.info(`Fetching RSVPs for event ${eventId}`);
         const rsvpsResult = await this.rsvpRepo.findAttendeesByEventId(eventId);
 
-        if (!rsvpsResult.ok) {
+        if (rsvpsResult.ok === false ) {
             return Err(UnexpectedDependencyError(rsvpsResult.value.message));
         }
 
@@ -175,7 +175,7 @@ class RsvpService implements IRsvpService {
 
         const eventResult = await this.eventRepo.findById(eventId);
 
-        if (!eventResult.ok) {
+        if (eventResult.ok === false) {
             return Err(UnexpectedDependencyError(eventResult.value.message));
         }
 
@@ -191,7 +191,7 @@ class RsvpService implements IRsvpService {
 
         const existingResult = await this.rsvpRepo.findByUserAndEvent(actingUserId, eventId);
 
-        if (!existingResult.ok) {
+        if (existingResult.ok === false) {
             return Err(UnexpectedDependencyError(existingResult.value.message));
         }
 
@@ -208,7 +208,7 @@ class RsvpService implements IRsvpService {
 
             const saveResult = await this.rsvpRepo.save(updated);
 
-            if (!saveResult.ok) {
+            if (saveResult.ok === false) {
                 return Err(UnexpectedDependencyError(saveResult.value.message));
             }
 
@@ -218,7 +218,7 @@ class RsvpService implements IRsvpService {
 
         const countResult = await this.rsvpRepo.countGoing(eventId);
 
-        if (!countResult.ok) {
+        if (countResult.ok === false) {
             return Err(UnexpectedDependencyError(countResult.value.message));
         }
 
@@ -244,7 +244,7 @@ class RsvpService implements IRsvpService {
 
         const saveResult = await this.rsvpRepo.save(rsvp);
 
-        if (!saveResult.ok) {
+        if (saveResult.ok === false) {
             return Err(UnexpectedDependencyError(saveResult.value.message));
         }
 
@@ -255,7 +255,7 @@ class RsvpService implements IRsvpService {
     async getAttendeeCount(eventId: string): Promise<Result<number, GetAttendeeCountError>> {
         const eventResult = await this.eventRepo.findById(eventId);
 
-        if (!eventResult.ok) {
+        if (eventResult.ok === false) {
             return Err(UnexpectedDependencyError(eventResult.value.message));
         }
 
@@ -267,7 +267,7 @@ class RsvpService implements IRsvpService {
 
         const countResult = await this.rsvpRepo.countGoing(eventId);
 
-        if (!countResult.ok) {
+        if (countResult.ok === false) {
             return Err(UnexpectedDependencyError(countResult.value.message));
         }
 
