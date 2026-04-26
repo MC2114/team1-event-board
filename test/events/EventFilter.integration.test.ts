@@ -1,7 +1,7 @@
 import request from "supertest";
 import { Express } from "express";
 import { PrismaClient } from "@prisma/client";
-import { createComposedApp, createComposedAppWithPrismaEventRepository } from "../../src/composition";
+import { createComposedApp, createComposedAppWithPrisma } from "../../src/composition";
 import { loginAs } from "../helper/auth";
 import { seedTestDatabase } from "../helper/seed";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
@@ -166,7 +166,7 @@ describe("Feature 6: Category and Date Filter - Prisma", () => {
 
     beforeEach(async () => {
         await seedTestDatabase(prisma);
-        app = createComposedAppWithPrismaEventRepository().getExpressApp();
+        app = createComposedAppWithPrisma({usePrismaEvent: true}).getExpressApp();
     });
 
     afterAll(async () => {
