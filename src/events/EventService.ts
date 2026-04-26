@@ -152,7 +152,7 @@ class EventService implements IEventService {
     ): Promise<Result<Event, GetEventByIdError>> {
         const eventResult = await this.eventRepository.findById(eventId);
 
-        if (!eventResult.ok) {
+        if (eventResult.ok === false) {
             return Err(UnexpectedDependencyError(eventResult.value.message));
         }
 
@@ -193,13 +193,13 @@ class EventService implements IEventService {
     ): Promise<Result<EventDetailView, EventDetailError>> {
         const eventResult = await this.getEventById(eventId, actingUserId, actingUserRole);
 
-        if (!eventResult.ok) {
+        if (eventResult.ok === false) {
             return Err(eventResult.value);
         }
         const event = eventResult.value;
         const attendeeCountResult = await this.rsvpRepository.countGoing(eventId);
 
-        if (!attendeeCountResult.ok) {
+        if (attendeeCountResult.ok === false) {
             return Err(UnexpectedDependencyError(attendeeCountResult.value.message));
         }
 
@@ -263,7 +263,7 @@ class EventService implements IEventService {
 
         const createResult = await this.eventRepository.create(event);
         
-        if (!createResult.ok) {
+        if (createResult.ok === false) {
             return Err(UnexpectedDependencyError(createResult.value.message));
         }
 
@@ -278,7 +278,7 @@ class EventService implements IEventService {
     ): Promise<Result<Event, UpdateEventStatusError>> {
         const result = await this.eventRepository.findById(eventId);
 
-        if (!result.ok) {
+        if (result.ok === false) {
             return Err(UnexpectedDependencyError(result.value.message));
         }
 
@@ -316,7 +316,7 @@ class EventService implements IEventService {
 
         const updateResult = await this.eventRepository.updateStatus(eventId, newStatus);
 
-        if (!updateResult.ok) {
+        if (updateResult.ok === false) {
             return Err(UnexpectedDependencyError(updateResult.value.message));
         }
 
@@ -339,7 +339,7 @@ class EventService implements IEventService {
         if (actingUserRole === "admin") {
             const result = await this.eventRepository.findAll();
 
-            if (!result.ok) {
+            if (result.ok === false) {
                 return Err(UnexpectedDependencyError(result.value.message));
             }
 
@@ -350,7 +350,7 @@ class EventService implements IEventService {
         }
 
         const result = await this.eventRepository.findByOrganizer(actingUserId);
-        if (!result.ok) {
+        if (result.ok === false) {
             return Err(UnexpectedDependencyError(result.value.message));
         }
 
@@ -376,7 +376,7 @@ class EventService implements IEventService {
         }>,
     ): Promise<Result<Event, UpdateEventError>> {
         const findResult = await this.eventRepository.findById(eventId);
-        if (!findResult.ok) {
+        if (findResult.ok === false) {
             return Err(UnexpectedDependencyError(findResult.value.message));
         }
 
@@ -425,7 +425,7 @@ class EventService implements IEventService {
         const merged = { ...existing, ...data };
         const updateResult = await this.eventRepository.update({ ...merged, updatedAt: new Date() });
 
-        if (!updateResult.ok) {
+        if (updateResult.ok === false) {
             return Err(UnexpectedDependencyError(updateResult.value.message));
         }
 
@@ -462,7 +462,7 @@ class EventService implements IEventService {
 
         const allEventsResult = await this.eventRepository.findAll();
 
-        if (!allEventsResult.ok) {
+        if (allEventsResult.ok === false) {
             return Err(UnexpectedDependencyError(allEventsResult.value.message));
         }
 
