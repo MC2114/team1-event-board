@@ -110,7 +110,7 @@ export class EventController implements IEventController {
       formData
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = result.value;
 
       if (error.name === "NotAuthorizedError") {
@@ -162,7 +162,7 @@ export class EventController implements IEventController {
       user.role as UserRole
     );
 
-    if (!detailResult.ok) {
+    if (detailResult.ok === false) {
       const status = this.mapErrorStatus(detailResult.value);
 
       res.status(status).render("partials/error", {
@@ -218,7 +218,7 @@ export class EventController implements IEventController {
       user.role as UserRole
     );
 
-    if (!eventResult.ok) {
+    if (eventResult.ok === false) {
       const error = eventResult.value;
       const status = this.mapErrorStatus(error);
       res.status(status).render("partials/error", {
@@ -289,7 +289,7 @@ export class EventController implements IEventController {
       data
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = result.value;
 
       if (error.name === "NotAuthorizedError") {
@@ -365,7 +365,7 @@ export class EventController implements IEventController {
       },
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Failed to list events: ${result.value.message}`);
@@ -421,7 +421,7 @@ export class EventController implements IEventController {
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value);
 
       res.status(status).render("partials/error", {
@@ -456,7 +456,7 @@ export class EventController implements IEventController {
 
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "cancelled");
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value);
 
       res.status(status).render("partials/error", {
@@ -500,7 +500,7 @@ export class EventController implements IEventController {
       user.role
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Failed to load organizer dashboard: ${result.value.message}`);
