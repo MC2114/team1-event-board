@@ -72,7 +72,7 @@ describe("Feature 2: Event Detail Page", () => {
     const res = await agent.get("/events/does-not-exist");
 
     expect(res.status).toBe(404);
-    expect(res.text).toContain("Event not found");
+    expect(res.text).toContain("No event exists with the given ID.");
   });
 
   // error path: role user cannot view drafts
@@ -80,7 +80,7 @@ describe("Feature 2: Event Detail Page", () => {
     const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
     const res = await agent.get("/events/event-draft-1");
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
   });
 });
 
@@ -129,7 +129,7 @@ describe("Feature 2: Event Detail Page with PrismaEventRepository", () => {
     const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
     const res = await agent.get("/events/event-draft-1");
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
   });
 
   // error path: staff can't view drafts that they did not create
@@ -137,7 +137,7 @@ describe("Feature 2: Event Detail Page with PrismaEventRepository", () => {
     const agent = await loginAs(app, STAFF_EMAIL, STAFF_PASSWORD);
     const res = await agent.get("/events/event-draft-admin"); // owned by admin
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
   });
 
   // error path: missing Prisma event returns 404
@@ -146,6 +146,6 @@ describe("Feature 2: Event Detail Page with PrismaEventRepository", () => {
     const res = await agent.get("/events/does-not-exist");
 
     expect(res.status).toBe(404);
-    expect(res.text).toContain("Event not found");
+    expect(res.text).toContain("No event exists with the given ID");
   });
 });
