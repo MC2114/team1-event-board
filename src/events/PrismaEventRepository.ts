@@ -77,7 +77,15 @@ export class PrismaEventRepository implements IEventRepository {
     }
 
     async updateStatus(eventId: string, status: EventStatus): Promise<Result<Event | null, EventError>> {
-        throw new Error("Not implemented");
+        try {
+            const event = await this.prisma.event.update({
+                where: { id: eventId },
+                data: { status, updatedAt: new Date() },
+            });
+            return Ok(this.toEvent(event));
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to update the event status."));
+        }
     }
 
     private toEvent(prismaEvent: PrismaEvent): Event {
