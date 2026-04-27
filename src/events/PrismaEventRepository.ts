@@ -69,7 +69,27 @@ export class PrismaEventRepository implements IEventRepository {
     }
 
     async create(event: Event): Promise<Result<Event, EventError>> {
-        throw new Error("Not implemented");
+        try {
+            const created = await this.prisma.event.create({
+                data: {
+                    id: event.id,
+                    title: event.title,
+                    description: event.description,
+                    location: event.location,
+                    category: event.category,
+                    status: event.status,
+                    capacity: event.capacity,
+                    startDatetime: event.startDatetime,
+                    endDatetime: event.endDatetime,
+                    organizerId: event.organizerId,
+                    createdAt: event.createdAt,
+                    updatedAt: event.updatedAt,
+                },
+            });
+            return Ok(this.toEvent(created));
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to create the event."));
+        }
     }
 
     async update(event: Event): Promise<Result<Event | null, EventError>> {
