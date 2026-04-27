@@ -85,6 +85,15 @@ describe("Feature 10 Sprint 3 - Event Search integration (Prisma)", () => {
     expect(response.text).toContain("No events found.");
   });
 
+  it("matches events by location text", async () => {
+    const userAgent = await loginAs(app, "user@app.test", "password123");
+
+    const response = await userAgent.get("/events").query({ searchQuery: "innovation hub" });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("Startup Networking Night");
+  });
+
   it("treats an empty query as all published upcoming events", async () => {
     const userAgent = await loginAs(app, "user@app.test", "password123");
 
@@ -93,6 +102,16 @@ describe("Feature 10 Sprint 3 - Event Search integration (Prisma)", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain("Spring Picnic");
     expect(response.text).toContain("Graduation Celebration");
+  });
+
+  it("does not show draft-only matches to regular users", async () => {
+    const userAgent = await loginAs(app, "user@app.test", "password123");
+
+    const response = await userAgent.get("/events").query({ searchQuery: "draft planning" });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("No events found.");
+    expect(response.text).not.toContain("Draft Planning Meeting");
   });
 
   it("matches search queries case-insensitively", async () => {
