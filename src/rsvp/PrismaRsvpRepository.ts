@@ -1,21 +1,24 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, RSVP as PrismaRsvp, Event as PrismaEvent } from "@prisma/client";
 import { Ok, Err, type Result } from "../lib/result";
 import type { IRSVPRepository } from "./RsvpRepository";
 import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
 import type { RSVPError } from "./errors";
 import { UnexpectedDependencyError } from "./errors";
+import { DEMO_USERS } from "../auth/InMemoryUserRepository";
 
-function toRSVP(record: any): RSVP {
+type PrismaRsvpWithEvent = PrismaRsvp & { event: PrismaEvent };
+
+function toRSVP(record: PrismaRsvp): RSVP {
   return {
     id: record.id,
     eventId: record.eventId,
     userId: record.userId,
-    status: record.status,
+    status: record.status as RSVP["status"],
     createdAt: record.createdAt,
   };
 }
 
-function toRSVPWithEvent(record: any): RSVPWithEvent {
+function toRSVPWithEvent(record: PrismaRsvpWithEvent): RSVPWithEvent {
   return {
     ...toRSVP(record),
     event: {
@@ -24,7 +27,7 @@ function toRSVPWithEvent(record: any): RSVPWithEvent {
       description: record.event.description,
       location: record.event.location,
       category: record.event.category,
-      status: record.event.status,
+      status: record.event.status as RSVPWithEvent["event"]["status"],
       capacity: record.event.capacity,
       startDatetime: record.event.startDatetime,
       endDatetime: record.event.endDatetime,
@@ -52,11 +55,37 @@ export class PrismaRsvpRepository implements IRSVPRepository {
   }
 
   async findByEventId(eventId: string): Promise<Result<RSVP[], RSVPError>> {
-    throw new Error("Not implemented");
+    try {
+      const rsvps = await this.prisma.rSVP.findMany({
+        where: { eventId },
+        orderBy: { createdAt: "asc" },
+      });
+
+      return Ok(rsvps.map(toRSVP));
+    } catch {
+      return Err(UnexpectedDependencyError("Unable to read RSVPs for event."));
+    }
   }
 
   async findAttendeesByEventId(eventId: string,): Promise<Result<RSVPAttendee[], RSVPError>> {
-    throw new Error("Not implemented");
+    try {
+      const rsvps = await this.prisma.rSVP.findMany({
+        where: { eventId },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const attendees: RSVPAttendee[] = rsvps.map((rsvp) => {
+        const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
+        return {
+          ...toRSVP(rsvp),
+          displayName: user?.displayName ?? rsvp.userId,
+        };
+      });
+
+      return Ok(attendees);
+    } catch {
+      return Err(UnexpectedDependencyError("Unable to read attendee list for event."));
+    }
   }
 
   async findByUserAndEvent(
