@@ -57,7 +57,7 @@ export class PrismaEventRepository implements IEventRepository {
                     cutoffDate.setFullYear(now.getFullYear() + 1);
                 }
                 where.startDatetime = {
-                    gte: now,
+                    gt: now,
                     lte: cutoffDate,
                 };
             }
