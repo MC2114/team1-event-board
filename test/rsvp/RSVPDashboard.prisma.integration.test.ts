@@ -101,7 +101,7 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Integration (Prisma)", () => {
         await prisma.rSVP.create({
             data: {
                 id: "rsvp-other-user",
-                userId: "user-2",
+                userId: "user-1",
                 eventId: "event-published-1",
                 status: "going",
                 createdAt: new Date(),
