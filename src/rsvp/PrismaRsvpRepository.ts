@@ -4,7 +4,6 @@ import type { IRSVPRepository } from "./RsvpRepository";
 import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
 import type { RSVPError } from "./errors";
 import { UnexpectedDependencyError } from "./errors";
-import { DEMO_USERS } from "../auth/InMemoryUserRepository";
 
 type PrismaRsvpWithEvent = PrismaRsvp & { event: PrismaEvent };
 
@@ -67,20 +66,20 @@ export class PrismaRsvpRepository implements IRSVPRepository {
     }
   }
 
-  async findAttendeesByEventId(eventId: string,): Promise<Result<RSVPAttendee[], RSVPError>> {
+  async findAttendeesByEventId(eventId: string): Promise<Result<RSVPAttendee[], RSVPError>> {
     try {
       const rsvps = await this.prisma.rSVP.findMany({
         where: { eventId },
         orderBy: { createdAt: "asc" },
+        include: {
+          user: true,
+        }
       });
 
-      const attendees: RSVPAttendee[] = rsvps.map((rsvp) => {
-        const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
-        return {
-          ...toRSVP(rsvp),
-          displayName: user?.displayName ?? rsvp.userId,
-        };
-      });
+      const attendees: RSVPAttendee[] = rsvps.map((rsvp) => ({
+        ...toRSVP(rsvp),
+        displayName: rsvp.user.displayName,
+      }));
 
       return Ok(attendees);
     } catch {
