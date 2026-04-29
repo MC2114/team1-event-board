@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma, Event as PrismaEvent} from "@prisma/client";
+import type { PrismaClient, Prisma, Event as PrismaEvent } from "@prisma/client";
 import { Ok, Err } from "../lib/result";
 import type { Result } from "../lib/result";
 import type { Event, EventStatus, EventFilters } from "./Event";
@@ -6,13 +6,13 @@ import type { IEventRepository } from "./EventRepository";
 import { UnexpectedDependencyError, type EventError } from "./errors";
 
 export class PrismaEventRepository implements IEventRepository {
-    constructor(private readonly prisma: PrismaClient) {}
+    constructor(private readonly prisma: PrismaClient) { }
 
     async findById(eventId: string): Promise<Result<Event | null, EventError>> {
         try {
-        const event = await this.prisma.event.findUnique({
-            where: { id: eventId },
-        });
+            const event = await this.prisma.event.findUnique({
+                where: { id: eventId },
+            });
             return Ok(event ? this.toEvent(event) : null);
         } catch {
             return Err(UnexpectedDependencyError("Unable to find event."));
@@ -20,7 +20,15 @@ export class PrismaEventRepository implements IEventRepository {
     }
 
     async findByOrganizer(organizerId: string): Promise<Result<Event[], EventError>> {
-        throw new Error("Not implemented");
+        try {
+            const events = await this.prisma.event.findMany({
+                where: { organizerId },
+            });
+
+            return Ok(events.map((event) => this.toEvent(event)));
+        } catch {
+            return Err(UnexpectedDependencyError("Unable to find organizer events."));
+        }
     }
 
     async findAll(): Promise<Result<Event[], EventError>> {
@@ -31,9 +39,9 @@ export class PrismaEventRepository implements IEventRepository {
             return Err(UnexpectedDependencyError("Unable to find the events."));
         }
     }
-    
+
     async findPublishedUpcoming(filters?: EventFilters): Promise<Result<Event[], EventError>> {
-        try{
+        try {
             const now = new Date();
             const where: Prisma.EventWhereInput = {
                 status: "published",
@@ -149,5 +157,5 @@ export class PrismaEventRepository implements IEventRepository {
             createdAt: prismaEvent.createdAt,
             updatedAt: prismaEvent.updatedAt,
         };
-    }   
+    }
 }
