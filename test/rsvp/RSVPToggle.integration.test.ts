@@ -142,6 +142,33 @@ describe("Feature 4: RSVP Toggle with Prisma", () => {
       },
     });
 
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ["waitlist-user-1", "waitlist-user-2"],
+        },
+      },
+    });
+
+    await prisma.user.createMany({
+      data: [
+        {
+          id: "waitlist-user-1",
+          email: "waitlist-user-1@app.test",
+          displayName: "Waitlist User One",
+          role: "user",
+          passwordHash: "password123",
+        },
+        {
+          id: "waitlist-user-2",
+          email: "waitlist-user-2@app.test",
+          displayName: "Waitlist User Two",
+          role: "user",
+          passwordHash: "password123",
+        },
+      ],
+    });
+
     await prisma.event.createMany({
       data: [
         {
@@ -224,6 +251,14 @@ describe("Feature 4: RSVP Toggle with Prisma", () => {
             "event-published-2",
             "event-cancelled-1",
           ],
+        },
+      },
+    });
+
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ["waitlist-user-1", "waitlist-user-2"],
         },
       },
     });
