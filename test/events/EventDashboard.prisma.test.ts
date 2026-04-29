@@ -26,7 +26,7 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
                     capacity: 10,
                     startDatetime: new Date("2030-01-01"),
                     endDatetime: new Date("2030-01-01"),
-                    organizerId: "organizer-1",
+                    organizerId: "user-staff",
                 },
                 {
                     id: "e2",
@@ -38,7 +38,7 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
                     capacity: 10,
                     startDatetime: new Date("2030-01-02"),
                     endDatetime: new Date("2030-01-02"),
-                    organizerId: "organizer-1",
+                    organizerId: "user-staff",
                 },
                 {
                     id: "e3",
@@ -50,7 +50,7 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
                     capacity: 20,
                     startDatetime: new Date("2030-01-03"),
                     endDatetime: new Date("2030-01-03"),
-                    organizerId: "organizer-2",
+                    organizerId: "user-admin",
                 },
             ],
         });
@@ -61,12 +61,12 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
     });
 
     it("returns only events belonging to the organizer (Prisma filter check)", async () => {
-        const result = await repo.findByOrganizer("organizer-1");
+        const result = await repo.findByOrganizer("user-staff");
 
         expect(result.ok).toBe(true);
         if (!result.ok) return;
         expect(result.value.length).toBe(2);
-        expect(result.value.every(e => e.organizerId === "organizer-1")).toBe(true);
+        expect(result.value.every(e => e.organizerId === "user-staff")).toBe(true);
         expect(result.value.map(e => e.id)).toEqual(
             expect.arrayContaining(["e1", "e2"])
         );
@@ -82,16 +82,16 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
     });
 
     it("does not leak other organizers' events (strict DB enforcement)", async () => {
-        const result = await repo.findByOrganizer("organizer-1");
+        const result = await repo.findByOrganizer("user-staff");
 
         expect(result.ok).toBe(true);
         if (!result.ok) return;
 
-        expect(result.value.some(e => e.organizerId === "organizer-2")).toBe(false);
+        expect(result.value.some(e => e.organizerId === "user-admin")).toBe(false);
     });
 
     it("Prisma correctly persists status values per organizer", async () => {
-        const result = await repo.findByOrganizer("organizer-1");
+        const result = await repo.findByOrganizer("user-staff");
 
         expect(result.ok).toBe(true);
         if (!result.ok) return;

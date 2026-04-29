@@ -142,6 +142,7 @@ describe("Feature 2: EventService.getEventDetailView", () => {
 });
 
 // Uses PrismaEventRepository and PrismaRsvpRepository against seeded database records
+// Uses PrismaEventRepository and PrismaRsvpRepository against seeded database records
 describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
   const adapter = new PrismaBetterSqlite3({
     url: "file:./prisma/dev.db",
@@ -172,6 +173,44 @@ describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
           ],
         },
       },
+    });
+
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: [
+            "detail-user-1",
+            "detail-user-2",
+            "detail-user-3",
+          ],
+        },
+      },
+    });
+
+    await prisma.user.createMany({
+      data: [
+        {
+          id: "detail-user-1",
+          email: "detail-user-1@app.test",
+          displayName: "Detail User One",
+          role: "user",
+          passwordHash: "password123",
+        },
+        {
+          id: "detail-user-2",
+          email: "detail-user-2@app.test",
+          displayName: "Detail User Two",
+          role: "user",
+          passwordHash: "password123",
+        },
+        {
+          id: "detail-user-3",
+          email: "detail-user-3@app.test",
+          displayName: "Detail User Three",
+          role: "user",
+          passwordHash: "password123",
+        },
+      ],
     });
 
     const start = new Date("2030-04-20T15:00:00.000Z");
@@ -225,21 +264,21 @@ describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
         {
           id: "prisma-detail-rsvp-1",
           eventId: "prisma-published-event",
-          userId: "user-going-1",
+          userId: "detail-user-1",
           status: "going",
           createdAt: new Date("2030-04-01T10:00:00.000Z"),
         },
         {
           id: "prisma-detail-rsvp-2",
           eventId: "prisma-published-event",
-          userId: "user-going-2",
+          userId: "detail-user-2",
           status: "going",
           createdAt: new Date("2030-04-01T10:05:00.000Z"),
         },
         {
           id: "prisma-detail-rsvp-3",
           eventId: "prisma-published-event",
-          userId: "user-waitlisted-1",
+          userId: "detail-user-3",
           status: "waitlisted",
           createdAt: new Date("2030-04-01T10:10:00.000Z"),
         },
@@ -267,6 +306,18 @@ describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
             "prisma-published-event",
             "prisma-draft-event",
             "prisma-admin-draft-event",
+          ],
+        },
+      },
+    });
+
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: [
+            "detail-user-1",
+            "detail-user-2",
+            "detail-user-3",
           ],
         },
       },
@@ -310,7 +361,9 @@ describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
     expect(draftResult.ok).toBe(true);
     if (!draftResult.ok) return;
 
-    expect(draftResult.value.event.title).toBe("Prisma Draft Planning Meeting");
+    expect(draftResult.value.event.title).toBe(
+      "Prisma Draft Planning Meeting",
+    );
     expect(draftResult.value.event.status).toBe("draft");
 
     const publishedResult = await service.getEventDetailView(
@@ -322,7 +375,9 @@ describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
     expect(publishedResult.ok).toBe(true);
     if (!publishedResult.ok) return;
 
-    expect(publishedResult.value.event.title).toBe("Prisma Published Picnic");
+    expect(publishedResult.value.event.title).toBe(
+      "Prisma Published Picnic",
+    );
     expect(publishedResult.value.event.status).toBe("published");
     expect(publishedResult.value.event.organizerId).toBe("user-staff");
   });
@@ -345,7 +400,7 @@ describe("Feature 2: EventService.getEventDetailView with Prisma", () => {
     expect(result.value.event.status).toBe("draft");
   });
 
-  // error path: blocks users from viewing drafts 
+  // error path: blocks users from viewing drafts
   it("blocks regular users from viewing a draft event from Prisma", async () => {
     const eventRepo = new PrismaEventRepository(prisma);
     const rsvpRepo = new PrismaRsvpRepository(prisma);

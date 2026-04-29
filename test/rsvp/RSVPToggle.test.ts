@@ -261,10 +261,37 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
             "prisma-rsvp-full-event",
             "prisma-rsvp-toggle-event",
             "prisma-rsvp-cancelled-event",
-            "prisma-rsvp-past-event"
+            "prisma-rsvp-past-event",
           ],
         },
       },
+    });
+
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ["user-going-1", "user-going-2"],
+        },
+      },
+    });
+
+    await prisma.user.createMany({
+      data: [
+        {
+          id: "user-going-1",
+          email: "user-going-1@app.test",
+          displayName: "Going User One",
+          role: "user",
+          passwordHash: "password123",
+        },
+        {
+          id: "user-going-2",
+          email: "user-going-2@app.test",
+          displayName: "Going User Two",
+          role: "user",
+          passwordHash: "password123",
+        },
+      ],
     });
 
     const start = new Date("2030-04-20T15:00:00.000Z");
@@ -371,7 +398,7 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
             "prisma-rsvp-full-event",
             "prisma-rsvp-toggle-event",
             "prisma-rsvp-cancelled-event",
-            "prisma-rsvp-past-event"
+            "prisma-rsvp-past-event",
           ],
         },
       },
@@ -391,10 +418,18 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
       },
     });
 
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ["user-going-1", "user-going-2"],
+        },
+      },
+    });
+
     await prisma.$disconnect();
   });
 
-  // success path: creates "going" RSVP when event has available capacity    
+  // success path: creates "going" RSVP when event has available capacity
   it("creates a going RSVP in Prisma when the event has available capacity", async () => {
     const eventRepo = new PrismaEventRepository(prisma);
     const rsvpRepo = new PrismaRsvpRepository(prisma);
@@ -584,5 +619,4 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
       InvalidRSVPError("Cannot RSVP to a cancelled or past event"),
     );
   });
-
 });

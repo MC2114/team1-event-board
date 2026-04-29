@@ -10,11 +10,58 @@ describe("Feature 8: Organizer Dashboard (Prisma)", () => {
     });
 
     const prisma = new PrismaClient({ adapter });
-    const app = createComposedAppWithPrisma({ usePrismaEvent: true }).getExpressApp();
+    const app = createComposedAppWithPrisma({
+        usePrismaEvent: true,
+    }).getExpressApp();
 
     beforeEach(async () => {
         await prisma.rSVP.deleteMany();
-        await prisma.event.deleteMany();
+
+        await prisma.event.deleteMany({
+            where: {
+                id: {
+                    in: ["e1", "e2", "e3"],
+                },
+            },
+        });
+
+        await prisma.user.deleteMany({
+            where: {
+                id: {
+                    in: [
+                        "dashboard-user-1",
+                        "dashboard-user-2",
+                        "dashboard-user-3",
+                    ],
+                },
+            },
+        });
+
+        await prisma.user.createMany({
+            data: [
+                {
+                    id: "dashboard-user-1",
+                    email: "dashboard-user-1@app.test",
+                    displayName: "Dashboard User One",
+                    role: "user",
+                    passwordHash: "password123",
+                },
+                {
+                    id: "dashboard-user-2",
+                    email: "dashboard-user-2@app.test",
+                    displayName: "Dashboard User Two",
+                    role: "user",
+                    passwordHash: "password123",
+                },
+                {
+                    id: "dashboard-user-3",
+                    email: "dashboard-user-3@app.test",
+                    displayName: "Dashboard User Three",
+                    role: "user",
+                    passwordHash: "password123",
+                },
+            ],
+        });
 
         await prisma.event.createMany({
             data: [
@@ -59,19 +106,70 @@ describe("Feature 8: Organizer Dashboard (Prisma)", () => {
 
         await prisma.rSVP.createMany({
             data: [
-                { id: "r1", eventId: "e2", userId: "u1", status: "going", createdAt: new Date() },
-                { id: "r2", eventId: "e2", userId: "u2", status: "going", createdAt: new Date() },
-                { id: "r3", eventId: "e3", userId: "u3", status: "going", createdAt: new Date() },
+                {
+                    id: "r1",
+                    eventId: "e2",
+                    userId: "dashboard-user-1",
+                    status: "going",
+                    createdAt: new Date(),
+                },
+                {
+                    id: "r2",
+                    eventId: "e2",
+                    userId: "dashboard-user-2",
+                    status: "going",
+                    createdAt: new Date(),
+                },
+                {
+                    id: "r3",
+                    eventId: "e3",
+                    userId: "dashboard-user-3",
+                    status: "going",
+                    createdAt: new Date(),
+                },
             ],
         });
     });
 
     afterAll(async () => {
+        await prisma.rSVP.deleteMany({
+            where: {
+                id: {
+                    in: ["r1", "r2", "r3"],
+                },
+            },
+        });
+
+        await prisma.event.deleteMany({
+            where: {
+                id: {
+                    in: ["e1", "e2", "e3"],
+                },
+            },
+        });
+
+        await prisma.user.deleteMany({
+            where: {
+                id: {
+                    in: [
+                        "dashboard-user-1",
+                        "dashboard-user-2",
+                        "dashboard-user-3",
+                    ],
+                },
+            },
+        });
+
         await prisma.$disconnect();
     });
 
     it("organizer only sees their own events (Prisma enforced)", async () => {
-        const agent = await loginAs(app, "staff@app.test", "password123");
+        const agent = await loginAs(
+            app,
+            "staff@app.test",
+            "password123",
+        );
+
         const res = await agent.get("/events/dashboard");
 
         expect(res.status).toBe(200);
@@ -81,7 +179,12 @@ describe("Feature 8: Organizer Dashboard (Prisma)", () => {
     });
 
     it("admin sees all events across organizers", async () => {
-        const agent = await loginAs(app, "admin@app.test", "password123");
+        const agent = await loginAs(
+            app,
+            "admin@app.test",
+            "password123",
+        );
+
         const res = await agent.get("/events/dashboard");
 
         expect(res.status).toBe(200);
@@ -91,7 +194,12 @@ describe("Feature 8: Organizer Dashboard (Prisma)", () => {
     });
 
     it("attendee counts reflect Prisma RSVP aggregation", async () => {
-        const agent = await loginAs(app, "staff@app.test", "password123");
+        const agent = await loginAs(
+            app,
+            "staff@app.test",
+            "password123",
+        );
+
         const res = await agent.get("/events/dashboard");
 
         expect(res.status).toBe(200);
@@ -100,7 +208,12 @@ describe("Feature 8: Organizer Dashboard (Prisma)", () => {
     });
 
     it("members are blocked even with valid Prisma data", async () => {
-        const agent = await loginAs(app, "user@app.test", "password123");
+        const agent = await loginAs(
+            app,
+            "user@app.test",
+            "password123",
+        );
+
         const res = await agent.get("/events/dashboard");
 
         expect(res.status).toBe(403);

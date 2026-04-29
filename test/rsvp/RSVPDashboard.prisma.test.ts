@@ -13,26 +13,56 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
 
     beforeEach(async () => {
         await seedTestDatabase(prisma);
+
+        await prisma.rSVP.deleteMany({
+            where: {
+                id: {
+                    in: [
+                        "rsvp-user-reader",
+                        "rsvp-user-reader-2",
+                        "rsvp-other-user",
+                        "rsvp-new",
+                    ],
+                },
+            },
+        });
+
+        await prisma.user.deleteMany({
+            where: {
+                id: "dashboard-rsvp-user",
+            },
+        });
+
+        await prisma.user.create({
+            data: {
+                id: "dashboard-rsvp-user",
+                email: "dashboard-rsvp-user@app.test",
+                displayName: "Dashboard RSVP User",
+                role: "user",
+                passwordHash: "password123",
+            },
+        });
+
         await prisma.rSVP.createMany({
             data: [
                 {
-                    id: "rsvp-user-1",
+                    id: "rsvp-user-reader",
                     eventId: "event-published-1",
-                    userId: "user-1",
+                    userId: "user-reader",
                     status: "going",
                     createdAt: new Date("2026-04-05T10:00:00.000Z"),
                 },
                 {
-                    id: "rsvp-user-1-2",
+                    id: "rsvp-user-reader-2",
                     eventId: "event-published-2",
-                    userId: "user-1",
+                    userId: "user-reader",
                     status: "waitlisted",
                     createdAt: new Date("2026-04-06T10:00:00.000Z"),
                 },
                 {
-                    id: "rsvp-user-2",
+                    id: "rsvp-other-user",
                     eventId: "event-published-1",
-                    userId: "user-2",
+                    userId: "dashboard-rsvp-user",
                     status: "going",
                     createdAt: new Date(),
                 },
@@ -41,11 +71,30 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
     });
 
     afterAll(async () => {
+        await prisma.rSVP.deleteMany({
+            where: {
+                id: {
+                    in: [
+                        "rsvp-user-reader",
+                        "rsvp-user-reader-2",
+                        "rsvp-other-user",
+                        "rsvp-new",
+                    ],
+                },
+            },
+        });
+
+        await prisma.user.deleteMany({
+            where: {
+                id: "dashboard-rsvp-user",
+            },
+        });
+
         await prisma.$disconnect();
     });
 
     it("returns RSVPs for a user with joined event details", async () => {
-        const result = await repository.findByUser("user-1");
+        const result = await repository.findByUser("user-reader");
 
         expect(result.ok).toBe(true);
         if (result.ok) {
@@ -59,11 +108,11 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
     });
 
     it("returns only RSVPs belonging to the given user", async () => {
-        const result = await repository.findByUser("user-1");
+        const result = await repository.findByUser("user-reader");
 
         expect(result.ok).toBe(true);
         if (result.ok) {
-            expect(result.value.every(r => r.userId === "user-1")).toBe(true);
+            expect(result.value.every(r => r.userId === "user-reader")).toBe(true);
         }
     });
 
@@ -87,12 +136,12 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
     });
 
     it("finds RSVP by user and event", async () => {
-        const result = await repository.findByUserAndEvent("user-1", "event-published-1");
+        const result = await repository.findByUserAndEvent("user-reader", "event-published-1");
 
         expect(result.ok).toBe(true);
         if (result.ok) {
             if (result.value) {
-                expect(result.value.userId).toBe("user-1");
+                expect(result.value.userId).toBe("user-reader");
                 expect(result.value.eventId).toBe("event-published-1");
             }
         }
@@ -101,7 +150,7 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
     it("creates a new RSVP if one does not exist", async () => {
         const newRsvp = {
             id: "rsvp-new",
-            userId: "user-1",
+            userId: "user-reader",
             eventId: "event-published-3",
             status: "going" as const,
             createdAt: new Date(),
@@ -119,7 +168,7 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
     it("updates an existing RSVP instead of creating a duplicate", async () => {
         const updated = {
             id: "ignored",
-            userId: "user-1",
+            userId: "user-reader",
             eventId: "event-published-1",
             status: "waitlisted" as const,
             createdAt: new Date(),
@@ -132,7 +181,7 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Repository (Prisma)", () => {
             expect(result.value.status).toBe("waitlisted");
         }
 
-        const check = await repository.findByUserAndEvent("user-1", "event-published-1");
+        const check = await repository.findByUserAndEvent("user-reader", "event-published-1");
         expect(check.ok).toBe(true);
         if (check.ok && check.value) {
             expect(check.value.status).toBe("waitlisted");

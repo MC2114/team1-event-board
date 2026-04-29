@@ -33,7 +33,7 @@ async function main() {
         {
             id: "user-admin",
             email: "admin@app.test",
-            displayName: "Ada Admin",
+            displayName: "Avery Admin",
             role: "admin",
             passwordHash: "password123",
         },

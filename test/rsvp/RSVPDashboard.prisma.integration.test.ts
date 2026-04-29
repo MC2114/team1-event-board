@@ -98,11 +98,33 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Integration (Prisma)", () => {
     });
 
     it("only shows RSVPs belonging to the logged-in user", async () => {
+        await prisma.rSVP.deleteMany({
+            where: {
+                id: "rsvp-other-user",
+            },
+        });
+        
+        await prisma.user.deleteMany({
+            where: {
+                id: "rsvp-dashboard-other-user",
+            },
+        });
+
+        await prisma.user.create({
+            data: {
+                id: "rsvp-dashboard-other-user",
+                email: "rsvp-dashboard-other-user@app.test",
+                displayName: "RSVP Dashboard Other User",
+                role: "user",
+                passwordHash: "password123",
+            },
+        });
+
         await prisma.rSVP.create({
             data: {
                 id: "rsvp-other-user",
-                userId: "user-1",
-                eventId: "event-published-1",
+                userId: "rsvp-dashboard-other-user",
+                eventId: "event-published-2",
                 status: "going",
                 createdAt: new Date(),
             },
@@ -110,6 +132,7 @@ describe("Feature 7 Sprint 3 - RSVP Dashboard Integration (Prisma)", () => {
 
         const userAgent = await loginAs(app, "user@app.test", "password123");
         const response = await userAgent.get("/rsvps");
+
         expect(response.status).toBe(200);
         expect(response.text).not.toContain("rsvp-other-user");
     });
