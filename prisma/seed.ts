@@ -12,6 +12,33 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     await prisma.rSVP.deleteMany();
     await prisma.event.deleteMany();
+    await prisma.user.deleteMany();
+
+    await prisma.user.createMany({
+        data: [
+        {
+            id: "user-reader",
+            email: "user@app.test",
+            displayName: "Una User",
+            role: "user",
+            passwordHash: "password123",
+        },
+        {
+            id: "user-staff",
+            email: "staff@app.test",
+            displayName: "Sam Staff",
+            role: "staff",
+            passwordHash: "password123",
+        },
+        {
+            id: "user-admin",
+            email: "admin@app.test",
+            displayName: "Avery Admin",
+            role: "admin",
+            passwordHash: "password123",
+        },
+        ],
+    });
 
     const now = new Date();
     const oneYear = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);

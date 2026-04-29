@@ -1,7 +1,10 @@
 import request from "supertest";
 import { PrismaClient } from "@prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { createComposedApp, createComposedAppWithPrisma } from "../../src/composition";
+import {
+  createComposedApp,
+  createComposedAppWithPrisma,
+} from "../../src/composition";
 import { loginAs } from "../helper/auth";
 
 const USER_EMAIL = "user@app.test";
@@ -15,6 +18,7 @@ const ADMIN_PASSWORD = "password123";
 
 describe("Feature 4: RSVP Toggle", () => {
   const app = createComposedApp().getExpressApp();
+
   // success path: role user can RSVP to a published event
   it("returns 302 and redirects after a user RSVPs to a published event", async () => {
     const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
@@ -108,35 +112,102 @@ describe("Feature 4: RSVP Toggle with Prisma", () => {
   }).getExpressApp();
 
   const prisma = new PrismaClient({
-    adapter: new PrismaBetterSqlite3({ url: "file:./prisma/dev.db" }),
+    adapter: new PrismaBetterSqlite3({
+      url: "file:./prisma/dev.db",
+    }),
   });
 
   beforeEach(async () => {
     await prisma.rSVP.deleteMany({
       where: {
-        eventId: "prisma-waitlist-event",
+        eventId: {
+          in: [
+            "prisma-waitlist-event",
+            "event-published-2",
+            "event-cancelled-1",
+          ],
+        },
       },
     });
 
     await prisma.event.deleteMany({
       where: {
-        id: "prisma-waitlist-event",
+        id: {
+          in: [
+            "prisma-waitlist-event",
+            "event-published-2",
+            "event-cancelled-1",
+          ],
+        },
       },
     });
 
-    await prisma.event.create({
-      data: {
-        id: "prisma-waitlist-event",
-        title: "Small Waitlist Event",
-        description: "Used to test waitlist behavior.",
-        location: "Small Room",
-        category: "social",
-        status: "published",
-        capacity: 2,
-        startDatetime: new Date("2030-04-20T15:00:00.000Z"),
-        endDatetime: new Date("2030-04-20T17:00:00.000Z"),
-        organizerId: "user-staff",
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ["waitlist-user-1", "waitlist-user-2"],
+        },
       },
+    });
+
+    await prisma.user.createMany({
+      data: [
+        {
+          id: "waitlist-user-1",
+          email: "waitlist-user-1@app.test",
+          displayName: "Waitlist User One",
+          role: "user",
+          passwordHash: "password123",
+        },
+        {
+          id: "waitlist-user-2",
+          email: "waitlist-user-2@app.test",
+          displayName: "Waitlist User Two",
+          role: "user",
+          passwordHash: "password123",
+        },
+      ],
+    });
+
+    await prisma.event.createMany({
+      data: [
+        {
+          id: "event-published-2",
+          title: "Published Event 2",
+          description: "Published event for RSVP testing",
+          location: "Campus Center",
+          category: "social",
+          status: "published",
+          capacity: 10,
+          startDatetime: new Date("2030-04-21T15:00:00.000Z"),
+          endDatetime: new Date("2030-04-21T17:00:00.000Z"),
+          organizerId: "user-staff",
+        },
+        {
+          id: "event-cancelled-1",
+          title: "Cancelled Event",
+          description: "Cancelled event for RSVP testing",
+          location: "Student Union",
+          category: "social",
+          status: "cancelled",
+          capacity: 10,
+          startDatetime: new Date("2030-04-22T15:00:00.000Z"),
+          endDatetime: new Date("2030-04-22T17:00:00.000Z"),
+          organizerId: "user-staff",
+        },
+        {
+          id: "prisma-waitlist-event",
+          title: "Small Waitlist Event",
+          description: "Used to test waitlist behavior.",
+          location: "Small Room",
+          category: "social",
+          status: "published",
+          capacity: 2,
+          startDatetime: new Date("2030-04-20T15:00:00.000Z"),
+          endDatetime: new Date("2030-04-20T17:00:00.000Z"),
+          organizerId: "user-staff",
+        },
+      ],
     });
 
     await prisma.rSVP.createMany({
@@ -162,18 +233,39 @@ describe("Feature 4: RSVP Toggle with Prisma", () => {
   afterAll(async () => {
     await prisma.rSVP.deleteMany({
       where: {
-        eventId: "prisma-waitlist-event",
+        eventId: {
+          in: [
+            "prisma-waitlist-event",
+            "event-published-2",
+            "event-cancelled-1",
+          ],
+        },
       },
     });
 
     await prisma.event.deleteMany({
       where: {
-        id: "prisma-waitlist-event",
+        id: {
+          in: [
+            "prisma-waitlist-event",
+            "event-published-2",
+            "event-cancelled-1",
+          ],
+        },
+      },
+    });
+
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: ["waitlist-user-1", "waitlist-user-2"],
+        },
       },
     });
 
     await prisma.$disconnect();
   });
+
   // success path: user can RSVP to a published Prisma event
   it("returns 302 and redirects after a user RSVPs to a published event with Prisma", async () => {
     await prisma.rSVP.deleteMany({
@@ -234,6 +326,7 @@ describe("Feature 4: RSVP Toggle with Prisma", () => {
   // success path: HTMX request returns partial HTML with Prisma when RSVP
   it("returns 200 and partial HTML for an HTMX RSVP request with Prisma", async () => {
     const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+
     const res = await agent
       .post("/events/event-published-2/rsvp")
       .set("HX-Request", "true");
@@ -246,7 +339,9 @@ describe("Feature 4: RSVP Toggle with Prisma", () => {
   // success path: HTMX request returns partial HTML with Prisma when cancelling
   it("returns partial HTML when cancelling RSVP via HTMX", async () => {
     const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
+
     await agent.post("/events/event-published-2/rsvp");
+
     const res = await agent
       .post("/events/event-published-2/rsvp")
       .set("HX-Request", "true");
