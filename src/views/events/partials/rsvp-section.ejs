@@ -1,5 +1,12 @@
-<div id="rsvp-section" class="pt-4 border-t border-slate-200 space-y-4">
-  <p class="text-sm font-semibold text-gray-700  tracking-wide">
+<div
+  id="rsvp-section"
+  x-data="{ isUpdating: false }"
+  x-on:htmx:before-request="isUpdating = true"
+  x-on:htmx:after-swap="isUpdating = false"
+  x-transition.opacity.duration.200ms
+  class="pt-4 border-t border-slate-200 space-y-4"
+>
+  <p class="text-sm text-gray-700  tracking-wide">
     <strong>Attendance</strong>
   </p>
 
@@ -30,13 +37,14 @@
         action="/events/<%= event.id %>/rsvp"
         hx-post="/events/<%= event.id %>/rsvp"
         hx-target="#rsvp-section"
-        hx-swap="outerHTML"
+        hx-swap="outerHTML settle:200ms"
         class="space-y-3"
       >
 
         <% if (!userRSVP || userRSVP.status === "cancelled") { %>
           <button
             type="submit"
+            x-bind:class="isUpdating ? 'opacity-60 scale-95' : 'opacity-100 scale-100'"
             class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition duration-200"
           >
             RSVP
@@ -44,6 +52,7 @@
         <% } else { %>
           <button
             type="submit"
+            x-bind:class="isUpdating ? 'opacity-60 scale-95' : 'opacity-100 scale-100'"
             class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition duration-200"
           >
             Cancel RSVP
