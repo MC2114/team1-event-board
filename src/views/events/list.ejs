@@ -25,6 +25,13 @@
     </div>
   </div>
 
+  <div x-data="{
+    category: '<%= activeCategory ?? '' %>',
+    timeframe: '<%= activeTimeframe ?? 'all' %>',
+    get hasFilters() {
+      return this.category !== '' || this.timeframe !== 'all';
+    }
+  }">
   <form id="event-search-form" method="GET" action="/events"
     class="flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
     <div class="flex items-center gap-2">
@@ -48,6 +55,7 @@
         Category
       </label>
       <select id="category" name="category"
+        x-model="category"
         hx-get="/events"
         hx-trigger="change"
         hx-target="#event-results"
@@ -55,7 +63,8 @@
         hx-include="#event-search-form"
         hx-push-url="true"
         hx-indicator="#event-results-loading"
-        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+        :class="category !== '' ? 'ring-2 ring-blue-300 border-blue-300 font-semibold text-blue-700' : ''">
         <option value="">All categories</option>
         <% const categories=["technology", "business", "music", "art", "food", "health", "education", "sports",
           "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv",
@@ -73,6 +82,7 @@
         When
       </label>
       <select id="timeframe" name="timeframe"
+        x-model="timeframe"
         hx-get="/events"
         hx-trigger="change"
         hx-target="#event-results"
@@ -80,23 +90,38 @@
         hx-include="#event-search-form"
         hx-push-url="true"
         hx-indicator="#event-results-loading"
-        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+        :class="timeframe !== 'all' ? 'ring-2 ring-blue-300 border-blue-300 font-semibold text-blue-700' : ''">
         <option value="all" <%= activeTimeframe === "all" || !activeTimeframe ? "selected" : "" %>>All upcoming</option>
         <option value="this_week" <%= activeTimeframe === "this_week" ? "selected" : "" %>>This week</option>
         <option value="this_month" <%= activeTimeframe === "this_month" ? "selected" : "" %>>This month</option>
         <option value="this_year" <%= activeTimeframe === "this_year" ? "selected" : "" %>>This year</option>
       </select>
     </div>
+
+    <button type="submit"
+      class="px-4 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+      x-data
+      x-show="false"
+    >
+      Apply
+    </button>
   </form>
 
-  <% if ((searchQuery && searchQuery.trim() !=="" ) || activeCategory || (activeTimeframe && activeTimeframe !=="all" ))
-    { %>
-    <div class="mb-4">
-      <a href="/events" class="text-sm text-slate-500 hover:text-slate-700 hover:underline">
-        Clear search and filters
-      </a>
-    </div>
-    <% } %>
+  <div class="mb-4">
+    <a href="/events"
+      x-show="hasFilters"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="text-sm text-slate-500 hover:text-slate-700 hover:underline no-underline">
+      Clear search and filters
+    </a>
+  </div>
+</div>
 
       <% if (pageError) { %>
         <%- include("../partials/error", { message: pageError }) %>
