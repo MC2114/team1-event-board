@@ -1,79 +1,99 @@
-<div class="max-w-3xl mx-auto p-6">
-  <div class="bg-white rounded-xl shadow p-6 space-y-5">
-    <div class="space-y-1">
-      <h1 class="text-3xl font-bold"><%= event.title %></h1>
-      <p class="text-sm text-gray-500"><%= event.category %></p>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <article class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+    <div class="p-6 sm:p-8 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+      <div class="space-y-2">
+        <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+          <%= event.category %>
+        </p>
+
+        <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
+          <%= event.title %>
+        </h1>
+      </div>
     </div>
 
-    <p class="text-gray-800"><%= event.description %></p>
+    <div class="p-6 sm:p-8 space-y-8">
+      <section>
+        <h2 class="text-lg font-semibold text-slate-900 mb-2">About this event</h2>
+        <p class="text-slate-700 leading-relaxed">
+          <%= event.description %>
+        </p>
+      </section>
 
-    <div class="space-y-2 text-sm text-gray-700">
-      <p><strong>Location:</strong> <%= event.location %></p>
-      <p><strong>Starts:</strong> <%= event.startDatetime.toLocaleString() %></p>
-      <p><strong>Ends:</strong> <%= event.endDatetime.toLocaleString() %></p>
-      <%
-        const statusColor =
-          event.status === 'published' ? 'bg-green-100 text-green-700' :
-          event.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-          'bg-red-100 text-red-600';
-      %>
-      <p>
-        <strong>Status:</strong>
-        <span class="inline-block ml-1 px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize <%= statusColor %>">
-          <%= event.status %>
-        </span>
-      </p>
-      <p>
-        <strong>Attending:</strong>
-        <%= attendeeCount %>
-        <% if (event.capacity !== null) { %>
-          / <%= event.capacity %>
-        <% } else { %>
-          / No limit
-        <% } %>
-      </p>
-    </div>
-
-    <%- include("partials/rsvp-section", {
-      event,
-      attendeeCount,
-      user,
-      userRSVP,
-      rsvpMessage
-    }) %>
-
-    <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
-      <div x-data="{ attendeesOpen: false }">
-        <div class="flex gap-3 flex-wrap">
-          <a
-            href="/events/<%= event.id %>/edit"
-            class="px-4 py-2 rounded bg-blue-600 text-white"
-          >
-            Edit Event
-          </a>
-
-          <button
-            type="button"
-            hx-get="/events/<%= event.id %>/attendees"
-            hx-target="#attendee-list-panel"
-            hx-swap="innerHTML"
-            hx-indicator="#attendee-list-loading"
-            @click="if (attendeesOpen) { attendeesOpen = false; $event.preventDefault(); } else { attendeesOpen = true; }"
-            class="px-4 py-2 rounded bg-slate-700 text-white cursor-pointer"
-            x-text="attendeesOpen ? 'Hide Attendees' : 'View Attendees'"
-          >
-            View Attendees
-          </button>
-
-          <%- include("partials/event-status-controls", { event }) %>
-          
+      <section class="grid sm:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <p class="text-sm font-semibold text-slate-500">Location</p>
+          <p class="mt-1 text-slate-900 font-medium"><%= event.location %></p>
         </div>
 
-        <p id="attendee-list-loading" class="htmx-indicator mt-4 text-sm text-slate-500" role="status" aria-live="polite">
-          Loading attendees...
-        </p>
-        <div id="attendee-list-panel" class="mt-4" aria-live="polite" x-show="attendeesOpen"></div>
-      </div>
-    <% } %>
-  </div>
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <p class="text-sm font-semibold text-slate-500">Starts</p>
+          <p class="mt-1 text-slate-900 font-medium">
+            <%= event.startDatetime.toLocaleString() %>
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <p class="text-sm font-semibold text-slate-500">Ends</p>
+          <p class="mt-1 text-slate-900 font-medium">
+            <%= event.endDatetime.toLocaleString() %>
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <p class="text-sm font-semibold text-slate-500">Attending</p>
+          <p class="mt-1 text-slate-900 font-medium">
+            <%= attendeeCount %>
+            <% if (event.capacity !== null) { %>
+              / <%= event.capacity %>
+            <% } else { %>
+              / No limit
+            <% } %>
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <%- include("partials/rsvp-section", {
+          event,
+          attendeeCount,
+          user,
+          userRSVP,
+          rsvpMessage
+        }) %>
+      </section>
+
+      <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
+        <section class="pt-6 border-t border-slate-200 space-y-4">
+          <div class="flex gap-3 flex-wrap">
+            <a
+              href="/events/<%= event.id %>/edit"
+              class="inline-flex items-center px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+            >
+              Edit Event
+            </a>
+
+            <button
+              type="button"
+              hx-get="/events/<%= event.id %>/attendees"
+              hx-target="#attendee-list-panel"
+              hx-swap="innerHTML"
+              hx-indicator="#attendee-list-loading"
+              class="inline-flex items-center px-4 py-2 rounded-xl bg-slate-800 text-white font-semibold hover:bg-slate-900 transition cursor-pointer"
+            >
+              View Attendees
+            </button>
+
+            <%- include("partials/event-status-controls", { event }) %>
+          </div>
+
+          <p id="attendee-list-loading" class="htmx-indicator text-sm text-slate-500" role="status" aria-live="polite">
+            Loading attendees...
+          </p>
+
+          <div id="attendee-list-panel" class="mt-4" aria-live="polite"></div>
+        </section>
+      <% } %>
+    </div>
+  </article>
 </div>
