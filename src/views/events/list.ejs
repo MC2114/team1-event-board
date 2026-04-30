@@ -75,6 +75,7 @@
         When
       </label>
       <select id="timeframe" name="timeframe"
+        x-model="timeframe"
         hx-get="/events"
         hx-trigger="change"
         hx-target="#event-results"
@@ -82,7 +83,8 @@
         hx-include="#event-search-form"
         hx-push-url="true"
         hx-indicator="#event-results-loading"
-        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+        :class="timeframe !== 'all' ? 'ring-2 ring-blue-300 border-blue-300 font-semibold text-blue-700' : ''">
         <option value="all" <%= activeTimeframe === "all" || !activeTimeframe ? "selected" : "" %>>All upcoming</option>
         <option value="this_week" <%= activeTimeframe === "this_week" ? "selected" : "" %>>This week</option>
         <option value="this_month" <%= activeTimeframe === "this_month" ? "selected" : "" %>>This month</option>
