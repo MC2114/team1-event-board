@@ -51,18 +51,52 @@
           </p>
         </div>
 
-        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+        <div
+          class="p-4 rounded-xl bg-slate-50 border border-slate-200"
+          x-data="{
+            start: new Date('<%= event.startDatetime.toISOString() %>'),
+            relativeTime() {
+              const now = new Date();
+              const diffMs = this.start - now;
+              const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+              if (diffDays === 0) return 'today';
+              if (diffDays === 1) return 'tomorrow';
+              if (diffDays === -1) return 'yesterday';
+              if (diffDays > 1) return `in ${diffDays} days`;
+              return `${Math.abs(diffDays)} days ago`;
+            }
+          }"
+        >
           <p class="text-sm font-semibold text-slate-500">Starts</p>
           <p class="mt-1 text-slate-900 font-medium">
             <%= event.startDatetime.toLocaleString() %>
           </p>
+          <p class="mt-1 text-sm text-blue-600" x-text="relativeTime()"></p>
         </div>
 
-        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+        <div
+          class="p-4 rounded-xl bg-slate-50 border border-slate-200"
+          x-data="{
+            end: new Date('<%= event.endDatetime.toISOString() %>'),
+            relativeTime() {
+              const now = new Date();
+              const diffMs = this.end - now;
+              const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+              if (diffDays === 0) return 'today';
+              if (diffDays === 1) return 'tomorrow';
+              if (diffDays === -1) return 'yesterday';
+              if (diffDays > 1) return `in ${diffDays} days`;
+              return `${Math.abs(diffDays)} days ago`;
+            }
+          }"
+        >
           <p class="text-sm font-semibold text-slate-500">Ends</p>
           <p class="mt-1 text-slate-900 font-medium">
             <%= event.endDatetime.toLocaleString() %>
           </p>
+          <p class="mt-1 text-sm text-blue-600" x-text="relativeTime()"></p>
         </div>
       </section>
 
@@ -77,7 +111,10 @@
       </section>
 
       <% if ((user.role === "staff" && user.userId === event.organizerId) || user.role === "admin") { %>
-        <section class="pt-6 border-t border-slate-200 space-y-4">
+        <section
+          x-data="{ attendeesOpen: false }"
+          class="pt-6 border-t border-slate-200 space-y-4"
+        >
           <div class="flex gap-3 flex-wrap">
             <a
               href="/events/<%= event.id %>/edit"
@@ -92,7 +129,9 @@
               hx-target="#attendee-list-panel"
               hx-swap="innerHTML"
               hx-indicator="#attendee-list-loading"
+              @click="if (attendeesOpen) { attendeesOpen = false; $event.preventDefault(); } else { attendeesOpen = true; }"
               class="inline-flex items-center px-4 py-2 rounded-xl bg-slate-800 text-white font-semibold hover:bg-slate-900 transition cursor-pointer"
+              x-text="attendeesOpen ? 'Hide Attendees' : 'View Attendees'"
             >
               View Attendees
             </button>
@@ -100,11 +139,22 @@
             <%- include("partials/event-status-controls", { event }) %>
           </div>
 
-          <p id="attendee-list-loading" class="htmx-indicator text-sm text-slate-500" role="status" aria-live="polite">
+          <p
+            id="attendee-list-loading"
+            class="htmx-indicator text-sm text-slate-500"
+            role="status"
+            aria-live="polite"
+          >
             Loading attendees...
           </p>
 
-          <div id="attendee-list-panel" class="mt-4" aria-live="polite"></div>
+          <div
+            id="attendee-list-panel"
+            class="mt-4"
+            aria-live="polite"
+            x-show="attendeesOpen"
+            x-transition.opacity.duration.200ms
+          ></div>
         </section>
       <% } %>
     </div>
