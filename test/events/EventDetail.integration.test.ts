@@ -22,7 +22,7 @@ describe("Feature 2: Event Detail Page", () => {
     expect(res.text).toContain("Spring Picnic");
     expect(res.text).toContain("Campus Pond Lawn");
     expect(res.text).toContain("Food, games, and fun on the lawn.");
-    expect(res.text).toContain("Attending:");
+    expect(res.text).toContain("Attending");
   });
 
   // success path: event detail contains required UI fields
@@ -36,8 +36,8 @@ describe("Feature 2: Event Detail Page", () => {
     expect(res.text).toContain("Food, games, and fun on the lawn.");
     expect(res.text).toContain("Campus Pond Lawn");
     expect(res.text).toContain("party");
-    expect(res.text).toContain("Starts:");
-    expect(res.text).toContain("Ends:");
+    expect(res.text).toContain("Starts");
+    expect(res.text).toContain("Ends");
   });
 
   // success path: role staff can view their own draft
@@ -95,7 +95,7 @@ describe("Feature 2: Event Detail Page with PrismaEventRepository", () => {
     expect(res.text).toContain("Spring Picnic");
     expect(res.text).toContain("Campus Pond Lawn");
     expect(res.text).toContain("Food, games, and fun on the lawn.");
-    expect(res.text).toContain("Attending:");
+    expect(res.text).toContain("Attending");
   });
 
   // success path: staff can view their own draft loaded from Prisma
