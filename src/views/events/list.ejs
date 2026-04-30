@@ -48,6 +48,7 @@
         Category
       </label>
       <select id="category" name="category"
+        x-model="category"
         hx-get="/events"
         hx-trigger="change"
         hx-target="#event-results"
@@ -55,7 +56,8 @@
         hx-include="#event-search-form"
         hx-push-url="true"
         hx-indicator="#event-results-loading"
-        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white">
+        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+        :class="category !== '' ? 'ring-2 ring-blue-300 border-blue-300 font-semibold text-blue-700' : ''">
         <option value="">All categories</option>
         <% const categories=["technology", "business", "music", "art", "food", "health", "education", "sports",
           "gaming", "networking", "party", "holiday", "birthday", "graduation", "wedding", "movies and tv",
