@@ -162,9 +162,11 @@ export class EventController implements IEventController {
       user.role as UserRole
     );
 
-    if (!detailResult.ok) {
-      res.status(404).render("partials/error", {
-        message: "Event not found.",
+    if (detailResult.ok === false) {
+      const status = this.mapErrorStatus(detailResult.value);
+
+      res.status(status).render("partials/error", {
+        message: detailResult.value.message,
         layout: false,
       });
       return;
@@ -420,19 +422,7 @@ export class EventController implements IEventController {
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "published");
 
     if (result.ok === false) {
-      let status = 500;
-
-      if (result.value.name === "EventNotFoundError") {
-        status = 404;
-      }
-
-      if (result.value.name === "NotAuthorizedError") {
-        status = 403;
-      }
-
-      if (result.value.name === "InvalidEventStateError") {
-        status = 400;
-      }
+      const status = this.mapErrorStatus(result.value);
 
       res.status(status).render("partials/error", {
         message: result.value.message,
@@ -467,19 +457,7 @@ export class EventController implements IEventController {
     const result = await this.eventService.updateEventStatus(eventId, user.userId, user.role, "cancelled");
 
     if (result.ok === false) {
-      let status = 500;
-
-      if (result.value.name === "EventNotFoundError") {
-        status = 404;
-      }
-
-      if (result.value.name === "NotAuthorizedError") {
-        status = 403;
-      }
-
-      if (result.value.name === "InvalidEventStateError") {
-        status = 400;
-      }
+      const status = this.mapErrorStatus(result.value);
 
       res.status(status).render("partials/error", {
         message: result.value.message,
