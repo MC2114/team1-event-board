@@ -44,6 +44,16 @@
         <% if (!userRSVP || userRSVP.status === "cancelled") { %>
           <button
             type="submit"
+            x-on:click="$confetti({
+              particleCount: 300,
+              spread: 180,
+              startVelocity: 50,
+              gravity: 0.2,
+              drift: 0,
+              ticks: 300,
+              scalar: 1.3,
+              origin: { x: 0.5, y: 0.5 }
+            })"
             x-bind:class="isUpdating ? 'opacity-60 scale-95' : 'opacity-100 scale-100'"
             class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition duration-200"
           >
