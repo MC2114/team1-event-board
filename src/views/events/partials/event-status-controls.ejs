@@ -1,4 +1,13 @@
-<div id="event-status-controls">
+<div id="event-status-controls"
+  x-data="{ visible: false }"
+  x-init="$nextTick(() => visible = true)"
+>
+  <div
+    x-show="visible"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+  >
     <% if (event.status === "draft") { %>
       <form
         hx-post="/events/<%= event.id %>/publish"
@@ -8,7 +17,7 @@
       >
         <button
           type="submit"
-          class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer"
+          class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer transition-colors"
         >
           Publish Event
         </button>
@@ -22,7 +31,7 @@
       >
         <button
           type="submit"
-          class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+          class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer transition-colors"
         >
           Cancel Event
         </button>
@@ -32,4 +41,5 @@
         This event is cancelled.
       </p>
     <% } %>
+  </div>
 </div>

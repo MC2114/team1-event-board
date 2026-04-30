@@ -11,7 +11,18 @@
       <p><strong>Location:</strong> <%= event.location %></p>
       <p><strong>Starts:</strong> <%= event.startDatetime.toLocaleString() %></p>
       <p><strong>Ends:</strong> <%= event.endDatetime.toLocaleString() %></p>
-      <p><strong>Status:</strong> <%= event.status %></p>
+      <%
+        const statusColor =
+          event.status === 'published' ? 'bg-green-100 text-green-700' :
+          event.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+          'bg-red-100 text-red-600';
+      %>
+      <p>
+        <strong>Status:</strong>
+        <span class="inline-block ml-1 px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize <%= statusColor %>">
+          <%= event.status %>
+        </span>
+      </p>
       <p>
         <strong>Attending:</strong>
         <%= attendeeCount %>
