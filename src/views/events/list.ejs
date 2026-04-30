@@ -98,6 +98,14 @@
         <option value="this_year" <%= activeTimeframe === "this_year" ? "selected" : "" %>>This year</option>
       </select>
     </div>
+
+    <button type="submit"
+      class="px-4 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+      x-data
+      x-show="false"
+    >
+      Apply
+    </button>
   </form>
 
   <div class="mb-4">
