@@ -26,6 +26,13 @@
   </div>
 
   <form id="event-search-form" method="GET" action="/events"
+    x-data="{
+      category: '<%= activeCategory ?? '' %>',
+      timeframe: '<%= activeTimeframe ?? 'all' %>',
+      get hasFilters() {
+        return this.category !== '' || this.timeframe !== 'all';
+      }
+    }"
     class="flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
     <div class="flex items-center gap-2">
       <label for="searchQuery" class="text-sm font-medium text-slate-700">
