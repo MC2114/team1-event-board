@@ -20,7 +20,10 @@
               <%= new Date(event.startDatetime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) %>
             </p>
           </div>
-          <span class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+          <span class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full capitalize
+            <%= event.status === 'published' ? 'bg-green-100 text-green-700' :
+                event.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-red-100 text-red-600' %>">
             <%= event.status %>
           </span>
         </div>
