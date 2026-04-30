@@ -27,9 +27,16 @@
       </div>
 
       <div class="space-y-1" x-data="{ count: <%= (formData.description ?? '').length %> }">
-        <label for="description" class="block text-sm font-semibold text-slate-700">
-          Description <span class="text-red-500">*</span>
-        </label>
+        <div class="flex justify-between items-center">
+          <label for="description" class="block text-sm font-semibold text-slate-700">
+            Description <span class="text-red-500">*</span>
+          </label>
+          <span
+            class="text-xs"
+            :class="count > 500 ? 'text-red-500 font-medium' : 'text-slate-400'"
+            x-text="count + ' characters'"
+          ></span>
+        </div>
         <textarea
           id="description"
           name="description"
