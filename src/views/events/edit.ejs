@@ -1,8 +1,8 @@
-<% if (pageError) { %>
-  <%- include('../partials/error', { message: pageError }) %>
-<% } %>
+<div id="edit-form-container" class="max-w-2xl mx-auto p-6">
+  <% if (pageError) { %>
+    <%- include('../partials/error', { message: pageError }) %>
+  <% } %>
 
-<div class="max-w-2xl mx-auto p-6">
   <div class="bg-white rounded-xl shadow p-6 space-y-6">
 
     <div class="space-y-1">
@@ -10,7 +10,14 @@
       <p class="text-sm text-slate-500">Update the details below. Changes will not be published until the event is explicitly published.</p>
     </div>
 
-    <form method="POST" action="/events/<%= eventId %>/edit" class="space-y-5">
+    <form
+      method="POST"
+      action="/events/<%= eventId %>/edit"
+      class="space-y-5"
+      hx-post="/events/<%= eventId %>/edit"
+      hx-target="#edit-form-container"
+      hx-swap="outerHTML"
+    >
 
       <div class="space-y-1">
         <label for="title" class="block text-sm font-semibold text-slate-700">
