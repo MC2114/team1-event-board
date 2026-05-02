@@ -79,16 +79,29 @@ class RsvpController implements IRsvpController {
             return;
         }
 
-        this.logger.info(`User ${userId} toggled RSVP for event ${eventId} - status: ${result.value.status}`);
+        this.logger.info(`User ${userId} toggled RSVP for event ${eventId} - status: ${result.value.rsvp.status}`);
 
         let rsvpMessage = "";
 
-        if (result.value.status === "going") {
+        if (result.value.rsvp.status === "going") {
             rsvpMessage = "You have successfully RSVPed to this event.";
-        } else if (result.value.status === "waitlisted") {
+        } else if (result.value.rsvp.status === "waitlisted") {
             rsvpMessage = "This event is full. You have been added to the waitlist.";
-        } else if (result.value.status === "cancelled") {
+        } else if (result.value.rsvp.status === "cancelled") {
             rsvpMessage = "Your RSVP has been cancelled.";
+        }
+
+        let overlapWarning: string | null = null;
+
+        if (result.value.conflicts.length > 0) {
+            const conflictList = result.value.conflicts
+                .map((conflict) => {
+                    const event = conflict.event;
+                    return `${event.title} from ${event.startDatetime.toLocaleString()} to ${event.endDatetime.toLocaleString()}`;
+                })
+                .join("; ");
+
+            overlapWarning = `This event overlaps with: ${conflictList}.`;
         }
 
         const hxHeader = req.get("HX-Request");
@@ -128,13 +141,22 @@ class RsvpController implements IRsvpController {
                 user: session.authenticatedUser,
                 userRSVP,
                 rsvpMessage,
+                overlapWarning,
                 layout: false,
             });
             return;
         }
 
         this.logger.info("Standard request detected -> redirecting for full page reload");
-        res.redirect(`/events/${eventId}?rsvpMessage=${encodeURIComponent(rsvpMessage)}`);
+        const params = new URLSearchParams({
+            rsvpMessage,
+        });
+
+        if (overlapWarning) {
+            params.set("overlapWarning", overlapWarning);
+        }
+
+        res.redirect(`/events/${eventId}?${params.toString()}`);
     }
 
     async showEventAttendees(
