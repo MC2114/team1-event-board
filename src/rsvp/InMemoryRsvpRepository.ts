@@ -1,5 +1,5 @@
 import { Ok, Err, type Result } from "../lib/result";
-import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
+import type { RSVP, RSVPAttendee, RSVPConflict, RSVPWithEvent } from "./RSVP";
 import type { IRSVPRepository } from "./RsvpRepository";
 import type { Event } from "../events/Event";
 import { UnexpectedDependencyError, type RSVPError } from "./errors";
@@ -98,6 +98,43 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             return Ok(match ?? null)
         } catch {
             return Err(UnexpectedDependencyError("Unable to look up RSVP."))
+        }
+    }
+
+    async findOverlappingActiveRsvps(
+        userId: string,
+        eventId: string,
+        startDatetime: Date,
+        endDatetime: Date,
+    ): Promise<Result<RSVPConflict[], RSVPError>> {
+        try {
+            const overlaps = this.rsvps
+                .filter((rsvp) =>
+                    rsvp.userId === userId &&
+                    rsvp.eventId !== eventId &&
+                    (rsvp.status === "going" || rsvp.status === "waitlisted")
+                )
+                .flatMap((rsvp) => {
+                    const event = this.events.find((e) => e.id === rsvp.eventId);
+
+                    if (!event) return [];
+                    const overlapsTime =
+                        event.startDatetime < endDatetime &&
+                        event.endDatetime > startDatetime;
+
+                    if (!overlapsTime) return [];
+                    return [{
+                        ...rsvp,
+                        event,
+                    }];
+                });
+            return Ok(overlaps);
+        } catch {
+            return Err(
+                UnexpectedDependencyError(
+                    "Unable to find overlapping RSVPs.",
+                ),
+            );
         }
     }
 
