@@ -14,13 +14,18 @@ import type {
   UnexpectedDependencyError as UnexpectedDependencyErrorType,
 } from "./errors";
 import type { IRSVPRepository } from "./RsvpRepository";
-import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
+import type { RSVP, RSVPAttendee, RSVPConflict, RSVPWithEvent } from "./RSVP";
 import type { IEventRepository } from "../events/EventRepository";
 
 export interface IAttendeeGroups {
     going: RSVPAttendee[];
     waitlisted: RSVPAttendee[];
     cancelled: RSVPAttendee[];
+}
+
+export interface IToggleRSVPResult {
+    rsvp: RSVP;
+    conflicts: RSVPConflict[];
 }
 
 export interface IUserDashboardRSVPs {
