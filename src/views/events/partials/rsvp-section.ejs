@@ -16,6 +16,13 @@
     </div>
   <% } %>
 
+  <% if (typeof overlapWarning !== "undefined" && overlapWarning) { %>
+    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 flex items-start gap-2">
+      <span class="mt-0.5">⚠️</span>
+      <span><%= overlapWarning %></span>
+    </div>
+  <% } %>
+
   <% if (user.role === "user") { %>
     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
       <% if (!userRSVP || userRSVP.status === "cancelled") { %>
