@@ -187,4 +187,71 @@ describe("Feature 7: getDashboardRSVPs (unit)", () => {
         expect(result.value.pastCancelled[0].id).toBe("new");
         expect(result.value.pastCancelled[1].id).toBe("old");
     });
+
+    it("includes conflictWarning on upcoming RSVPs that overlap with another event", async () => {
+        const now = new Date();
+        const futureEvent = makeEvent({
+            startDatetime: new Date(now.getTime() + 100000),
+            endDatetime: new Date(now.getTime() + 200000),
+        });
+    
+        const rsvps: RSVPWithEvent[] = [
+            makeRSVP({
+                id: "upcoming-conflict",
+                status: "going",
+                event: futureEvent,
+            }),
+        ];
+    
+        const rsvpRepo = makeRsvpRepo();
+        rsvpRepo.findByUser.mockResolvedValue(Ok(rsvps));
+        rsvpRepo.findOverlappingActiveRsvps.mockResolvedValue(Ok([
+            {
+                id: "conflict-rsvp",
+                eventId: "conflict-event",
+                userId: "user-1",
+                status: "going" as const,
+                createdAt: new Date(),
+                event: makeEvent({ title: "Overlapping Seminar" }),
+            }
+        ]));
+    
+        const service = CreateRsvpService(rsvpRepo, makeEventRepo(), makeLogger());
+        const result = await service.getDashboardRSVPs("user-1");
+    
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+    
+        expect(result.value.upcoming.length).toBe(1);
+        expect(result.value.upcoming[0].conflictWarning).toBe("Conflicts with Overlapping Seminar");
+    });
+    
+    it("sets conflictWarning to null on upcoming RSVPs with no overlaps", async () => {
+        const now = new Date();
+        const futureEvent = makeEvent({
+            startDatetime: new Date(now.getTime() + 100000),
+            endDatetime: new Date(now.getTime() + 200000),
+        });
+    
+        const rsvps: RSVPWithEvent[] = [
+            makeRSVP({
+                id: "upcoming-no-conflict",
+                status: "going",
+                event: futureEvent,
+            }),
+        ];
+    
+        const rsvpRepo = makeRsvpRepo();
+        rsvpRepo.findByUser.mockResolvedValue(Ok(rsvps));
+        rsvpRepo.findOverlappingActiveRsvps.mockResolvedValue(Ok([]));
+    
+        const service = CreateRsvpService(rsvpRepo, makeEventRepo(), makeLogger());
+        const result = await service.getDashboardRSVPs("user-1");
+    
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+    
+        expect(result.value.upcoming.length).toBe(1);
+        expect(result.value.upcoming[0].conflictWarning).toBeNull();
+    });
 })
