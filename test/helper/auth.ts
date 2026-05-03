@@ -59,6 +59,7 @@ export function makeRsvpRepo(
     findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
     countGoing: jest.fn().mockResolvedValue(countResult),
     save: jest.fn().mockImplementation(async (rsvp) => Ok(rsvp)),
+    findOverlappingActiveRsvps: jest.fn().mockResolvedValue(Ok([])),
   };
 }
 

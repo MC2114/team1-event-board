@@ -32,6 +32,12 @@
                                     <%= item.event.category %>
                                 </span>
                             </p>
+                            <% if (typeof item.conflictWarning !== "undefined" && item.conflictWarning) { %>
+                                <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 flex items-start gap-2 mt-2">
+                                    <span class="mt-0.5 shrink-0">⚠️</span>
+                                    <span><%= item.conflictWarning %></span>
+                                </div>
+                            <% } %>
                         </div>
 
                         <div class="flex flex-col items-end gap-2 shrink-0">

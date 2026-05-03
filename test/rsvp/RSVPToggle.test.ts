@@ -44,9 +44,9 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("going");
-    expect(result.value.eventId).toBe("event-1");
-    expect(result.value.userId).toBe("user-reader");
+    expect(result.value.rsvp.status).toBe("going");
+    expect(result.value.rsvp.eventId).toBe("event-1");
+    expect(result.value.rsvp.userId).toBe("user-reader");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("waitlisted");
+    expect(result.value.rsvp.status).toBe("waitlisted");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -86,8 +86,8 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("cancelled");
-    expect(result.value.id).toBe("rsvp-1");
+    expect(result.value.rsvp.status).toBe("cancelled");
+    expect(result.value.rsvp.id).toBe("rsvp-1");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -107,7 +107,7 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("cancelled");
+    expect(result.value.rsvp.status).toBe("cancelled");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -228,6 +228,54 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.value).toEqual(
       UnexpectedDependencyError("Unable to count attendees."),
     );
+  });
+
+  it("returns conflicts when user RSVPs to an event overlapping an existing RSVP", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ capacity: 10 })),
+    );
+    const rsvpRepo = makeRsvpRepo(Ok(2));
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(Ok(null));
+    rsvpRepo.findOverlappingActiveRsvps.mockResolvedValue(Ok([
+        {
+            id: "conflict-rsvp-1",
+            eventId: "event-conflict-1",
+            userId: "user-reader",
+            status: "going" as const,
+            createdAt: new Date(),
+            event: makeEvent({ id: "event-conflict-1", title: "Morning Workshop" }),
+        }
+    ]));
+    const logger = makeLogger();
+
+    const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
+    const result = await service.toggleRSVP("event-1", "user-reader", "user");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.rsvp.status).toBe("going");
+    expect(result.value.conflicts.length).toBe(1);
+    expect(result.value.conflicts[0].event.title).toBe("Morning Workshop");
+});
+
+it("returns empty conflicts array when there are no overlapping RSVPs", async () => {
+    const eventRepo = makeEventRepo(
+        Ok(makeEvent({ capacity: 10 })),
+    );
+    const rsvpRepo = makeRsvpRepo(Ok(2));
+    rsvpRepo.findByUserAndEvent.mockResolvedValue(Ok(null));
+    rsvpRepo.findOverlappingActiveRsvps.mockResolvedValue(Ok([]));
+    const logger = makeLogger();
+
+    const service = CreateRsvpService(rsvpRepo, eventRepo, logger);
+    const result = await service.toggleRSVP("event-1", "user-reader", "user");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.rsvp.status).toBe("going");
+    expect(result.value.conflicts.length).toBe(0);
   });
 });
 
@@ -446,9 +494,9 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("going");
-    expect(result.value.eventId).toBe("prisma-rsvp-open-event");
-    expect(result.value.userId).toBe("user-reader");
+    expect(result.value.rsvp.status).toBe("going");
+    expect(result.value.rsvp.eventId).toBe("prisma-rsvp-open-event");
+    expect(result.value.rsvp.userId).toBe("user-reader");
 
     const saved = await prisma.rSVP.findFirst({
       where: {
@@ -478,7 +526,7 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("waitlisted");
+    expect(result.value.rsvp.status).toBe("waitlisted");
 
     const saved = await prisma.rSVP.findFirst({
       where: {
@@ -508,7 +556,7 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("cancelled");
+    expect(result.value.rsvp.status).toBe("cancelled");
 
     const saved = await prisma.rSVP.findUnique({
       where: {
