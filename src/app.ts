@@ -139,7 +139,7 @@ class ExpressApp implements IApp {
       asyncHandler(async (req, res) => {
         this.logger.info("GET /");
         const store = sessionStore(req);
-        res.redirect(isAuthenticatedSession(store) ? "/home" : "/login");
+        res.redirect(isAuthenticatedSession(store) ? "/events" : "/login");
       }),
     );
 
@@ -150,7 +150,7 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(store);
 
         if (getAuthenticatedUser(store)) {
-          res.redirect("/home");
+          res.redirect("/events");
           return;
         }
 
