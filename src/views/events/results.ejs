@@ -5,38 +5,86 @@
   </div>
 <% } else { %>
   <% events.forEach(function(event) { %>
-    <a href="/events/<%= event.id %>"
-      class="block no-underline text-inherit rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+    <a
+      href="/events/<%= event.id %>"
+      class="group block no-underline text-inherit rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
       <article
-        class="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col gap-2 hover:border-slate-300 hover:shadow transition">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <h2 class="text-xl font-semibold text-slate-900"><%= event.title %></h2>
-            <p class="text-xs font-medium text-slate-500 mt-0.5 capitalize">
-              Category: <%= event.category %>
-            </p>
-            <p class="text-slate-500 text-sm mt-0.5">
-              <%= event.location %> |
-              <%= new Date(event.startDatetime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) %>
-            </p>
+        class="overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-0.5 hover:border-blue-200 transition-all duration-200"
+      >
+        <div class="p-6 sm:p-7">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 capitalize">
+                  <%= event.category %>
+                </span>
+
+                <% if (event.capacity !== null) { %>
+                  <span class="text-xs text-slate-400">
+                    Capacity: <%= event.capacity %>
+                  </span>
+                <% } else { %>
+                  <span class="text-xs text-slate-400">
+                    No capacity limit
+                  </span>
+                <% } %>
+              </div>
+
+              <h2 class="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                <%= event.title %>
+              </h2>
+
+              <p class="mt-2 text-sm text-slate-500">
+                <span class="font-medium text-slate-600"><%= event.location %></span>
+                <span class="mx-1">•</span>
+                <span>
+                  <%= new Date(event.startDatetime).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric"
+                  }) %>
+                </span>
+              </p>
+
+              <div class="mt-4" x-data="{ expanded: false }">
+                <% if (event.description.length > 200) { %>
+                  <p
+                    class="text-sm text-slate-700 leading-relaxed"
+                    x-text="expanded
+                      ? `<%= event.description.replace(/`/g, '\\`') %>`
+                      : `<%= event.description.substring(0, 100).replace(/`/g, '\\`') %>...`"
+                  ></p>
+
+                  <button
+                    type="button"
+                    @click.prevent="expanded = !expanded"
+                    class="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                  >
+                    <span x-text="expanded ? 'Show less' : 'Read more'"></span>
+                  </button>
+
+                <% } else { %>
+
+                  <p class="text-sm text-slate-700 leading-relaxed">
+                    <%= event.description %>
+                  </p>
+
+                <% } %>
+              </div>
+            </div>
+
+            <div class="flex h-full flex-col items-end justify-between shrink-0">
+              <span class="px-3 py-1 text-xs font-semibold rounded-full capitalize
+                <%= event.status === 'published' ? 'bg-green-100 text-green-700' :
+                    event.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-600' %>">
+                <%= event.status %>
+              </span>
+            </div>
           </div>
-          <span class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full capitalize
-            <%= event.status === 'published' ? 'bg-green-100 text-green-700' :
-                event.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-red-100 text-red-600' %>">
-            <%= event.status %>
-          </span>
         </div>
-
-        <p class="text-slate-600 text-sm"><%= event.description %></p>
-
-        <p class="text-xs text-slate-400 mt-1">
-          <% if (event.capacity !== null) { %>
-            Capacity: <%= event.capacity %>
-          <% } else { %>
-            Capacity: No limit
-          <% } %>
-        </p>
       </article>
     </a>
   <% }) %>
