@@ -181,6 +181,8 @@ export class EventController implements IEventController {
 
     const rsvpMessage = typeof req.query.rsvpMessage === "string" ? req.query.rsvpMessage : null;
 
+    const overlapWarning = typeof req.query.overlapWarning === "string" ? req.query.overlapWarning : null;
+
     res.render("events/detail", {
       session: browserSession,
       title: detailResult.value.event.title,
@@ -189,6 +191,7 @@ export class EventController implements IEventController {
       user,
       userRSVP,
       rsvpMessage,
+      overlapWarning,
     });
   }
 

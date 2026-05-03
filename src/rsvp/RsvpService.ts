@@ -14,7 +14,7 @@ import type {
   UnexpectedDependencyError as UnexpectedDependencyErrorType,
 } from "./errors";
 import type { IRSVPRepository } from "./RsvpRepository";
-import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
+import type { RSVP, RSVPAttendee, RSVPConflict, RSVPWithEvent } from "./RSVP";
 import type { IEventRepository } from "../events/EventRepository";
 
 export interface IAttendeeGroups {
@@ -23,8 +23,17 @@ export interface IAttendeeGroups {
     cancelled: RSVPAttendee[];
 }
 
+export interface IToggleRSVPResult {
+    rsvp: RSVP;
+    conflicts: RSVPConflict[];
+}
+
+export type RSVPWithEventAndConflict = RSVPWithEvent & {
+    conflictWarning: string | null;
+};
+
 export interface IUserDashboardRSVPs {
-    upcoming: RSVPWithEvent[];
+    upcoming: RSVPWithEventAndConflict[];
     pastCancelled: RSVPWithEvent[];
 }
 
@@ -60,7 +69,7 @@ export interface IRsvpService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP, ToggleRsvpError>>;
+    ): Promise<Result<IToggleRSVPResult, ToggleRsvpError>>;
     getAttendeeCount(eventId: string): Promise<Result<number, GetAttendeeCountError>>;
 }
 
@@ -94,7 +103,7 @@ class RsvpService implements IRsvpService {
         }
         
         const now = new Date();
-        const upcoming: RSVPWithEvent[] = [];
+        const upcoming: RSVPWithEventAndConflict[] = [];
         const pastCancelled: RSVPWithEvent[] = [];
 
         for (const rsvp of result.value) {
@@ -104,7 +113,19 @@ class RsvpService implements IRsvpService {
             if (isPast || isCancelled) {
                 pastCancelled.push(rsvp);
             } else {
-                upcoming.push(rsvp);
+                const conflictsResult = await this.rsvpRepo.findOverlappingActiveRsvps(
+                    userId,
+                    rsvp.eventId,
+                    rsvp.event.startDatetime,
+                    rsvp.event.endDatetime,
+                );
+
+                if (conflictsResult.ok === false) {
+                    return Err(UnexpectedDependencyError(conflictsResult.value.message));
+                }
+
+                const conflictWarning = conflictsResult.value.length > 0 ? `Conflicts with ${conflictsResult.value[0].event.title}` : null;
+                upcoming.push({...rsvp, conflictWarning,});
             }
         }
 
@@ -168,7 +189,7 @@ class RsvpService implements IRsvpService {
         eventId: string,
         actingUserId: string,
         actingUserRole: UserRole,
-    ): Promise<Result<RSVP, ToggleRsvpError>> {
+    ): Promise<Result<IToggleRSVPResult, ToggleRsvpError>> {
         if (actingUserRole === "staff" || actingUserRole === "admin") {
             return Err(InvalidRSVPError("Organizers and admins cannot RSVP to events"));
         }
@@ -213,7 +234,11 @@ class RsvpService implements IRsvpService {
             }
 
             this.logger.info(`User ${actingUserId} cancelled RSVP for event ${eventId}`);
-            return Ok(updated);
+            
+            return Ok({
+                rsvp: updated,
+                conflicts: [],
+            });
         }
 
         const countResult = await this.rsvpRepo.countGoing(eventId);
@@ -248,8 +273,23 @@ class RsvpService implements IRsvpService {
             return Err(UnexpectedDependencyError(saveResult.value.message));
         }
 
+        const conflictsResult = await this.rsvpRepo.findOverlappingActiveRsvps(
+            actingUserId,
+            eventId,
+            event.startDatetime,
+            event.endDatetime,
+        );
+
+        if (conflictsResult.ok === false) {
+            return Err(UnexpectedDependencyError(conflictsResult.value.message));
+        }
+
         this.logger.info(`User ${actingUserId} RSVP'd ${newStatus} for event ${eventId}`);
-        return Ok(rsvp);
+
+        return Ok({
+            rsvp,
+            conflicts: conflictsResult.value,
+        });
     }
 
     async getAttendeeCount(eventId: string): Promise<Result<number, GetAttendeeCountError>> {
