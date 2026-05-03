@@ -44,9 +44,9 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("going");
-    expect(result.value.eventId).toBe("event-1");
-    expect(result.value.userId).toBe("user-reader");
+    expect(result.value.rsvp.status).toBe("going");
+    expect(result.value.rsvp.eventId).toBe("event-1");
+    expect(result.value.rsvp.userId).toBe("user-reader");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("waitlisted");
+    expect(result.value.rsvp.status).toBe("waitlisted");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -86,8 +86,8 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("cancelled");
-    expect(result.value.id).toBe("rsvp-1");
+    expect(result.value.rsvp.status).toBe("cancelled");
+    expect(result.value.rsvp.id).toBe("rsvp-1");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -107,7 +107,7 @@ describe("Feature 4: RsvpService.toggleRSVP", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("cancelled");
+    expect(result.value.rsvp.status).toBe("cancelled");
     expect(rsvpRepo.save).toHaveBeenCalled();
   });
 
@@ -446,9 +446,9 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("going");
-    expect(result.value.eventId).toBe("prisma-rsvp-open-event");
-    expect(result.value.userId).toBe("user-reader");
+    expect(result.value.rsvp.status).toBe("going");
+    expect(result.value.rsvp.eventId).toBe("prisma-rsvp-open-event");
+    expect(result.value.rsvp.userId).toBe("user-reader");
 
     const saved = await prisma.rSVP.findFirst({
       where: {
@@ -478,7 +478,7 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("waitlisted");
+    expect(result.value.rsvp.status).toBe("waitlisted");
 
     const saved = await prisma.rSVP.findFirst({
       where: {
@@ -508,7 +508,7 @@ describe("Feature 4: RsvpService.toggleRSVP with Prisma", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.status).toBe("cancelled");
+    expect(result.value.rsvp.status).toBe("cancelled");
 
     const saved = await prisma.rSVP.findUnique({
       where: {
