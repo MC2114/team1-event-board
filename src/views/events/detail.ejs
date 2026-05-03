@@ -116,13 +116,54 @@
           x-data="{ attendeesOpen: false }"
           class="pt-6 border-t border-slate-200 space-y-4"
         >
-          <div class="flex gap-3 flex-wrap">
-            <a
-              href="/events/<%= event.id %>/edit"
-              class="inline-flex items-center px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+          <div x-data="{ showEditModal: false }">
+            <% if (event.status === "cancelled" || event.status === "past") { %>
+              <button
+                type="button"
+                x-on:click="showEditModal = true"
+                class="inline-flex items-center px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              >
+                Edit Event
+              </button>
+            <% } else { %>
+              
+                href="/events/<%= event.id %>/edit"
+                class="inline-flex items-center px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              >
+                Edit Event
+              </a>
+            <% } %>
+
+            <div
+              x-show="showEditModal"
+              x-on:click.self="showEditModal = false"
+              class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
             >
-              Edit Event
-            </a>
+              <div
+                class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 text-center space-y-4"
+                x-on:click.stop
+              >
+                <img
+                  src="/images/thumbs_down_hamster.png"
+                  alt="Cannot edit"
+                  class="w-36 h-36 object-contain mx-auto"
+                />
+                <h2 class="text-lg font-bold text-slate-800">Can't Edit This Event</h2>
+                <p class="text-sm text-slate-500">
+                  <%= event.status === "cancelled"
+                    ? "This event has been cancelled and can no longer be edited."
+                    : "This event has already passed and can no longer be edited." %>
+                </p>
+                <button
+                  type="button"
+                  x-on:click="showEditModal = false"
+                  class="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
 
             <button
               type="button"
