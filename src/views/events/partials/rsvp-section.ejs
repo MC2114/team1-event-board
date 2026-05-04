@@ -6,7 +6,22 @@
   x-transition.opacity.duration.200ms
   class="pt-4 border-t border-slate-200 space-y-4"
 >
-  <p class="text-sm text-gray-700  tracking-wide">
+  <% if (typeof includeOobAttendeeCount === "undefined" || includeOobAttendeeCount) { %>
+    <p
+      id="attendee-count-display"
+      hx-swap-oob="true"
+      class="mt-1 text-slate-900 font-medium"
+    >
+      <%= attendeeCount %>
+      <% if (event.capacity !== null) { %>
+        / <%= event.capacity %>
+      <% } else { %>
+        / No limit
+      <% } %>
+    </p>
+  <% } %>
+
+  <p class="text-lg text-slate-900 mb-2">
     <strong>Attendance</strong>
   </p>
 

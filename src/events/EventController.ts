@@ -141,6 +141,12 @@ export class EventController implements IEventController {
       return;
     }
 
+    if (req.get("HX-Request") === "true") {
+      res.set("HX-Redirect", `/events/${result.value.id}`);
+      res.status(204).send();
+      return;
+    }
+
     res.redirect(`/events/${result.value.id}`);
   }
 

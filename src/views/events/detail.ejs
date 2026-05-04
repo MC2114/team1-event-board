@@ -12,7 +12,9 @@
           </h1>
         </div>
 
-        <span class="inline-flex w-fit items-center px-3 py-1 rounded-full text-sm font-semibold
+        <span
+          id="event-status-badge"
+          class="inline-flex w-fit items-center px-3 py-1 rounded-full text-sm font-semibold
           <%= event.status === 'published'
             ? 'bg-green-100 text-green-700'
             : event.status === 'cancelled'
@@ -41,7 +43,7 @@
 
         <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
           <p class="text-sm font-semibold text-slate-500">Attending</p>
-          <p class="mt-1 text-slate-900 font-medium">
+          <p id="attendee-count-display" class="mt-1 text-slate-900 font-medium">
             <%= attendeeCount %>
             <% if (event.capacity !== null) { %>
               / <%= event.capacity %>
@@ -107,7 +109,8 @@
           user,
           userRSVP,
           rsvpMessage,
-          overlapWarning
+          overlapWarning,
+          includeOobAttendeeCount: false
         }) %>
       </section>
 
@@ -137,7 +140,7 @@
               View Attendees
             </button>
 
-            <%- include("partials/event-status-controls", { event }) %>
+            <%- include("partials/event-status-controls", {event, includeOobBadge: false}) %>
           </div>
 
           <p
