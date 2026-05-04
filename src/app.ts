@@ -64,6 +64,11 @@ class ExpressApp implements IApp {
     );
     this.app.use(Layouts);
     this.app.use(express.urlencoded({ extended: true }));
+
+    this.app.use((req, res, next) => {
+      res.locals.currentPath = req.path;
+      next();
+    });
   }
 
   private registerTemplating(): void {

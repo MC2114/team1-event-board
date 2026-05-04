@@ -12,13 +12,24 @@
   <body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-900 p-6">
     <div class="max-w-5xl mx-auto">
       <nav class="flex items-center justify-between gap-3 mb-6 flex-wrap">
-        <a
-          href="<%= session?.authenticatedUser ? '/events' : '/login' %>"
-          class="inline-flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white border border-slate-200 shadow-lg font-bold text-slate-900 no-underline"
-        >
-          <span class="text-blue-600 text-lg leading-none">←</span>
-          Event List
-        </a>
+        <% const showEventListButton =
+          session?.authenticatedUser &&
+          typeof currentPath !== "undefined" &&
+          currentPath !== "/events" &&
+          currentPath !== "/login";
+        %>
+
+        <% if (showEventListButton) { %>
+          <a
+            href="/events"
+            class="inline-flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white border border-slate-200 shadow-lg font-bold text-slate-900 no-underline"
+          >
+            <span class="text-blue-600 text-xl leading-none">←</span>
+            Event List
+          </a>
+        <% } else { %>
+          <div></div>
+        <% } %>
         <div class="flex items-center gap-3 flex-wrap">
           <% if (session?.authenticatedUser) { %>
             <% if (session.authenticatedUser.role === "admin") { %>
