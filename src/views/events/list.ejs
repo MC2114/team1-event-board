@@ -30,7 +30,7 @@
     timeframe: '<%= activeTimeframe ?? 'all' %>',
     searchQuery: '<%= (searchQuery ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'") %>',
     get hasFilters() {
-      return this.category !== '' || this.timeframe !== 'all';
+      return this.searchQuery.trim() !== '' || this.category !== '' || this.timeframe !== 'all';
     }
   }">
   <form id="event-search-form" method="GET" action="/events"
