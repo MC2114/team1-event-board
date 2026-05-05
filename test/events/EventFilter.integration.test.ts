@@ -39,7 +39,7 @@ describe("Feature 6: Category and Date Filter", () => {
 
     it("returns 200 when filtering by category with no results", async () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
-        const res = await agent.get("/events").query({ category: "art" });
+        const res = await agent.get("/events").query({ category: "health" });
         expect(res.status).toBe(200);
         expect(res.text).toContain("No events found");
     });
@@ -189,7 +189,7 @@ describe("Feature 6: Category and Date Filter - Prisma", () => {
 
     it("returns 200 when filtering by category with no results", async () => {
         const agent = await loginAs(app, USER_EMAIL, USER_PASSWORD);
-        const res = await agent.get("/events").query({ category: "art" });
+        const res = await agent.get("/events").query({ category: "health" });
         expect(res.status).toBe(200);
         expect(res.text).toContain("No events found");
     });
