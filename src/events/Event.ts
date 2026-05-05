@@ -46,6 +46,7 @@ export interface Event {
     organizerId: string
     createdAt: Date
     updatedAt: Date
+    conflictWarning?: string | null
 }
 
 export interface CreateEventData {

@@ -140,6 +140,52 @@ class EventService implements IEventService {
         );
     }
 
+    private async addConflictWarnings(
+        actingUserId: string,
+        events: Event[],
+        allEvents: Event[],
+    ): Promise<Result<Event[], ListEventsError>> {
+        const userRsvpsResult = await this.rsvpRepository.findByUser(actingUserId);
+        if (userRsvpsResult.ok === false) {
+            return Err(UnexpectedDependencyError(userRsvpsResult.value.message));
+        }
+
+        const eventById = new Map(allEvents.map((event) => [event.id, event]));
+        const activeRsvps = userRsvpsResult.value.filter(
+            (rsvp) => rsvp.status === "going" || rsvp.status === "waitlisted",
+        );
+
+        const conflictWarningByEventId = new Map<string, string>();
+
+        for (const rsvp of activeRsvps) {
+            const event = eventById.get(rsvp.eventId);
+            if (!event) continue;
+
+            const overlapsResult = await this.rsvpRepository.findOverlappingActiveRsvps(
+                actingUserId,
+                event.id,
+                event.startDatetime,
+                event.endDatetime,
+            );
+            if (overlapsResult.ok === false) {
+                return Err(UnexpectedDependencyError(overlapsResult.value.message));
+            }
+
+            if (overlapsResult.value.length > 0) {
+                const firstConflict = overlapsResult.value[0];
+                conflictWarningByEventId.set(
+                    event.id,
+                    `Conflicts with ${firstConflict.event.title}`,
+                );
+            }
+        }
+
+        return Ok(events.map((event) => ({
+            ...event,
+            conflictWarning: conflictWarningByEventId.get(event.id) ?? null,
+        })));
+    }
+
     constructor(
         private readonly eventRepository: IEventRepository,
         private readonly rsvpRepository: IRSVPRepository,
@@ -511,15 +557,13 @@ class EventService implements IEventService {
             );
         }
 
-        if (searchQuery.length === 0) {
-            return Ok(visibleEvents);
-        }
-
-        const filteredEvents = visibleEvents.filter((event) =>
+        const searchedEvents = searchQuery.length === 0
+            ? visibleEvents
+            : visibleEvents.filter((event) =>
             EventService.includesSearchMatch(event, searchQuery),
         );
 
-        return Ok(filteredEvents);
+        return this.addConflictWarnings(actingUserId, searchedEvents, allEventsResult.value);
     }
 }
 
