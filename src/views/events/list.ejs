@@ -28,26 +28,51 @@
   <div x-data="{
     category: '<%= activeCategory ?? '' %>',
     timeframe: '<%= activeTimeframe ?? 'all' %>',
+    searchQuery: '<%= (searchQuery ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'") %>',
     get hasFilters() {
-      return this.category !== '' || this.timeframe !== 'all';
+      return this.searchQuery.trim() !== '' || this.category !== '' || this.timeframe !== 'all';
     }
   }">
   <form id="event-search-form" method="GET" action="/events"
-    class="flex flex-wrap items-center gap-3 mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
-    <div class="flex items-center gap-2">
-      <label for="searchQuery" class="text-sm font-medium text-slate-700">
-        Search
+    class="mb-6 p-4 sm:p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+    <div class="flex flex-col gap-2 mb-4">
+      <label for="searchQuery" class="text-sm font-semibold text-slate-700">
+        Search upcoming events
       </label>
-      <input id="searchQuery" name="searchQuery" type="search" maxlength="100" value="<%= searchQuery ?? '' %>"
-        placeholder="Title, description, or location"
-        hx-get="/events"
-        hx-trigger="input changed delay:400ms, search"
-        hx-target="#event-results"
-        hx-swap="innerHTML"
-        hx-include="#event-search-form"
-        hx-push-url="true"
-        hx-indicator="#event-results-loading"
-        class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white min-w-[220px]" />
+      <div class="relative w-full">
+        <input
+          id="searchQuery"
+          name="searchQuery"
+          type="search"
+          maxlength="100"
+          x-model="searchQuery"
+          value="<%= searchQuery ?? '' %>"
+          placeholder="Search by title, description, or location"
+          hx-get="/events"
+          hx-trigger="input changed delay:400ms, search"
+          hx-target="#event-results"
+          hx-swap="innerHTML"
+          hx-include="#event-search-form"
+          hx-push-url="true"
+          hx-indicator="#event-results-loading"
+          class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-20 text-base text-slate-900 shadow-inner outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+        />
+        <button
+          type="button"
+          x-show="searchQuery.length > 0"
+          style="display: none;"
+          x-transition.opacity.duration.150ms
+          @click="searchQuery = ''; $nextTick(() => { const input = document.getElementById('searchQuery'); input.dispatchEvent(new Event('input', { bubbles: true })); input.focus(); })"
+          class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          aria-label="Clear search"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex items-center gap-2">
     </div>
 
     <div class="flex items-center gap-2">
@@ -106,6 +131,7 @@
     >
       Apply
     </button>
+    </div>
   </form>
 
   <div class="mb-4">
