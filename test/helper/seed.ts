@@ -122,6 +122,18 @@ export async function seedTestDatabase(prisma: PrismaClient): Promise<void> {
                 endDatetime: new Date("2030-06-01T12:00:00.000Z"),
                 organizerId: "user-staff",
             },
+            {
+                id: "event-long-description-1",
+                title: "Storytelling Marathon",
+                description: "Join us for an immersive storytelling marathon featuring student performers, alumni guests, and community writers. This event is designed to test long card descriptions in the UI, so the text intentionally goes beyond two hundred characters to trigger the Read more and Show less interaction on the events list.",
+                location: "Main Auditorium",
+                category: "art",
+                status: "published",
+                capacity: 120,
+                startDatetime: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
+                endDatetime: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
+                organizerId: "user-staff",
+            },
         ],
     });
 }
