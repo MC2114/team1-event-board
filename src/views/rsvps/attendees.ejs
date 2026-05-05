@@ -1,6 +1,11 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">Attendee List</h1>
-  <p class="text-slate-500">Grouped by RSVP status for this event.</p>
+<section class="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Attendee List</h1>
+      <p class="mt-1 text-sm text-slate-500">Grouped by RSVP status for this event.</p>
+    </div>
+    <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Organizer View</p>
+  </div>
 </section>
 
 <%
@@ -18,14 +23,14 @@
       };
 %>
 
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <h2 class="text-xl font-semibold text-slate-900 mb-3">Going</h2>
+<section class="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-lg font-semibold text-slate-900">Going</h2>
   <% if (groups.going.length === 0) { %>
     <p class="text-slate-500 text-sm">No attendees are currently marked as going.</p>
   <% } else { %>
-    <ul class="list-none p-0 m-0 grid gap-3">
+    <ul class="m-0 grid list-none gap-3 p-0">
       <% groups.going.forEach((person) => { %>
-        <li class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
+        <li class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
           <span class="font-semibold text-slate-900"><%= person.displayName ?? person.userId %></span>
           <span class="text-sm text-slate-500"><%= person.createdAt.toLocaleString() %></span>
         </li>
@@ -34,14 +39,14 @@
   <% } %>
 </section>
 
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <h2 class="text-xl font-semibold text-slate-900 mb-3">Waitlisted</h2>
+<section class="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-lg font-semibold text-slate-900">Waitlisted</h2>
   <% if (groups.waitlisted.length === 0) { %>
     <p class="text-slate-500 text-sm">No attendees are currently waitlisted.</p>
   <% } else { %>
-    <ul class="list-none p-0 m-0 grid gap-3">
+    <ul class="m-0 grid list-none gap-3 p-0">
       <% groups.waitlisted.forEach((person) => { %>
-        <li class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
+        <li class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
           <span class="font-semibold text-slate-900"><%= person.displayName ?? person.userId %></span>
           <span class="text-sm text-slate-500"><%= person.createdAt.toLocaleString() %></span>
         </li>
@@ -50,14 +55,14 @@
   <% } %>
 </section>
 
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <h2 class="text-xl font-semibold text-slate-900 mb-3">Cancelled</h2>
+<section class="mb-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-lg font-semibold text-slate-900">Cancelled</h2>
   <% if (groups.cancelled.length === 0) { %>
     <p class="text-slate-500 text-sm">No attendees are currently cancelled.</p>
   <% } else { %>
-    <ul class="list-none p-0 m-0 grid gap-3">
+    <ul class="m-0 grid list-none gap-3 p-0">
       <% groups.cancelled.forEach((person) => { %>
-        <li class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-between">
+        <li class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
           <span class="font-semibold text-slate-900"><%= person.displayName ?? person.userId %></span>
           <span class="text-sm text-slate-500"><%= person.createdAt.toLocaleString() %></span>
         </li>
