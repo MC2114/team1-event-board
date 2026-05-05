@@ -86,4 +86,51 @@ describe("Feature 10 Sprint 2 - Event Search unit", () => {
       InvalidSearchQueryError("Search query must be 100 characters or fewer."),
     );
   });
+
+  it("adds conflict warning metadata for RSVP'd events with overlaps", async () => {
+    const events = [
+      makeEvent({
+        id: "event-match",
+        title: "Conflict Event",
+        startDatetime: new Date("2030-04-20T15:00:00.000Z"),
+        endDatetime: new Date("2030-04-20T17:00:00.000Z"),
+      }),
+    ];
+
+    const eventRepo = makeEventRepo();
+    eventRepo.findAll.mockResolvedValue(Ok(events));
+    eventRepo.findPublishedUpcoming.mockResolvedValue(Ok(events));
+
+    const rsvpRepo = makeRsvpRepo();
+    rsvpRepo.findByUser.mockResolvedValue(
+      Ok([
+        {
+          id: "rsvp-1",
+          eventId: "event-match",
+          userId: "user-1",
+          status: "going",
+          createdAt: new Date(),
+        },
+      ]),
+    );
+    rsvpRepo.findOverlappingActiveRsvps.mockResolvedValue(
+      Ok([
+        {
+          id: "rsvp-overlap",
+          eventId: "event-overlap",
+          userId: "user-1",
+          status: "going",
+          createdAt: new Date(),
+          event: makeEvent({ id: "event-overlap", title: "Overlap Event" }),
+        },
+      ]),
+    );
+
+    const service = CreateEventService(eventRepo, rsvpRepo);
+    const result = await service.listEvents("user-1", "user", { searchQuery: "conflict" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0].conflictWarning).toBe("Conflicts with Overlap Event");
+  });
 });
