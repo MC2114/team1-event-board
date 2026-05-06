@@ -59,6 +59,13 @@
                                                 <%= event.location %>
                                             </div>
 
+                                            <% if (typeof item.conflictWarning !== "undefined" && item.conflictWarning) { %>
+                                            <div class="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                                                <span>⚠️</span>
+                                                <span><%= item.conflictWarning %></span>
+                                            </div>
+                                            <% } %>
+
                                         </td>
 
                                         <!-- DATE -->
