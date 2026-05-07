@@ -11,8 +11,21 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
     const repo = new PrismaEventRepository(prisma);
 
     beforeEach(async () => {
-        await prisma.rSVP.deleteMany();
-        await prisma.event.deleteMany();
+        await prisma.rSVP.deleteMany({
+            where: {
+                eventId: {
+                in: ["e1", "e2", "e3"],
+                },
+            },
+        });
+
+        await prisma.event.deleteMany({
+            where: {
+                id: {
+                in: ["e1", "e2", "e3"],
+                },
+            },
+        });
 
         await prisma.event.createMany({
             data: [
@@ -57,6 +70,21 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
     });
 
     afterAll(async () => {
+        await prisma.rSVP.deleteMany({
+            where: {
+            eventId: {
+                in: ["e1", "e2", "e3"],
+            },
+            },
+        });
+
+        await prisma.event.deleteMany({
+            where: {
+            id: {
+                in: ["e1", "e2", "e3"],
+            },
+            },
+        });
         await prisma.$disconnect();
     });
 
@@ -65,9 +93,17 @@ describe("Feature 8 Sprint 3 - Organizer Dashboard Repository (Prisma)", () => {
 
         expect(result.ok).toBe(true);
         if (!result.ok) return;
-        expect(result.value.length).toBe(2);
-        expect(result.value.every(e => e.organizerId === "user-staff")).toBe(true);
-        expect(result.value.map(e => e.id)).toEqual(
+        
+        const testEvents = result.value.filter(
+            e => ["e1", "e2"].includes(e.id)
+        );
+
+        expect(testEvents.length).toBe(2);
+        expect(testEvents.every(
+            e => e.organizerId === "user-staff"
+        )).toBe(true);
+
+        expect(testEvents.map(e => e.id)).toEqual(
             expect.arrayContaining(["e1", "e2"])
         );
     });

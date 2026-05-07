@@ -64,6 +64,11 @@ class ExpressApp implements IApp {
     );
     this.app.use(Layouts);
     this.app.use(express.urlencoded({ extended: true }));
+
+    this.app.use((req, res, next) => {
+      res.locals.currentPath = req.path;
+      next();
+    });
   }
 
   private registerTemplating(): void {
@@ -139,7 +144,7 @@ class ExpressApp implements IApp {
       asyncHandler(async (req, res) => {
         this.logger.info("GET /");
         const store = sessionStore(req);
-        res.redirect(isAuthenticatedSession(store) ? "/home" : "/login");
+        res.redirect(isAuthenticatedSession(store) ? "/events" : "/login");
       }),
     );
 
@@ -150,7 +155,7 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(store);
 
         if (getAuthenticatedUser(store)) {
-          res.redirect("/home");
+          res.redirect("/events");
           return;
         }
 
@@ -252,7 +257,7 @@ class ExpressApp implements IApp {
 
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /home for ${browserSession.browserLabel}`);
-        res.render("home", { session: browserSession, pageError: null });
+        res.redirect("/events");
       }),
     );
 

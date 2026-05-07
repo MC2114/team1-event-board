@@ -18,6 +18,8 @@ export type RSVPWithEvent = {
     event: Event
 }
 
+export type RSVPConflict = RSVPWithEvent;
+
 export type RSVPAttendee = {
     id: string;
     eventId: string;

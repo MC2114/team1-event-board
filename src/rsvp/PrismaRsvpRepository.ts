@@ -1,7 +1,7 @@
 import type { PrismaClient, RSVP as PrismaRsvp, Event as PrismaEvent } from "@prisma/client";
 import { Ok, Err, type Result } from "../lib/result";
 import type { IRSVPRepository } from "./RsvpRepository";
-import type { RSVP, RSVPAttendee, RSVPWithEvent } from "./RSVP";
+import type { RSVP, RSVPAttendee, RSVPConflict, RSVPWithEvent } from "./RSVP";
 import type { RSVPError } from "./errors";
 import { UnexpectedDependencyError } from "./errors";
 
@@ -99,6 +99,48 @@ export class PrismaRsvpRepository implements IRSVPRepository {
       return Ok(rsvp ? toRSVP(rsvp) : null);
     } catch {
       return Err(UnexpectedDependencyError("Unable to find RSVP."));
+    }
+  }
+
+  async findOverlappingActiveRsvps(
+    userId: string,
+    eventId: string,
+    startDatetime: Date,
+    endDatetime: Date,
+  ): Promise<Result<RSVPConflict[], RSVPError>> {
+    try {
+      const rsvps = await this.prisma.rSVP.findMany({
+        where: {
+          userId,
+          eventId: {
+            not: eventId,
+          },
+          status: {
+            in: ["going", "waitlisted"],
+          },
+          event: {
+            status: "published",
+            startDatetime: {
+              lt: endDatetime,
+            },
+            endDatetime: {
+              gt: startDatetime,
+            },
+          },
+        },
+        include: {
+          event: true,
+        },
+        orderBy: {
+          event: {
+            startDatetime: "asc",
+          },
+        },
+      });
+
+      return Ok(rsvps.map(toRSVPWithEvent));
+    } catch {
+      return Err(UnexpectedDependencyError("Unable to find overlapping RSVPs."));
     }
   }
 

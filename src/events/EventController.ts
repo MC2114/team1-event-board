@@ -141,6 +141,12 @@ export class EventController implements IEventController {
       return;
     }
 
+    if (req.get("HX-Request") === "true") {
+      res.set("HX-Redirect", `/events/${result.value.id}`);
+      res.status(204).send();
+      return;
+    }
+
     res.redirect(`/events/${result.value.id}`);
   }
 
@@ -181,6 +187,34 @@ export class EventController implements IEventController {
 
     const rsvpMessage = typeof req.query.rsvpMessage === "string" ? req.query.rsvpMessage : null;
 
+    let overlapWarning = typeof req.query.overlapWarning === "string" ? req.query.overlapWarning : null;
+
+    if (
+      userRSVP &&
+      (userRSVP.status === "going" || userRSVP.status === "waitlisted")
+    ) {
+      const overlapsResult = await this.rsvpRepository.findOverlappingActiveRsvps(
+        user.userId,
+        eventId,
+        detailResult.value.event.startDatetime,
+        detailResult.value.event.endDatetime,
+      );
+
+      if (overlapsResult.ok) {
+        if (overlapsResult.value.length > 0) {
+          const conflictList = overlapsResult.value
+            .map((conflict) => {
+              const event = conflict.event;
+              return `${event.title} from ${event.startDatetime.toLocaleString()} to ${event.endDatetime.toLocaleString()}`;
+            })
+            .join("; ");
+          overlapWarning = `This event overlaps with: ${conflictList}.`;
+        } else {
+          overlapWarning = null;
+        }
+      }
+    }
+
     res.render("events/detail", {
       session: browserSession,
       title: detailResult.value.event.title,
@@ -189,6 +223,7 @@ export class EventController implements IEventController {
       user,
       userRSVP,
       rsvpMessage,
+      overlapWarning,
     });
   }
 
